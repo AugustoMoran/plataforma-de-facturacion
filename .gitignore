@@ -1,0 +1,63 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build outputs
+dist/
+build/
+*.tsbuildinfo
+
+# Environment files
+.env
+.env.local
+.env.*.local
+.env.production
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage
+coverage/
+.nyc_output/
+
+# IDEs and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Docker
+docker/ssl/
+docker/certs/*.pem
+docker/certs/*.key
+
+# Certificates (AFIP)
+backend/certs/
+!backend/certs/.gitkeep
+
+# Uploads
+backend/uploads/
+!backend/uploads/.gitkeep
+
+# Test results
+test-results/
+playwright-report/
+playwright/.cache/
+
+# Misc
+*.tgz
+.cache/
