@@ -10,6 +10,7 @@ import { config } from './config/env';
 import { logger } from './config/logger';
 import { errorHandler, notFoundHandler } from './middleware/error.middleware';
 import { globalRateLimit } from './middleware/rate-limit.middleware';
+import { csrfProtection, getCsrfToken } from './middleware/csrf.middleware';
 
 // Routes
 import authRoutes from './modules/auth/auth.routes';
@@ -57,11 +58,24 @@ export function createApp(): Application {
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-  // Cookie parsing
+  // Cookie parsing (must come before CSRF middleware)
   app.use(cookieParser());
 
-  // MongoDB query injection sanitization
+  // MongoDB query injection sanitization (must come before routes)
   app.use(mongoSanitize());
+
+  // CSRF protection (double-submit cookie pattern)
+  // Exempt the refresh token endpoint (it uses the refresh cookie itself as proof)
+  // and the CSRF token generation endpoint
+  if (config.env !== 'test') {
+    app.use((req, res, next) => {
+      // Skip CSRF for the CSRF token endpoint itself and refresh
+      if (req.path === '/api/csrf-token' || req.path === '/api/auth/refresh') {
+        return next();
+      }
+      return csrfProtection(req, res, next);
+    });
+  }
 
   // Rate limiting
   app.use(globalRateLimit);
@@ -86,6 +100,9 @@ export function createApp(): Application {
       env: config.env,
     });
   });
+
+  // CSRF token endpoint (SPA calls this on startup to get initial token)
+  app.get('/api/csrf-token', getCsrfToken);
 
   // API routes
   const apiRouter = express.Router();
