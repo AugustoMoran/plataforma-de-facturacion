@@ -1,11 +1,11 @@
-import { Router } from 'express';
+import { Router, type Router as ExpressRouter } from 'express';
 import { body } from 'express-validator';
 
 import { authenticate, requirePermission } from '../../middleware/auth.middleware';
 import { validate } from '../../middleware/validate.middleware';
 import { stockController } from './stock.controller';
 
-const router = Router();
+const router: ExpressRouter = Router();
 router.use(authenticate);
 
 router.get('/branch/:branchId', requirePermission('viewStock'), stockController.getByBranch.bind(stockController));

@@ -1,8 +1,8 @@
 import { Queue } from 'bullmq';
-import { getRedisClient } from '../config/redis';
+import { getBullMQConnection } from '../config/redis';
 
 export const afipQueue = new Queue('afip-processing', {
-  connection: getRedisClient(),
+  connection: getBullMQConnection(),
   defaultJobOptions: {
     attempts: 3,
     backoff: {

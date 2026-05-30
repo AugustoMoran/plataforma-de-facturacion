@@ -1,8 +1,8 @@
-import { Router } from 'express';
+import { Router, type Router as ExpressRouter } from 'express';
 import { authenticate, requirePermission } from '../../middleware/auth.middleware';
 import { reportsController } from './reports.controller';
 
-const router = Router();
+const router: ExpressRouter = Router();
 router.use(authenticate, requirePermission('viewReports'));
 
 router.get('/sales', reportsController.getSales.bind(reportsController));

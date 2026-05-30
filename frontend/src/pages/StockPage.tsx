@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { AlertTriangle, ArrowRightLeft } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { useGetStockQuery, useTransferStockMutation, useAdjustStockMutation } from '../api/stockApi';
+import { useGetStockQuery, useTransferStockMutation } from '../api/stockApi';
 import { useGetBranchesQuery } from '../api/branchesApi';
 import { TableSkeleton } from '../components/common/SkeletonLoader';
 import { PermissionGate } from '../components/common/PermissionGate';

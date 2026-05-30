@@ -36,7 +36,9 @@ export class AuthService {
     ipAddress?: string,
     userAgent?: string,
   ): Promise<{ tokenPair: TokenPair; user: Record<string, unknown> }> {
-    const user = await User.findOne({ email: dto.email, isDeleted: false })
+    // Explicitly cast to string to prevent NoSQL injection via object payloads
+    const email = String(dto.email).toLowerCase().trim();
+    const user = await User.findOne({ email, isDeleted: false })
       .select('+password')
       .populate('roleId')
       .lean();

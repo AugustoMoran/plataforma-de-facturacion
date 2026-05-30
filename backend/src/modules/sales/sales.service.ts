@@ -9,6 +9,7 @@ import { AppError } from '../../middleware/error.middleware';
 import { stockService } from '../stock/stock.service';
 import { getSocketServer } from '../../sockets/socket.server';
 import { afipQueue } from '../../queues/afip.queue';
+import { validateObjectId } from '../../shared/utils/validation';
 
 export interface CreateSaleDto {
   branchId: string;
@@ -172,8 +173,8 @@ export class SalesService {
     const skip = (page - 1) * limit;
 
     const filter: Record<string, unknown> = {};
-    if (query.branchId) filter['branchId'] = query.branchId;
-    if (query.sellerId) filter['sellerId'] = query.sellerId;
+    if (query.branchId) filter['branchId'] = validateObjectId(query.branchId, 'branchId');
+    if (query.sellerId) filter['sellerId'] = validateObjectId(query.sellerId, 'sellerId');
     if (query.status) filter['status'] = query.status;
     if (query.saleType) filter['saleType'] = query.saleType;
     if (query.dateFrom || query.dateTo) {
@@ -207,6 +208,7 @@ export class SalesService {
   }
 
   async getById(id: string) {
+    validateObjectId(id);
     const sale = await Sale.findById(id)
       .populate('branchId', 'name')
       .populate('sellerId', 'firstName lastName email')
@@ -217,6 +219,8 @@ export class SalesService {
   }
 
   async cancel(id: string, reason: string, cancelledBy: string) {
+    validateObjectId(id);
+    validateObjectId(cancelledBy, 'cancelledBy');
     const sale = await Sale.findById(id);
     if (!sale) throw new AppError('Sale not found', 404);
     if (sale.status !== 'completed') throw new AppError('Only completed sales can be cancelled', 400);

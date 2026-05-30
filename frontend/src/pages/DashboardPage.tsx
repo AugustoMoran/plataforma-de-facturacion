@@ -1,7 +1,7 @@
 import { CardSkeleton } from '../components/common/SkeletonLoader';
 import { useGetDailySalesQuery } from '../api/reportsApi';
 import { useGetStockQuery } from '../api/stockApi';
-import { DollarSign, TrendingUp, Package, AlertTriangle, ShoppingCart } from 'lucide-react';
+import { DollarSign, TrendingUp, AlertTriangle, ShoppingCart } from 'lucide-react';
 
 function StatCard({
   title,

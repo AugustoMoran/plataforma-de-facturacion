@@ -1,6 +1,7 @@
 import { Branch } from '../../database/models/branch.model';
 import { User } from '../../database/models/user.model';
 import { AppError } from '../../middleware/error.middleware';
+import { validateObjectId, sanitizeSearchString } from '../../shared/utils/validation';
 
 export class BranchesService {
   async getAll(query: { page?: number; limit?: number; search?: string }) {
@@ -9,7 +10,7 @@ export class BranchesService {
     const skip = (page - 1) * limit;
     const filter: Record<string, unknown> = { isDeleted: false };
     if (query.search) {
-      filter['name'] = { $regex: query.search, $options: 'i' };
+      filter['name'] = { $regex: sanitizeSearchString(query.search), $options: 'i' };
     }
     const [branches, total] = await Promise.all([
       Branch.find(filter)
@@ -32,6 +33,7 @@ export class BranchesService {
   }
 
   async getById(id: string) {
+    validateObjectId(id);
     const branch = await Branch.findOne({ _id: id, isDeleted: false })
       .populate('managerUserId', 'firstName lastName email')
       .lean();
@@ -46,6 +48,7 @@ export class BranchesService {
   }
 
   async update(id: string, data: Partial<{ name: string; address: string; phone: string; email: string; isActive: boolean; managerUserId: string }>) {
+    validateObjectId(id);
     const branch = await Branch.findOne({ _id: id, isDeleted: false });
     if (!branch) throw new AppError('Branch not found', 404);
     Object.assign(branch, data);
@@ -53,6 +56,7 @@ export class BranchesService {
   }
 
   async getVendedores(branchId: string) {
+    validateObjectId(branchId, 'branchId');
     return User.find({ branchId, isActive: true, isDeleted: false })
       .populate('roleId', 'name displayName')
       .select('-password')
@@ -60,6 +64,8 @@ export class BranchesService {
   }
 
   async assignVendedor(branchId: string, userId: string): Promise<void> {
+    validateObjectId(branchId, 'branchId');
+    validateObjectId(userId, 'userId');
     const branch = await Branch.findOne({ _id: branchId, isDeleted: false });
     if (!branch) throw new AppError('Branch not found', 404);
     const user = await User.findOne({ _id: userId, isDeleted: false });
@@ -69,6 +75,7 @@ export class BranchesService {
   }
 
   async softDelete(id: string): Promise<void> {
+    validateObjectId(id);
     const branch = await Branch.findOne({ _id: id, isDeleted: false });
     if (!branch) throw new AppError('Branch not found', 404);
     branch.isDeleted = true;

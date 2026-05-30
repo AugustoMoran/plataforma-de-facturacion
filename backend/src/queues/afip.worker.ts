@@ -1,6 +1,6 @@
 import { Worker, Job } from 'bullmq';
 
-import { getRedisClient } from '../config/redis';
+import { getBullMQConnection } from '../config/redis';
 import { logger } from '../config/logger';
 import { Sale } from '../database/models/sale.model';
 import { getSocketServer } from '../sockets/socket.server';
@@ -72,7 +72,7 @@ export function createAfipWorker(): Worker {
       }
     },
     {
-      connection: getRedisClient(),
+      connection: getBullMQConnection(),
       concurrency: 5,
     },
   );

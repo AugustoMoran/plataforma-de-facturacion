@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type Router as ExpressRouter } from 'express';
 import { body } from 'express-validator';
 
 import { authenticate, requirePermission } from '../../middleware/auth.middleware';
@@ -6,7 +6,7 @@ import { uploadImage } from '../../middleware/upload.middleware';
 import { validate } from '../../middleware/validate.middleware';
 import { productsController } from './products.controller';
 
-const router = Router();
+const router: ExpressRouter = Router();
 
 router.use(authenticate);
 
@@ -14,7 +14,15 @@ router.get('/', requirePermission('viewProducts'), productsController.getAll.bin
 router.get('/barcode/:barcode', requirePermission('viewProducts'), productsController.getByBarcode.bind(productsController));
 router.get('/:id', requirePermission('viewProducts'), productsController.getById.bind(productsController));
 
-router.post('/calculate-price', productsController.calculatePrice.bind(productsController));
+router.post(
+  '/calculate-price',
+  [
+    body('cost').isFloat({ min: 0 }),
+    body('ivaPercentage').isFloat({ min: 0 }),
+  ],
+  validate,
+  productsController.calculatePrice.bind(productsController),
+);
 
 router.post(
   '/',

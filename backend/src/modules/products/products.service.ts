@@ -4,6 +4,7 @@ import { cloudinary } from '../../config/cloudinary';
 import { Category } from '../../database/models/category.model';
 import { Product } from '../../database/models/product.model';
 import { AppError } from '../../middleware/error.middleware';
+import { validateObjectId, sanitizeSearchString } from '../../shared/utils/validation';
 
 export class ProductsService {
   calculatePublicPrice(cost: number, ivaPercentage: number, profitPercentage: number): number {
@@ -30,13 +31,14 @@ export class ProductsService {
 
     const filter: Record<string, unknown> = { isDeleted: false };
     if (query.search) {
+      const safeSearch = sanitizeSearchString(query.search);
       filter['$or'] = [
-        { name: { $regex: query.search, $options: 'i' } },
+        { name: { $regex: safeSearch, $options: 'i' } },
         { barcode: query.search },
-        { internalCode: { $regex: query.search, $options: 'i' } },
+        { internalCode: { $regex: safeSearch, $options: 'i' } },
       ];
     }
-    if (query.categoryId) filter['categoryId'] = query.categoryId;
+    if (query.categoryId) filter['categoryId'] = validateObjectId(query.categoryId, 'categoryId');
     if (query.isActive !== undefined) filter['isActive'] = query.isActive;
 
     const [products, total] = await Promise.all([
@@ -71,6 +73,7 @@ export class ProductsService {
   }
 
   async getById(id: string) {
+    validateObjectId(id);
     const product = await Product.findOne({ _id: id, isDeleted: false })
       .populate('categoryId', 'name')
       .lean();
@@ -95,7 +98,7 @@ export class ProductsService {
     imageBuffer?: Buffer,
     imageMimetype?: string,
   ) {
-    const category = await Category.findOne({ _id: data.categoryId, isDeleted: false });
+    const category = await Category.findOne({ _id: validateObjectId(data.categoryId, 'categoryId'), isDeleted: false });
     if (!category) throw new AppError('Category not found', 404);
 
     // Calculate prices
@@ -143,11 +146,12 @@ export class ProductsService {
     imageBuffer?: Buffer,
     imageMimetype?: string,
   ) {
+    validateObjectId(id);
     const product = await Product.findOne({ _id: id, isDeleted: false });
     if (!product) throw new AppError('Product not found', 404);
 
     if (data.categoryId) {
-      const category = await Category.findOne({ _id: data.categoryId, isDeleted: false });
+      const category = await Category.findOne({ _id: validateObjectId(data.categoryId, 'categoryId'), isDeleted: false });
       if (!category) throw new AppError('Category not found', 404);
     }
 
@@ -198,6 +202,7 @@ export class ProductsService {
   }
 
   async softDelete(id: string): Promise<void> {
+    validateObjectId(id);
     const product = await Product.findOne({ _id: id, isDeleted: false });
     if (!product) throw new AppError('Product not found', 404);
     if (product.image?.publicId) {

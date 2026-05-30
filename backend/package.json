@@ -18,7 +18,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "afip.ts": "^1.1.0",
+    "afip.ts": "^3.2.2",
     "axios": "^1.6.8",
     "bcrypt": "^5.1.1",
     "bullmq": "^5.4.2",

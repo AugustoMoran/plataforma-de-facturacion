@@ -1,5 +1,5 @@
 import multer, { FileFilterCallback } from 'multer';
-import { Request } from 'express';
+import { Request, RequestHandler } from 'express';
 
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -14,13 +14,13 @@ const fileFilter = (_req: Request, file: Express.Multer.File, cb: FileFilterCall
   }
 };
 
-export const uploadImage = multer({
+export const uploadImage: RequestHandler = multer({
   storage,
   fileFilter,
   limits: { fileSize: MAX_FILE_SIZE },
 }).single('image');
 
-export const uploadImages = multer({
+export const uploadImages: RequestHandler = multer({
   storage,
   fileFilter,
   limits: { fileSize: MAX_FILE_SIZE },

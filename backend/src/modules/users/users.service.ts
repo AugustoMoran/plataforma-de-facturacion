@@ -6,6 +6,7 @@ import type { PermissionsMap } from '../../shared/types';
 import { AppError } from '../../middleware/error.middleware';
 import { getSocketServer } from '../../sockets/socket.server';
 import { SOCKET_EVENTS } from '../../shared/types';
+import { validateObjectId, sanitizeSearchString } from '../../shared/utils/validation';
 
 export class UsersService {
   async getAll(query: {
@@ -22,14 +23,15 @@ export class UsersService {
 
     const filter: Record<string, unknown> = { isDeleted: false };
     if (query.search) {
+      const safeSearch = sanitizeSearchString(query.search);
       filter['$or'] = [
-        { firstName: { $regex: query.search, $options: 'i' } },
-        { lastName: { $regex: query.search, $options: 'i' } },
-        { email: { $regex: query.search, $options: 'i' } },
+        { firstName: { $regex: safeSearch, $options: 'i' } },
+        { lastName: { $regex: safeSearch, $options: 'i' } },
+        { email: { $regex: safeSearch, $options: 'i' } },
       ];
     }
-    if (query.roleId) filter['roleId'] = query.roleId;
-    if (query.branchId) filter['branchId'] = query.branchId;
+    if (query.roleId) filter['roleId'] = validateObjectId(query.roleId, 'roleId');
+    if (query.branchId) filter['branchId'] = validateObjectId(query.branchId, 'branchId');
     if (query.isActive !== undefined) filter['isActive'] = query.isActive;
 
     const [users, total] = await Promise.all([
@@ -58,6 +60,7 @@ export class UsersService {
   }
 
   async getById(id: string) {
+    validateObjectId(id);
     const user = await User.findOne({ _id: id, isDeleted: false })
       .populate('roleId', 'name displayName permissions')
       .populate('branchId', 'name')
@@ -78,9 +81,12 @@ export class UsersService {
     commissionPercentage?: number;
     permissions?: Partial<PermissionsMap>;
   }) {
-    const existingUser = await User.findOne({ email: data.email, isDeleted: false });
+    // Explicitly cast email to string to prevent NoSQL injection via object payloads
+    const email = String(data.email).toLowerCase().trim();
+    const existingUser = await User.findOne({ email, isDeleted: false });
     if (existingUser) throw new AppError('Email already in use', 409);
 
+    if (data.roleId) validateObjectId(data.roleId, 'roleId');
     const role = await Role.findById(data.roleId);
     if (!role) throw new AppError('Role not found', 404);
 
@@ -106,13 +112,16 @@ export class UsersService {
       permissions: Partial<PermissionsMap>;
     }>,
   ) {
+    validateObjectId(id);
     const user = await User.findOne({ _id: id, isDeleted: false });
     if (!user) throw new AppError('User not found', 404);
 
     if (data.roleId) {
+      validateObjectId(data.roleId, 'roleId');
       const role = await Role.findById(data.roleId);
       if (!role) throw new AppError('Role not found', 404);
     }
+    if (data.branchId) validateObjectId(data.branchId, 'branchId');
 
     Object.assign(user, data);
     await user.save();
@@ -136,6 +145,7 @@ export class UsersService {
   }
 
   async updatePassword(id: string, newPassword: string): Promise<void> {
+    validateObjectId(id);
     const user = await User.findOne({ _id: id, isDeleted: false });
     if (!user) throw new AppError('User not found', 404);
     user.password = newPassword;
@@ -143,6 +153,7 @@ export class UsersService {
   }
 
   async softDelete(id: string): Promise<void> {
+    validateObjectId(id);
     const user = await User.findOne({ _id: id, isDeleted: false });
     if (!user) throw new AppError('User not found', 404);
     user.isDeleted = true;

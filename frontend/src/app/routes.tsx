@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 
-import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { useAppDispatch } from '../store/hooks';
 import { setCredentials, clearCredentials, setLoading } from '../features/auth/authSlice';
 import { setPermissions } from '../features/auth/permissionsSlice';
 import { useGetMeQuery } from '../api/authApi';

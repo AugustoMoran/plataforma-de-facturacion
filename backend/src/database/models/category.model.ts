@@ -19,7 +19,6 @@ const CategorySchema = new Schema<ICategory>(
   { timestamps: true, versionKey: false },
 );
 
-CategorySchema.index({ name: 1 });
 CategorySchema.index({ isActive: 1, isDeleted: 1 });
 
 export const Category = mongoose.model<ICategory>('Category', CategorySchema);

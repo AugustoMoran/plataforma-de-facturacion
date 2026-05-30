@@ -18,7 +18,7 @@ export const store = configureStore({
         ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE'],
       },
     }).concat(apiSlice.middleware),
-  devTools: process.env.NODE_ENV !== 'production',
+  devTools: import.meta.env.DEV,
 });
 
 export type RootState = ReturnType<typeof store.getState>;

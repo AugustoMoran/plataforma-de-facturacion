@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
-import { Router } from 'express';
+import { Router, type Router as ExpressRouter } from 'express';
 import { body } from 'express-validator';
 
 import { authenticate, requirePermission } from '../../middleware/auth.middleware';
@@ -42,7 +42,7 @@ class CategoriesController {
 }
 
 const controller = new CategoriesController();
-const router = Router();
+const router: ExpressRouter = Router();
 
 router.use(authenticate);
 router.get('/', controller.getAll.bind(controller));

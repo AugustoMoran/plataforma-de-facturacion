@@ -46,7 +46,6 @@ const RoleSchema = new Schema<IRole>(
   },
 );
 
-RoleSchema.index({ name: 1 });
 RoleSchema.index({ isActive: 1 });
 
 export const Role = mongoose.model<IRole>('Role', RoleSchema);

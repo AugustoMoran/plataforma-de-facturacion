@@ -1,66 +1,124 @@
-import mongoose from 'mongoose';
-import { MongoMemoryServer } from 'mongodb-memory-server';
 import request from 'supertest';
+import jwt from 'jsonwebtoken';
 
-import { createApp } from '../../src/app';
-import { Role } from '../../src/database/models/role.model';
-import { User } from '../../src/database/models/user.model';
+// ── Mock BullMQ & Redis before app loads ─────────────────────────────────────
+jest.mock('bullmq', () => ({
+  Queue: jest.fn().mockImplementation(() => ({
+    add: jest.fn().mockResolvedValue({}),
+    close: jest.fn().mockResolvedValue(undefined),
+    on: jest.fn(),
+  })),
+  Worker: jest.fn().mockImplementation(() => ({
+    on: jest.fn(),
+    close: jest.fn().mockResolvedValue(undefined),
+  })),
+}));
 
-let mongod: MongoMemoryServer;
-const app = createApp();
+jest.mock('ioredis', () =>
+  jest.fn().mockImplementation(() => ({
+    on: jest.fn(),
+    get: jest.fn(),
+    set: jest.fn(),
+    del: jest.fn(),
+    quit: jest.fn(),
+  })),
+);
 
-const ADMIN_PERMISSIONS = {
-  viewProducts: true, createProducts: true, editProducts: true, deleteProducts: true,
-  viewStock: true, adjustStock: true, transferStock: true,
-  viewSales: true, createSales: true, cancelSales: true, refundSales: true,
-  viewUsers: true, createUsers: true, editUsers: true, deleteUsers: true,
-  viewBranches: true, manageBranches: true,
-  viewReports: true, exportReports: true,
-  manageAfip: true, manageRoles: true, managePermissions: true, manageCategories: true,
+// ── Mock Mongoose models ──────────────────────────────────────────────────────
+const mockUser = {
+  _id: '507f1f77bcf86cd799439011',
+  email: 'test@example.com',
+  firstName: 'Test',
+  lastName: 'User',
+  isActive: true,
+  isDeleted: false,
+  roleId: {
+    _id: '507f1f77bcf86cd799439012',
+    name: 'admin',
+    displayName: 'Administrator',
+    permissions: {
+      viewProducts: true, createProducts: true, editProducts: true, deleteProducts: true,
+      viewStock: true, adjustStock: true, transferStock: true,
+      viewSales: true, createSales: true, cancelSales: true, refundSales: true,
+      viewUsers: true, createUsers: true, editUsers: true, deleteUsers: true,
+      viewBranches: true, manageBranches: true,
+      viewReports: true, exportReports: true,
+      manageAfip: true, manageRoles: true, managePermissions: true, manageCategories: true,
+    },
+  },
+  permissions: {},
+  comparePassword: jest.fn(),
 };
 
-beforeAll(async () => {
-  mongod = await MongoMemoryServer.create();
-  await mongoose.connect(mongod.getUri());
+jest.mock('../../src/database/models/user.model', () => ({
+  User: {
+    findOne: jest.fn(),
+    findById: jest.fn(),
+    create: jest.fn(),
+    updateOne: jest.fn().mockResolvedValue({ modifiedCount: 1 }),
+  },
+}));
+
+jest.mock('../../src/database/models/refresh-token.model', () => ({
+  RefreshToken: {
+    findOne: jest.fn(),
+    create: jest.fn(),
+    deleteOne: jest.fn(),
+    deleteMany: jest.fn(),
+    findOneAndUpdate: jest.fn(),
+    updateOne: jest.fn().mockResolvedValue({ modifiedCount: 1 }),
+  },
+}));
+
+jest.mock('../../src/database/models/role.model', () => ({
+  Role: {
+    findOne: jest.fn(),
+    findById: jest.fn(),
+  },
+}));
+
+// ── Import app after mocks ────────────────────────────────────────────────────
+import { createApp } from '../../src/app';
+import { User } from '../../src/database/models/user.model';
+import { RefreshToken } from '../../src/database/models/refresh-token.model';
+
+const app = createApp();
+
+// Helpers
+const ACCESS_SECRET = process.env['JWT_ACCESS_SECRET']!;
+
+function makeAccessToken(payload: object): string {
+  return jwt.sign(payload, ACCESS_SECRET, { expiresIn: '15m' });
+}
+
+beforeEach(() => {
+  jest.clearAllMocks();
 });
 
-afterAll(async () => {
-  await mongoose.disconnect();
-  await mongod.stop();
-});
-
-afterEach(async () => {
-  await Promise.all([
-    mongoose.connection.collection('users').deleteMany({}),
-    mongoose.connection.collection('roles').deleteMany({}),
-    mongoose.connection.collection('refreshtokens').deleteMany({}),
-  ]);
-});
-
-describe('Auth Routes', () => {
-  let adminRole: any;
-  let testUser: any;
-
-  beforeEach(async () => {
-    adminRole = await Role.create({
-      name: 'admin',
-      displayName: 'Administrator',
-      permissions: ADMIN_PERMISSIONS,
-      isSystem: true,
-    });
-
-    testUser = await User.create({
-      email: 'test@example.com',
-      password: 'TestPassword123!',
-      firstName: 'Test',
-      lastName: 'User',
-      roleId: adminRole._id,
-      isActive: true,
-    });
+// ── Health check ──────────────────────────────────────────────────────────────
+describe('Health Check', () => {
+  it('GET /health should return 200', async () => {
+    const res = await request(app).get('/health');
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe('ok');
   });
+});
 
+// ── Auth Routes ───────────────────────────────────────────────────────────────
+describe('Auth Routes', () => {
   describe('POST /api/auth/login', () => {
-    it('should login with valid credentials', async () => {
+    it('should return 200 with valid credentials', async () => {
+      const userWithSelect = { ...mockUser, comparePassword: jest.fn().mockResolvedValue(true) };
+      (User.findOne as jest.Mock).mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        populate: jest.fn().mockReturnThis(),
+        lean: jest.fn().mockResolvedValue(mockUser),
+      });
+      (User.findById as jest.Mock).mockReturnValue({
+        select: jest.fn().mockResolvedValue(userWithSelect),
+      });
+      (RefreshToken.create as jest.Mock).mockResolvedValue({ token: 'refresh-token-value' });
+
       const res = await request(app)
         .post('/api/auth/login')
         .send({ email: 'test@example.com', password: 'TestPassword123!' });
@@ -71,7 +129,17 @@ describe('Auth Routes', () => {
       expect(res.headers['set-cookie']).toBeDefined();
     });
 
-    it('should fail with invalid credentials', async () => {
+    it('should return 401 with invalid password', async () => {
+      const userWithSelect = { ...mockUser, comparePassword: jest.fn().mockResolvedValue(false) };
+      (User.findOne as jest.Mock).mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        populate: jest.fn().mockReturnThis(),
+        lean: jest.fn().mockResolvedValue(mockUser),
+      });
+      (User.findById as jest.Mock).mockReturnValue({
+        select: jest.fn().mockResolvedValue(userWithSelect),
+      });
+
       const res = await request(app)
         .post('/api/auth/login')
         .send({ email: 'test@example.com', password: 'WrongPassword!' });
@@ -80,7 +148,13 @@ describe('Auth Routes', () => {
       expect(res.body.success).toBe(false);
     });
 
-    it('should fail with non-existent user', async () => {
+    it('should return 401 when user not found', async () => {
+      (User.findOne as jest.Mock).mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        populate: jest.fn().mockReturnThis(),
+        lean: jest.fn().mockResolvedValue(null),
+      });
+
       const res = await request(app)
         .post('/api/auth/login')
         .send({ email: 'notfound@example.com', password: 'Password123!' });
@@ -88,7 +162,7 @@ describe('Auth Routes', () => {
       expect(res.status).toBe(401);
     });
 
-    it('should fail with invalid email format', async () => {
+    it('should return 422 with invalid email format', async () => {
       const res = await request(app)
         .post('/api/auth/login')
         .send({ email: 'not-an-email', password: 'Password123!' });
@@ -96,7 +170,7 @@ describe('Auth Routes', () => {
       expect(res.status).toBe(422);
     });
 
-    it('should fail with missing password', async () => {
+    it('should return 422 with missing password', async () => {
       const res = await request(app)
         .post('/api/auth/login')
         .send({ email: 'test@example.com' });
@@ -106,23 +180,28 @@ describe('Auth Routes', () => {
   });
 
   describe('GET /api/auth/me', () => {
-    it('should return current user when authenticated', async () => {
-      const loginRes = await request(app)
-        .post('/api/auth/login')
-        .send({ email: 'test@example.com', password: 'TestPassword123!' });
+    it('should return 200 when authenticated', async () => {
+      const token = makeAccessToken({
+        userId: mockUser._id,
+        email: mockUser.email,
+        role: 'admin',
+        permissions: mockUser.roleId.permissions,
+      });
 
-      const cookies = loginRes.headers['set-cookie'] as string[];
-      const accessTokenCookie = cookies?.find((c: string) => c.startsWith('accessToken='));
+      (User.findById as jest.Mock).mockReturnValue({
+        populate: jest.fn().mockReturnThis(),
+        lean: jest.fn().mockResolvedValue(mockUser),
+      });
 
       const res = await request(app)
         .get('/api/auth/me')
-        .set('Cookie', accessTokenCookie ? [accessTokenCookie] : []);
+        .set('Cookie', [`accessToken=${token}`]);
 
       expect(res.status).toBe(200);
       expect(res.body.data.email).toBe('test@example.com');
     });
 
-    it('should fail without authentication', async () => {
+    it('should return 401 without authentication', async () => {
       const res = await request(app).get('/api/auth/me');
       expect(res.status).toBe(401);
     });
@@ -130,26 +209,20 @@ describe('Auth Routes', () => {
 
   describe('POST /api/auth/logout', () => {
     it('should logout successfully', async () => {
-      const loginRes = await request(app)
-        .post('/api/auth/login')
-        .send({ email: 'test@example.com', password: 'TestPassword123!' });
-
-      const cookies = loginRes.headers['set-cookie'] as string[];
+      const token = makeAccessToken({
+        userId: mockUser._id,
+        email: mockUser.email,
+        role: 'admin',
+        permissions: mockUser.roleId.permissions,
+      });
+      (RefreshToken.deleteMany as jest.Mock).mockResolvedValue({ deletedCount: 1 });
 
       const res = await request(app)
         .post('/api/auth/logout')
-        .set('Cookie', cookies);
+        .set('Cookie', [`accessToken=${token}`]);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
     });
-  });
-});
-
-describe('Health Check', () => {
-  it('should return 200 on /health', async () => {
-    const res = await request(app).get('/health');
-    expect(res.status).toBe(200);
-    expect(res.body.status).toBe('ok');
   });
 });

@@ -8,19 +8,22 @@ import type { StockMovementType } from '../../shared/types';
 import { SOCKET_EVENTS } from '../../shared/types';
 import { AppError } from '../../middleware/error.middleware';
 import { getSocketServer } from '../../sockets/socket.server';
+import { validateObjectId, sanitizeSearchString } from '../../shared/utils/validation';
 
 export class StockService {
   async getByBranch(branchId: string, query: { page?: number; limit?: number; search?: string }) {
+    validateObjectId(branchId, 'branchId');
     const page = query.page ?? 1;
     const limit = query.limit ?? 50;
     const skip = (page - 1) * limit;
 
     const productFilter: Record<string, unknown> = { isDeleted: false };
     if (query.search) {
+      const safeSearch = sanitizeSearchString(query.search);
       productFilter['$or'] = [
-        { name: { $regex: query.search, $options: 'i' } },
+        { name: { $regex: safeSearch, $options: 'i' } },
         { barcode: query.search },
-        { internalCode: { $regex: query.search, $options: 'i' } },
+        { internalCode: { $regex: safeSearch, $options: 'i' } },
       ];
     }
 
@@ -56,8 +59,9 @@ export class StockService {
   }
 
   async getProductStock(productId: string, branchId?: string) {
+    validateObjectId(productId, 'productId');
     const filter: Record<string, unknown> = { productId };
-    if (branchId) filter['branchId'] = branchId;
+    if (branchId) filter['branchId'] = validateObjectId(branchId, 'branchId');
     return Stock.find(filter).populate('branchId', 'name').lean();
   }
 
@@ -73,6 +77,8 @@ export class StockService {
     },
     performedBy: string,
   ) {
+    validateObjectId(data.productId, 'productId');
+    validateObjectId(data.branchId, 'branchId');
     const session = await mongoose.startSession();
     session.startTransaction();
 
@@ -172,8 +178,8 @@ export class StockService {
     const skip = (page - 1) * limit;
 
     const filter: Record<string, unknown> = {};
-    if (query.productId) filter['productId'] = query.productId;
-    if (query.branchId) filter['branchId'] = query.branchId;
+    if (query.productId) filter['productId'] = validateObjectId(query.productId, 'productId');
+    if (query.branchId) filter['branchId'] = validateObjectId(query.branchId, 'branchId');
     if (query.type) filter['type'] = query.type;
     if (query.dateFrom || query.dateTo) {
       filter['createdAt'] = {};
@@ -215,6 +221,12 @@ export class StockService {
     },
     requestedBy: string,
   ) {
+    validateObjectId(data.fromBranchId, 'fromBranchId');
+    validateObjectId(data.toBranchId, 'toBranchId');
+    // Validate all productIds in the transfer items
+    for (const item of data.items) {
+      validateObjectId(item.productId, 'productId');
+    }
     const { Transfer } = await import('../../database/models/transfer.model');
     const session = await mongoose.startSession();
     session.startTransaction();

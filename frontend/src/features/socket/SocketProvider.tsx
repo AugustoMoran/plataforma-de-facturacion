@@ -47,7 +47,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     });
 
     // Stock events
-    socket.on('stock:updated', (data) => {
+    socket.on('stock:updated', (_data) => {
       dispatch(apiSlice.util.invalidateTags([{ type: 'Stock', id: 'LIST' }]));
     });
 

@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type Router as ExpressRouter } from 'express';
 import { body } from 'express-validator';
 
 import { authenticate } from '../../middleware/auth.middleware';
@@ -6,7 +6,7 @@ import { authRateLimit } from '../../middleware/rate-limit.middleware';
 import { validate } from '../../middleware/validate.middleware';
 import { authController } from './auth.controller';
 
-const router = Router();
+const router: ExpressRouter = Router();
 
 router.post(
   '/login',

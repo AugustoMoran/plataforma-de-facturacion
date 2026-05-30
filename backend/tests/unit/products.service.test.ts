@@ -1,4 +1,4 @@
-import { productsService } from '../../../src/modules/products/products.service';
+import { productsService } from '../../src/modules/products/products.service';
 
 describe('ProductsService - Price Calculations', () => {
   describe('calculatePublicPrice', () => {

@@ -2,6 +2,10 @@ import { apiSlice } from './apiSlice';
 
 export const authApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
+    getCsrfToken: builder.query<{ csrfToken: string }, void>({
+      query: () => '/csrf-token',
+    }),
+
     login: builder.mutation<
       { success: boolean; data: { user: User } },
       { email: string; password: string }
@@ -31,6 +35,7 @@ export const authApi = apiSlice.injectEndpoints({
 });
 
 export const {
+  useGetCsrfTokenQuery,
   useLoginMutation,
   useLogoutMutation,
   useRefreshTokenMutation,

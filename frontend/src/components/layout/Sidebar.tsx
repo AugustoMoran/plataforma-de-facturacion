@@ -9,7 +9,6 @@ import {
   Shield,
   BarChart3,
   LogOut,
-  Bell,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
@@ -19,7 +18,6 @@ import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { selectCurrentUser } from '../../features/auth/authSlice';
 import { clearCredentials } from '../../features/auth/authSlice';
 import { useLogoutMutation } from '../../api/authApi';
-import { selectUnreadCount } from '../../features/notifications/notificationsSlice';
 import { PermissionGate } from '../common/PermissionGate';
 
 const navItems = [
@@ -38,7 +36,6 @@ export function Sidebar() {
   const location = useLocation();
   const dispatch = useAppDispatch();
   const user = useAppSelector(selectCurrentUser);
-  const unreadCount = useAppSelector(selectUnreadCount);
   const [logout] = useLogoutMutation();
 
   const handleLogout = async () => {

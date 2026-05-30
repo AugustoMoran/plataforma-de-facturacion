@@ -1,5 +1,6 @@
 import { Category } from '../../database/models/category.model';
 import { AppError } from '../../middleware/error.middleware';
+import { validateObjectId, sanitizeSearchString } from '../../shared/utils/validation';
 
 export class CategoriesService {
   async getAll(query: { page?: number; limit?: number; search?: string }) {
@@ -7,7 +8,7 @@ export class CategoriesService {
     const limit = query.limit ?? 50;
     const skip = (page - 1) * limit;
     const filter: Record<string, unknown> = { isDeleted: false };
-    if (query.search) filter['name'] = { $regex: query.search, $options: 'i' };
+    if (query.search) filter['name'] = { $regex: sanitizeSearchString(query.search), $options: 'i' };
     const [categories, total] = await Promise.all([
       Category.find(filter).skip(skip).limit(limit).sort({ name: 1 }).lean(),
       Category.countDocuments(filter),
@@ -25,6 +26,7 @@ export class CategoriesService {
   }
 
   async update(id: string, data: Partial<{ name: string; description: string; isActive: boolean }>) {
+    validateObjectId(id);
     const category = await Category.findOne({ _id: id, isDeleted: false });
     if (!category) throw new AppError('Category not found', 404);
     Object.assign(category, data);
@@ -32,6 +34,7 @@ export class CategoriesService {
   }
 
   async delete(id: string): Promise<void> {
+    validateObjectId(id);
     const category = await Category.findOne({ _id: id, isDeleted: false });
     if (!category) throw new AppError('Category not found', 404);
     category.isDeleted = true;

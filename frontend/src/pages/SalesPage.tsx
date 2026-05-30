@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { Plus, Search, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Plus, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
-import { useGetSalesQuery, useCancelSaleMutation, type Sale } from '../api/salesApi';
+import { useGetSalesQuery, useCancelSaleMutation } from '../api/salesApi';
 import { TableSkeleton } from '../components/common/SkeletonLoader';
 import { PermissionGate } from '../components/common/PermissionGate';
 
@@ -160,6 +160,27 @@ export default function SalesPage() {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Nueva Venta — modal placeholder (to be implemented) */}
+      {showNewSale && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+          onClick={() => setShowNewSale(false)}
+        >
+          <div
+            className="rounded-lg bg-card p-6 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="text-muted-foreground">Formulario de nueva venta (próximamente)</p>
+            <button
+              className="mt-4 rounded bg-muted px-3 py-1 text-sm"
+              onClick={() => setShowNewSale(false)}
+            >
+              Cerrar
+            </button>
+          </div>
         </div>
       )}
     </div>

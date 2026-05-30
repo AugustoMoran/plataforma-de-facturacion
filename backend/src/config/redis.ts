@@ -19,6 +19,20 @@ export function getRedisClient(): IORedis {
   return redisClient;
 }
 
+/**
+ * Returns plain connection options for BullMQ.
+ * BullMQ bundles its own ioredis version, so passing a Redis instance
+ * causes a type mismatch. Passing plain options avoids the conflict.
+ */
+export function getBullMQConnection(): { host: string; port: number; password?: string } {
+  const url = new URL(config.redis.url);
+  return {
+    host: url.hostname,
+    port: parseInt(url.port || '6379', 10),
+    ...(url.password ? { password: decodeURIComponent(url.password) } : {}),
+  };
+}
+
 export async function connectRedis(): Promise<void> {
   const client = getRedisClient();
   await client.connect();
