@@ -79,14 +79,16 @@ export class StockService {
   ) {
     validateObjectId(data.productId, 'productId');
     validateObjectId(data.branchId, 'branchId');
+    const safeProductId = String(data.productId);
+    const safeBranchId = String(data.branchId);
     const session = await mongoose.startSession();
     session.startTransaction();
 
     try {
-      let stock = await Stock.findOne({ productId: data.productId, branchId: data.branchId }).session(session);
+      let stock = await Stock.findOne({ productId: safeProductId, branchId: safeBranchId }).session(session);
 
       if (!stock) {
-        stock = await Stock.create([{ productId: data.productId, branchId: data.branchId, quantity: 0 }], {
+        stock = await Stock.create([{ productId: safeProductId, branchId: safeBranchId, quantity: 0 }], {
           session,
         }).then((docs) => docs[0]);
       }
@@ -132,12 +134,12 @@ export class StockService {
         });
 
         // Check min stock alert
-        const product = await Product.findById(data.productId).lean();
+        const product = await Product.findById(safeProductId).lean();
         if (product && newQuantity <= product.minStock) {
           io.emit(SOCKET_EVENTS.STOCK_ALERT, {
-            productId: data.productId,
+            productId: safeProductId,
             productName: product.name,
-            branchId: data.branchId,
+            branchId: safeBranchId,
             quantity: newQuantity,
             minStock: product.minStock,
           });
@@ -183,8 +185,16 @@ export class StockService {
     if (query.type) filter['type'] = query.type;
     if (query.dateFrom || query.dateTo) {
       filter['createdAt'] = {};
-      if (query.dateFrom) (filter['createdAt'] as any)['$gte'] = new Date(query.dateFrom);
-      if (query.dateTo) (filter['createdAt'] as any)['$lte'] = new Date(query.dateTo);
+      if (query.dateFrom) {
+        const d = new Date(String(query.dateFrom));
+        if (isNaN(d.getTime())) throw new AppError('Invalid dateFrom', 400);
+        (filter['createdAt'] as any)['$gte'] = d;
+      }
+      if (query.dateTo) {
+        const d = new Date(String(query.dateTo));
+        if (isNaN(d.getTime())) throw new AppError('Invalid dateTo', 400);
+        (filter['createdAt'] as any)['$lte'] = d;
+      }
     }
 
     const [movements, total] = await Promise.all([

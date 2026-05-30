@@ -20,9 +20,10 @@ export class CategoriesService {
   }
 
   async create(data: { name: string; description?: string }) {
-    const existing = await Category.findOne({ name: data.name, isDeleted: false });
+    const name = String(data.name).trim();
+    const existing = await Category.findOne({ name, isDeleted: false });
     if (existing) throw new AppError('Category name already exists', 409);
-    return Category.create(data);
+    return Category.create({ ...data, name });
   }
 
   async update(id: string, data: Partial<{ name: string; description: string; isActive: boolean }>) {

@@ -179,8 +179,16 @@ export class SalesService {
     if (query.saleType) filter['saleType'] = query.saleType;
     if (query.dateFrom || query.dateTo) {
       filter['createdAt'] = {};
-      if (query.dateFrom) (filter['createdAt'] as any)['$gte'] = new Date(query.dateFrom);
-      if (query.dateTo) (filter['createdAt'] as any)['$lte'] = new Date(query.dateTo);
+      if (query.dateFrom) {
+        const d = new Date(String(query.dateFrom));
+        if (isNaN(d.getTime())) throw new AppError('Invalid dateFrom', 400);
+        (filter['createdAt'] as any)['$gte'] = d;
+      }
+      if (query.dateTo) {
+        const d = new Date(String(query.dateTo));
+        if (isNaN(d.getTime())) throw new AppError('Invalid dateTo', 400);
+        (filter['createdAt'] as any)['$lte'] = d;
+      }
     }
 
     const [sales, total] = await Promise.all([

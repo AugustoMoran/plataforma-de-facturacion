@@ -66,16 +66,13 @@ export function createApp(): Application {
 
   // CSRF protection (double-submit cookie pattern)
   // Exempt the refresh token endpoint (it uses the refresh cookie itself as proof)
-  // and the CSRF token generation endpoint
-  if (config.env !== 'test') {
-    app.use((req, res, next) => {
-      // Skip CSRF for the CSRF token endpoint itself and refresh
-      if (req.path === '/api/csrf-token' || req.path === '/api/auth/refresh') {
-        return next();
-      }
-      return csrfProtection(req, res, next);
-    });
-  }
+  // and the CSRF token generation endpoint. In test env the middleware is a no-op.
+  app.use((req, res, next) => {
+    if (req.path === '/api/csrf-token' || req.path === '/api/auth/refresh') {
+      return next();
+    }
+    return csrfProtection(req, res, next);
+  });
 
   // Rate limiting
   app.use(globalRateLimit);

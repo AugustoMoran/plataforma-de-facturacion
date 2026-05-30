@@ -42,9 +42,10 @@ export class BranchesService {
   }
 
   async create(data: { name: string; address: string; phone?: string; email?: string; managerUserId?: string }) {
-    const existing = await Branch.findOne({ name: data.name, isDeleted: false });
+    const name = String(data.name).trim();
+    const existing = await Branch.findOne({ name, isDeleted: false });
     if (existing) throw new AppError('Branch name already exists', 409);
-    return Branch.create(data);
+    return Branch.create({ ...data, name });
   }
 
   async update(id: string, data: Partial<{ name: string; address: string; phone: string; email: string; isActive: boolean; managerUserId: string }>) {
@@ -57,7 +58,8 @@ export class BranchesService {
 
   async getVendedores(branchId: string) {
     validateObjectId(branchId, 'branchId');
-    return User.find({ branchId, isActive: true, isDeleted: false })
+    const safeId = String(branchId);
+    return User.find({ branchId: safeId, isActive: true, isDeleted: false })
       .populate('roleId', 'name displayName')
       .select('-password')
       .lean();
