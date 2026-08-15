@@ -1,0 +1,39 @@
+{
+  "packageId": "com.ososound.app",
+  "host": "www.ososoundmusic.com",
+  "name": "Oso Sound",
+  "launcherName": "OsoSound",
+  "display": "standalone",
+  "themeColor": "#2563EB",
+  "themeColorDark": "#000000",
+  "navigationColor": "#2563EB",
+  "navigationColorDark": "#000000",
+  "navigationDividerColor": "#000000",
+  "navigationDividerColorDark": "#000000",
+  "backgroundColor": "#FFFFFF",
+  "enableNotifications": false,
+  "startUrl": "/",
+  "iconUrl": "https://www.ososoundmusic.com/icons/pwa-512.png",
+  "maskableIconUrl": "https://www.ososoundmusic.com/icons/pwa-512.png",
+  "monochromeIconUrl": "https://www.ososoundmusic.com/icons/pwa-512.png",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "./android.keystore",
+    "alias": "ososound"
+  },
+  "appVersionName": "1.0.0",
+  "appVersionCode": 1,
+  "shortcuts": [],
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "https://www.ososoundmusic.com/manifest.webmanifest",
+  "fallbackType": "customtabs",
+  "features": {},
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "https://www.ososoundmusic.com/",
+  "minSdkVersion": 21
+}

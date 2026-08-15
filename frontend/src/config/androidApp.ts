@@ -5,4 +5,7 @@ export const ANDROID_APP_URL =
 
 export const ANDROID_APP_PACKAGE = 'com.ososound.app';
 
+/** Solo true cuando la app ya está publicada en Play Store. */
+export const ANDROID_APP_PUBLISHED = import.meta.env.VITE_ANDROID_APP_PUBLISHED === 'true';
+
 export const ANDROID_BANNER_DISMISS_KEY = 'ososound_android_banner_dismissed_until';
