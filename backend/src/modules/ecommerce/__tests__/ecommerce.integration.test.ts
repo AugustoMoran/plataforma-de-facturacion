@@ -148,6 +148,25 @@ describe('Ecommerce Catalog Integration Tests', () => {
     expect(names).toContain('accesorios');
   });
 
+  it('should merge duplicate typo roots and nest prefixed root categories', async () => {
+    await Category.create([
+      { name: 'ACCESORIOS', visibleInEcommerce: true },
+      { name: 'ACSESORIOS', visibleInEcommerce: true },
+      { name: 'ACCESORIOS DE BATERIA Y PERCUCION', visibleInEcommerce: true },
+    ]);
+
+    const res = await request(app).get('/api/ecommerce/catalog/categories');
+    expect(res.status).toBe(200);
+
+    const accesorios = res.body.find((c: { name: string }) => c.name === 'ACCESORIOS');
+    expect(accesorios).toBeDefined();
+    expect(res.body.some((c: { name: string }) => c.name === 'ACSESORIOS')).toBe(false);
+    expect(res.body.some((c: { name: string }) => c.name === 'ACCESORIOS DE BATERIA Y PERCUCION')).toBe(false);
+    expect(accesorios.subcategories.map((s: { name: string }) => s.name)).toContain(
+      'ACCESORIOS DE BATERIA Y PERCUCION'
+    );
+  });
+
   it('should fetch product by slug and by id', async () => {
     const product = await Product.findOne({ sku: 'VIS-001' });
 

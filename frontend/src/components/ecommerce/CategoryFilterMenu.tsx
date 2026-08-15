@@ -40,6 +40,14 @@ export const CategoryFilterMenu: React.FC<CategoryFilterMenuProps> = ({
   }, []);
 
   useEffect(() => {
+    if (!open) return;
+    const withSubs = categories.filter((c) => (c.subcategories || []).length > 0).map((c) => c.name);
+    if (withSubs.length > 0) {
+      setExpandedParents(new Set(withSubs));
+    }
+  }, [open, categories]);
+
+  useEffect(() => {
     if (value.type === 'subcategory') {
       setExpandedParents((prev) => new Set(prev).add(value.category));
     }

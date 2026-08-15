@@ -4,6 +4,7 @@ import {
   useDeleteCategoryMutation,
   useGetCategoriesQuery,
   useGetOrphanProductCategoriesQuery,
+  useRepairCategoriesMutation,
   useUpdateCategoryMutation,
 } from '../../services/categoryApi';
 import {
@@ -27,6 +28,7 @@ export const AdminCatalog: React.FC = () => {
   const [createCategory, { isLoading: creatingCategory }] = useCreateCategoryMutation();
   const [updateCategory, { isLoading: updatingCategory }] = useUpdateCategoryMutation();
   const [deleteCategory] = useDeleteCategoryMutation();
+  const [repairCategories, { isLoading: repairingCategories }] = useRepairCategoriesMutation();
   const [createBranch, { isLoading: creatingBranch }] = useCreateBranchMutation();
   const [updateBranch, { isLoading: updatingBranch }] = useUpdateBranchMutation();
   const [deleteBranch] = useDeleteBranchMutation();
@@ -167,6 +169,20 @@ export const AdminCatalog: React.FC = () => {
     }
   };
 
+  const handleRepairCategories = async () => {
+    if (!window.confirm('¿Unificar duplicados (ej. ACSESORIOS → ACCESORIOS) y mover subcategorías mal ubicadas?')) {
+      return;
+    }
+    try {
+      const result = await repairCategories().unwrap();
+      alert(
+        `Listo. Duplicados unificados: ${result.mergedDuplicates}. Raíces reubicadas: ${result.reparentedRoots}. Productos actualizados: ${result.productsRetagged}.`
+      );
+    } catch (err: any) {
+      alert(err?.data?.message || 'Error al reparar categorías');
+    }
+  };
+
   const handleCreateBranch = async () => {
     if (!branchForm.name.trim() || !branchForm.address.trim()) {
       alert('Nombre y dirección son obligatorios');
@@ -304,6 +320,15 @@ export const AdminCatalog: React.FC = () => {
               <p className="font-mono text-[11px]">{orphanProductCategories.join(' · ')}</p>
             </div>
           )}
+
+          <button
+            type="button"
+            className="btn-secondary w-full justify-center text-xs"
+            onClick={handleRepairCategories}
+            disabled={repairingCategories}
+          >
+            {repairingCategories ? 'Reparando…' : 'Reparar duplicados y subcategorías'}
+          </button>
 
           <div className="space-y-2">
             <label className="section-heading">Nueva categoría principal</label>

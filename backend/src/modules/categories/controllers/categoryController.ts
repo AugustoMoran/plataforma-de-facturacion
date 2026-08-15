@@ -1,9 +1,10 @@
 import { Request, Response } from 'express';
 import Category from '../models/Category';
 import Product from '../../inventory/models/Product';
+import { canonicalCategoryKey, normalizeCategoryName } from '../categoryNormalization';
+import { repairCategoryStructure } from '../categoryRepairService';
 
 const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-const normalizeCategoryName = (value: string) => String(value || '').trim().toLowerCase();
 
 export const getCategories = async (req: Request, res: Response) => {
   try {
@@ -108,15 +109,27 @@ export const getOrphanProductCategories = async (_req: Request, res: Response) =
     ]);
 
     const known = new Set(
-      dbCategories.map((c) => normalizeCategoryName(c.name)).filter(Boolean)
+      dbCategories.map((c) => canonicalCategoryKey(c.name)).filter(Boolean)
     );
 
     const orphans = productCategories
       .map((name) => String(name || '').trim())
-      .filter((name) => name && !known.has(normalizeCategoryName(name)))
+      .filter((name) => name && !known.has(canonicalCategoryKey(name)))
       .sort((a, b) => a.localeCompare(b, 'es'));
 
     res.json(orphans);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const repairCategories = async (_req: Request, res: Response) => {
+  try {
+    const result = await repairCategoryStructure();
+    res.json({
+      message: 'Categorías reparadas',
+      ...result,
+    });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }

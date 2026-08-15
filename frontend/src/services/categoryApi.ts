@@ -19,6 +19,16 @@ export const categoryApi = createApi({
       query: () => '/orphans/products',
       providesTags: ['Category'],
     }),
+    repairCategories: builder.mutation<
+      { message: string; mergedDuplicates: number; reparentedRoots: number; productsRetagged: number },
+      void
+    >({
+      query: () => ({
+        url: '/repair',
+        method: 'POST',
+      }),
+      invalidatesTags: ['Category'],
+    }),
     createCategory: builder.mutation({
       query: (body) => ({
         url: '/',
@@ -48,6 +58,7 @@ export const categoryApi = createApi({
 export const {
   useGetCategoriesQuery,
   useGetOrphanProductCategoriesQuery,
+  useRepairCategoriesMutation,
   useCreateCategoryMutation,
   useUpdateCategoryMutation,
   useDeleteCategoryMutation,

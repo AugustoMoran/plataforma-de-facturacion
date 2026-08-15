@@ -1,5 +1,13 @@
 import Category from '../../categories/models/Category';
 import Product from '../../inventory/models/Product';
+import {
+  canonicalCategoryKey,
+  CatalogRootCategory,
+  getCategoryFilterVariants,
+  nestMisplacedRootCategories,
+  normalizeCategoryName,
+  preferCategoryDisplayName,
+} from '../../categories/categoryNormalization';
 
 export const CATALOG_PUBLIC_FILTER = {
   isActive: true,
@@ -38,8 +46,6 @@ const getHiddenCategoryNames = async () => {
   return hidden.map((c) => c.name).filter(Boolean);
 };
 
-const normalizeCategoryName = (value: string) => String(value || '').trim().toLowerCase();
-
 const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 const categoryRegex = (value: string) => new RegExp(`^${escapeRegex(String(value || '').trim())}$`, 'i');
@@ -74,7 +80,15 @@ export const getCatalogProducts = async (query: any = {}) => {
     if (!visible) {
       return { items: [], pagination: { page: 1, limit: 24, total: 0, pages: 1 } };
     }
-    filters.category = categoryRegex(categoryName);
+    const variants = getCategoryFilterVariants(categoryName);
+    if (variants.length === 1) {
+      filters.category = categoryRegex(variants[0]);
+    } else {
+      filters.$and = filters.$and || [];
+      filters.$and.push({
+        $or: variants.map((name) => ({ category: categoryRegex(name) })),
+      });
+    }
   }
 
   if (query.subcategory) {
@@ -226,24 +240,28 @@ export const getCatalogCategories = async () => {
     },
   ]);
 
-  const rootMap = new Map<string, { _id: string; name: string; subcategories: Map<string, { _id: string; name: string }> }>();
+  const rootMap = new Map<string, CatalogRootCategory>();
 
   const ensureRoot = (name: string, id?: string) => {
     const trimmed = String(name || '').trim();
     if (!trimmed) return null;
-    const key = normalizeCategoryName(trimmed);
-    if (!rootMap.has(key)) {
+    const key = canonicalCategoryKey(trimmed);
+    const existing = rootMap.get(key);
+    if (!existing) {
       rootMap.set(key, {
         _id: id ? String(id) : trimmed,
         name: trimmed,
         subcategories: new Map(),
       });
+      return rootMap.get(key)!;
     }
-    return rootMap.get(key)!;
+    existing.name = preferCategoryDisplayName(existing.name, trimmed);
+    if (id) existing._id = String(id);
+    return existing;
   };
 
   rootsRaw.forEach((root) => {
-    const key = normalizeCategoryName(root.name);
+    const key = canonicalCategoryKey(root.name);
     const existing = rootMap.get(key);
     if (!existing) {
       rootMap.set(key, {
@@ -253,12 +271,8 @@ export const getCatalogCategories = async () => {
       });
       return;
     }
-    const preferNew =
-      root.name !== root.name.toLowerCase() && existing.name === existing.name.toLowerCase();
-    if (preferNew || root.name.length > existing.name.length) {
-      existing.name = root.name;
-      existing._id = String(root._id);
-    }
+    existing.name = preferCategoryDisplayName(existing.name, root.name);
+    existing._id = String(root._id);
   });
 
   subsRaw.forEach((sub) => {
@@ -275,13 +289,15 @@ export const getCatalogCategories = async () => {
     const subName = String(row?._id?.subcategory || '').trim();
     if (!categoryName || !subName) return;
 
-    const root = rootMap.get(normalizeCategoryName(categoryName));
+    const root = rootMap.get(canonicalCategoryKey(categoryName));
     if (!root) return;
     const subKey = normalizeCategoryName(subName);
     if (!root.subcategories.has(subKey)) {
       root.subcategories.set(subKey, { _id: subKey, name: subName });
     }
   });
+
+  nestMisplacedRootCategories(rootMap);
 
   return Array.from(rootMap.values())
     .sort((a, b) => a.name.localeCompare(b.name, 'es'))
