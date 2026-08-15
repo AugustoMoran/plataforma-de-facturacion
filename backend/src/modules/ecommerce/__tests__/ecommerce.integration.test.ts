@@ -167,6 +167,25 @@ describe('Ecommerce Catalog Integration Tests', () => {
     );
   });
 
+  it('should include parent roots when only subcategories are marked visible in ecommerce', async () => {
+    const parent = await Category.create({ name: 'ACCESORIOS', visibleInEcommerce: false });
+    await Category.create({
+      name: 'Cables',
+      parent: parent._id,
+      visibleInEcommerce: true,
+    });
+
+    const res = await request(app).get('/api/ecommerce/catalog/categories');
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual([
+      {
+        _id: String(parent._id),
+        name: 'ACCESORIOS',
+        subcategories: [{ _id: expect.any(String), name: 'Cables' }],
+      },
+    ]);
+  });
+
   it('should fetch product by slug and by id', async () => {
     const product = await Product.findOne({ sku: 'VIS-001' });
 

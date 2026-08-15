@@ -50,6 +50,8 @@ export type CatalogRootCategory = {
 };
 
 export const nestMisplacedRootCategories = (rootMap: Map<string, CatalogRootCategory>) => {
+  if (rootMap.size <= 1) return;
+
   const roots = Array.from(rootMap.values());
   const removeKeys = new Set<string>();
 
@@ -75,6 +77,8 @@ export const nestMisplacedRootCategories = (rootMap: Map<string, CatalogRootCate
       break;
     }
   }
+
+  if (removeKeys.size >= rootMap.size) return;
 
   removeKeys.forEach((key) => {
     for (const [mapKey, root] of rootMap.entries()) {

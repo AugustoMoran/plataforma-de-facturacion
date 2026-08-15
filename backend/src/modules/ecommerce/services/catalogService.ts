@@ -206,27 +206,44 @@ export const getCatalogProductByIdOrSlug = async (idOrSlug: string) => {
 };
 
 export const getCatalogCategories = async () => {
-  const allVisible = await Category.find({
-    isActive: true,
-    visibleInEcommerce: true,
-  })
-    .sort({ name: 1 })
-    .lean();
-
-  if (allVisible.length === 0) {
+  const buildFromProducts = async () => {
     const names = await Product.distinct('category', CATALOG_PUBLIC_FILTER);
     const deduped = new Map<string, string>();
     names.filter(Boolean).forEach((name) => {
-      const key = normalizeCategoryName(String(name));
+      const key = canonicalCategoryKey(String(name));
       if (!deduped.has(key)) deduped.set(key, String(name).trim());
     });
     return Array.from(deduped.values())
       .sort((a, b) => a.localeCompare(b, 'es'))
       .map((name) => ({ _id: name, name, subcategories: [] }));
+  };
+
+  const allActive = await Category.find({ isActive: true }).sort({ name: 1 }).lean();
+  if (allActive.length === 0) {
+    return buildFromProducts();
   }
 
-  const rootsRaw = allVisible.filter((c) => !c.parent);
-  const subsRaw = allVisible.filter((c) => c.parent);
+  const isStoreVisible = (category: { visibleInEcommerce?: boolean }) =>
+    category.visibleInEcommerce !== false;
+
+  const categoryById = new Map(allActive.map((category) => [String(category._id), category]));
+  const visibleCategories = allActive.filter(isStoreVisible);
+  const visibleSubs = visibleCategories.filter((category) => category.parent);
+
+  const rootIds = new Set<string>();
+  visibleCategories
+    .filter((category) => !category.parent)
+    .forEach((category) => rootIds.add(String(category._id)));
+  visibleSubs.forEach((sub) => {
+    if (sub.parent) rootIds.add(String(sub.parent));
+  });
+
+  const rootsRaw = allActive.filter((category) => !category.parent && rootIds.has(String(category._id)));
+  const subsRaw = allActive.filter((category) => category.parent && isStoreVisible(category));
+
+  if (rootsRaw.length === 0 && subsRaw.length === 0) {
+    return buildFromProducts();
+  }
 
   const productSubRows = await Product.aggregate([
     { $match: { ...CATALOG_PUBLIC_FILTER, subcategory: { $exists: true, $nin: [null, ''] } } },
@@ -276,7 +293,7 @@ export const getCatalogCategories = async () => {
   });
 
   subsRaw.forEach((sub) => {
-    const parent = allVisible.find((c) => String(c._id) === String(sub.parent));
+    const parent = categoryById.get(String(sub.parent));
     if (!parent) return;
     const root = ensureRoot(parent.name, String(parent._id));
     if (!root) return;
@@ -299,7 +316,11 @@ export const getCatalogCategories = async () => {
 
   nestMisplacedRootCategories(rootMap);
 
-  return Array.from(rootMap.values())
+  if (rootMap.size === 0) {
+    return buildFromProducts();
+  }
+
+  const serialized = Array.from(rootMap.values())
     .sort((a, b) => a.name.localeCompare(b.name, 'es'))
     .map((root) => ({
       _id: root._id,
@@ -308,6 +329,12 @@ export const getCatalogCategories = async () => {
         a.name.localeCompare(b.name, 'es')
       ),
     }));
+
+  if (serialized.length === 0) {
+    return buildFromProducts();
+  }
+
+  return serialized;
 };
 
 export const getFeaturedProducts = async (limit = 8) => {
