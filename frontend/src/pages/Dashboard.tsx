@@ -107,7 +107,7 @@ export const Dashboard = () => {
     <div className="space-y-6 animate-slide-up">
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
         <div>
-          <p className="text-sm text-slate-500 mb-0.5">{timeGreeting}</p>
+          <p className="text-sm text-blue-100 mb-0.5">{timeGreeting}</p>
           <h1 className="page-title">Dashboard</h1>
         </div>
         <Link to="/dashboard/pos" className="btn-primary w-full sm:w-auto justify-center">
@@ -128,7 +128,7 @@ export const Dashboard = () => {
             </div>
             <div>
               <p className="text-xs text-slate-500 mb-1">{s.label}</p>
-              <p className="text-2xl font-bold text-white leading-none">{statValues[s.key]}</p>
+              <p className="text-2xl font-bold text-blue-950 leading-none">{statValues[s.key]}</p>
             </div>
           </div>
         ))}
@@ -137,7 +137,7 @@ export const Dashboard = () => {
       <div className="card p-5">
         <form onSubmit={applyFilter} className="flex flex-col lg:flex-row lg:items-end gap-4">
           <div>
-            <h2 className="text-sm font-semibold text-white">Rendimiento de productos</h2>
+            <h2 className="text-sm font-semibold text-blue-950">Rendimiento de productos</h2>
             <p className="text-xs text-slate-500 mt-1">
               Filtrá por fechas para ver los más vendidos y los que más ganancia dejaron.
             </p>
@@ -166,7 +166,7 @@ export const Dashboard = () => {
           <div className="mt-4 pt-4 border-t border-white/[0.05] grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
             <div>
               <p className="text-xs text-slate-500">Ventas en el período</p>
-              <p className="text-white font-semibold">{analytics.sales.totalCount}</p>
+              <p className="text-blue-950 font-semibold">{analytics.sales.totalCount}</p>
             </div>
             <div>
               <p className="text-xs text-slate-500">Facturación del período</p>
@@ -174,7 +174,7 @@ export const Dashboard = () => {
             </div>
             <div>
               <p className="text-xs text-slate-500">Ticket promedio</p>
-              <p className="text-white font-semibold">{money(analytics.sales.avgTicket)}</p>
+              <p className="text-blue-950 font-semibold">{money(analytics.sales.avgTicket)}</p>
             </div>
           </div>
         )}
@@ -218,7 +218,7 @@ export const Dashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 card p-0 overflow-hidden">
           <div className="px-5 py-4 border-b border-white/[0.05] flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-white">Ventas recientes</h2>
+            <h2 className="text-sm font-semibold text-blue-950">Ventas recientes</h2>
             <Link to="/dashboard/sales" className="text-xs text-brand-400 hover:text-brand-300 transition-colors">Ver todo →</Link>
           </div>
           {recentSales.length === 0 ? (
@@ -237,10 +237,10 @@ export const Dashboard = () => {
                 <tbody>
                   {recentSales.map((s: any) => (
                     <tr key={s._id}>
-                      <td className="font-medium text-white text-sm">{s.invoiceNumber || '—'}</td>
+                      <td className="font-medium text-blue-950 text-sm">{s.invoiceNumber || '—'}</td>
                       <td className="text-slate-500 text-xs hidden sm:table-cell">{new Date(s.createdAt).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' })}</td>
                       <td className="hidden md:table-cell"><span className="badge-gray">{s.paymentMethod}</span></td>
-                      <td className="text-right font-semibold text-white text-sm">${s.total?.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</td>
+                      <td className="text-right font-semibold text-blue-950 text-sm">${s.total?.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -250,7 +250,7 @@ export const Dashboard = () => {
         </div>
 
         <div className="card p-5 space-y-2">
-          <h2 className="text-sm font-semibold text-white mb-3">Acciones rápidas</h2>
+          <h2 className="text-sm font-semibold text-blue-950 mb-3">Acciones rápidas</h2>
           {[
             { label: 'Punto de Venta', sub: 'Registrar venta', to: '/dashboard/pos', iconPath: 'M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z', accent: 'text-brand-400 bg-brand-500/10 ring-brand-500/20' },
             { label: 'Inventario', sub: 'Gestionar stock', to: '/dashboard/inventory', iconPath: 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4', accent: 'text-emerald-400 bg-emerald-500/10 ring-emerald-500/20' },
@@ -264,7 +264,7 @@ export const Dashboard = () => {
                 </svg>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white leading-none mb-0.5">{a.label}</p>
+                <p className="text-sm font-medium text-blue-950 leading-none mb-0.5">{a.label}</p>
                 <p className="text-xs text-slate-500">{a.sub}</p>
               </div>
               <svg className="w-4 h-4 text-slate-700 group-hover:text-slate-500 transition-colors" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">

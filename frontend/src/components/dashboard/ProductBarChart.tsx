@@ -22,8 +22,8 @@ export const ProductBarChart: React.FC<ProductBarChartProps> = ({
   return (
     <div className="card p-5 space-y-4 h-full">
       <div>
-        <h2 className="text-sm font-semibold text-white">{title}</h2>
-        {subtitle && <p className="text-xs text-slate-500 mt-1">{subtitle}</p>}
+        <h2 className="text-sm font-semibold text-blue-950">{title}</h2>
+        {subtitle && <p className="text-xs text-blue-700 mt-1">{subtitle}</p>}
       </div>
 
       {items.length === 0 ? (
@@ -33,20 +33,20 @@ export const ProductBarChart: React.FC<ProductBarChartProps> = ({
           {items.map((item, index) => (
             <div key={`${item.name}-${index}`} className="space-y-1.5">
               <div className="flex items-start justify-between gap-3 text-xs">
-                <span className="text-slate-300 line-clamp-2 min-w-0 flex-1" title={item.name}>
+                <span className="text-blue-900 line-clamp-2 min-w-0 flex-1" title={item.name}>
                   {index + 1}. {item.name}
                 </span>
-                <span className="text-white font-semibold tabular-nums flex-shrink-0">
+                <span className="text-blue-950 font-semibold tabular-nums flex-shrink-0">
                   {valueLabel(item.value)}
                 </span>
               </div>
-              <div className="h-2.5 rounded-full bg-white/[0.04] overflow-hidden">
+              <div className="h-2.5 rounded-full bg-blue-100 overflow-hidden">
                 <div
                   className={`h-full rounded-full transition-all duration-500 ${barClassName}`}
                   style={{ width: `${Math.max(6, (item.value / maxValue) * 100)}%` }}
                 />
               </div>
-              {item.detail && <p className="text-[10px] text-slate-500">{item.detail}</p>}
+              {item.detail && <p className="text-[10px] text-blue-700">{item.detail}</p>}
             </div>
           ))}
         </div>
