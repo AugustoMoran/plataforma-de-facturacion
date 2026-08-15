@@ -13,9 +13,9 @@ export const StoreHeader: React.FC = () => {
 
   return (
     <header className="sticky top-0 z-40 bg-blue-950/35 backdrop-blur-md border-b border-blue-200/25 shadow-lg shadow-blue-950/20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 min-h-[4.5rem] flex items-center justify-between gap-4">
-        <Link to="/" className="min-w-0">
-          <BrandLogo size="lg" className="[&_span]:text-white" />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-[5.25rem] py-2 flex items-center justify-between gap-4">
+        <Link to="/" className="min-w-0 shrink-0">
+          <BrandLogo size="xl" className="[&_span]:text-white [&_span]:drop-shadow-sm" />
         </Link>
 
         <nav className="hidden md:flex items-center gap-1">

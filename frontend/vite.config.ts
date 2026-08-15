@@ -9,7 +9,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['brand-logo.png'],
+      includeAssets: ['brand-logo.png', 'icons/pwa-192.png', 'icons/pwa-512.png'],
       manifest: {
         name: companyName,
         short_name: 'OsoSound',
@@ -23,16 +23,22 @@ export default defineConfig({
         lang: 'es-AR',
         icons: [
           {
-            src: '/brand-logo.png',
+            src: '/icons/pwa-192.png',
             sizes: '192x192',
             type: 'image/png',
             purpose: 'any',
           },
           {
-            src: '/brand-logo.png',
+            src: '/icons/pwa-512.png',
             sizes: '512x512',
             type: 'image/png',
-            purpose: 'any maskable',
+            purpose: 'any',
+          },
+          {
+            src: '/icons/pwa-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable',
           },
         ],
       },

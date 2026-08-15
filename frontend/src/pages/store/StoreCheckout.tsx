@@ -17,25 +17,25 @@ const OrderSummary: React.FC<{
   hint?: string;
 }> = ({ items, total, hint }) => (
   <div className="card p-6 space-y-4 h-fit">
-    <h2 className="text-sm font-semibold text-white">Resumen</h2>
+    <h2 className="text-sm font-semibold text-blue-950">Resumen</h2>
     <div className="space-y-3 max-h-64 overflow-y-auto">
       {items.map((item) => (
         <div key={item.productId} className="flex justify-between gap-2 text-sm">
-          <span className="text-slate-400 truncate">{item.name} × {item.quantity}</span>
-          <span className="text-white tabular-nums flex-shrink-0">
+          <span className="text-blue-800 truncate">{item.name} × {item.quantity}</span>
+          <span className="text-blue-950 font-medium tabular-nums flex-shrink-0">
             ${(item.price * item.quantity).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
           </span>
         </div>
       ))}
     </div>
-    <div className="border-t border-white/[0.05] pt-4 flex justify-between font-bold text-white text-lg">
-      <span>Total</span>
-      <span className="text-brand-400 tabular-nums">
+    <div className="border-t border-blue-100 pt-4 flex justify-between font-bold text-lg">
+      <span className="text-blue-950">Total</span>
+      <span className="text-brand-600 tabular-nums">
         ${total.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
       </span>
     </div>
-    {hint && <p className="text-xs text-slate-500">{hint}</p>}
-    <Link to="/products" className="text-xs text-slate-500 hover:text-brand-400 transition-colors block text-center">
+    {hint && <p className="text-xs text-blue-700">{hint}</p>}
+    <Link to="/products" className="text-xs text-blue-700 hover:text-brand-600 transition-colors block text-center">
       Seguir comprando
     </Link>
   </div>
@@ -52,21 +52,21 @@ const PaymentMethodCard: React.FC<{
 }> = ({ selected, onSelect, title, subtitle, description, accent, wide }) => {
   const selectedStyles =
     accent === 'wa'
-      ? 'border-[#25D366]/50 bg-[#25D366]/10 ring-1 ring-[#25D366]/30'
-      : 'border-brand-500/50 bg-brand-500/10 ring-1 ring-brand-500/30';
+      ? 'border-emerald-400 bg-emerald-50 ring-1 ring-emerald-200'
+      : 'border-brand-500/50 bg-brand-50 ring-1 ring-brand-200';
 
   return (
     <button
       type="button"
       onClick={onSelect}
       className={`text-left rounded-xl border p-4 transition-all ${
-        selected ? selectedStyles : 'border-white/[0.08] bg-white/[0.02] hover:border-white/[0.15]'
+        selected ? selectedStyles : 'border-blue-200 bg-blue-50/60 hover:border-blue-300 hover:bg-blue-50'
       } ${wide ? 'sm:col-span-2' : ''}`}
     >
       <div className="flex items-center gap-3 mb-2">
         <div
           className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-            accent === 'wa' ? 'bg-[#25D366]/15 text-[#25D366]' : 'bg-sky-500/15 text-sky-400'
+            accent === 'wa' ? 'bg-emerald-100 text-emerald-700' : 'bg-sky-100 text-sky-700'
           }`}
         >
           {accent === 'wa' ? (
@@ -80,11 +80,11 @@ const PaymentMethodCard: React.FC<{
           )}
         </div>
         <div>
-          <p className="text-sm font-semibold text-white">{title}</p>
-          <p className="text-xs text-slate-500">{subtitle}</p>
+          <p className="text-sm font-semibold text-blue-950">{title}</p>
+          <p className="text-xs text-blue-700">{subtitle}</p>
         </div>
       </div>
-      <p className="text-xs text-slate-400">{description}</p>
+      <p className="text-xs text-blue-800">{description}</p>
     </button>
   );
 };
@@ -277,7 +277,7 @@ export const StoreCheckout: React.FC = () => {
                 ← Volver a elegir método
               </button>
 
-              <div className="rounded-xl bg-[#25D366]/10 border border-[#25D366]/20 p-4 text-sm text-slate-300">
+              <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-4 text-sm text-blue-900">
                 Solo necesitamos tus datos básicos. Un asesor te contactará por WhatsApp para coordinar pago y envío.
               </div>
 
@@ -318,7 +318,7 @@ export const StoreCheckout: React.FC = () => {
                 ← Volver a elegir método
               </button>
 
-              <h2 className="text-sm font-semibold text-white">Datos de contacto</h2>
+              <h2 className="text-sm font-semibold text-blue-950">Datos de contacto</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="sm:col-span-2">
                   <label className="section-heading">Nombre completo</label>
@@ -337,7 +337,7 @@ export const StoreCheckout: React.FC = () => {
                 </div>
               </div>
 
-              <h2 className="text-sm font-semibold text-white pt-2">Dirección de envío</h2>
+              <h2 className="text-sm font-semibold text-blue-950 pt-2">Dirección de envío</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="sm:col-span-2">
                   <label className="section-heading">Calle y número</label>
