@@ -96,19 +96,48 @@ export const getCatalogProducts = async (query: any = {}) => {
   const limit = Math.min(100, Math.max(1, Number(query.limit) || 24));
   const skip = (page - 1) * limit;
 
-  const sort: any = { displayOrder: 1, name: 1 };
-  if (query.sort === 'price_asc') sort.price = 1;
-  if (query.sort === 'price_desc') sort.price = -1;
-  if (query.sort === 'name_asc') sort.name = 1;
-  if (query.sort === 'name_desc') sort.name = -1;
-  if (query.sort === 'newest') {
-    delete sort.displayOrder;
-    delete sort.name;
-    sort.createdAt = -1;
-  }
+  const buildSort = (): Record<string, 1 | -1> => {
+    switch (String(query.sort || '')) {
+      case 'price_asc':
+        return { effectivePrice: 1, name: 1 };
+      case 'price_desc':
+        return { effectivePrice: -1, name: 1 };
+      case 'name_asc':
+        return { name: 1 };
+      case 'name_desc':
+        return { name: -1 };
+      case 'newest':
+        return { createdAt: -1 };
+      default:
+        return { displayOrder: 1, name: 1 };
+    }
+  };
+
+  const effectivePriceStage = {
+    $addFields: {
+      effectivePrice: {
+        $cond: {
+          if: {
+            $and: [
+              { $gt: [{ $ifNull: ['$salePrice', 0] }, 0] },
+              { $lt: ['$salePrice', '$price'] },
+            ],
+          },
+          then: '$salePrice',
+          else: '$price',
+        },
+      },
+    },
+  };
 
   const [items, total] = await Promise.all([
-    Product.find(filters).select(CATALOG_SELECT).sort(sort).skip(skip).limit(limit),
+    Product.aggregate([
+      { $match: filters },
+      effectivePriceStage,
+      { $sort: buildSort() },
+      { $skip: skip },
+      { $limit: limit },
+    ]),
     Product.countDocuments(filters),
   ]);
 

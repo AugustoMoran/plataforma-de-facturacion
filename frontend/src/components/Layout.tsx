@@ -131,7 +131,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 	const companyName = (import.meta as any).env?.VITE_COMPANY_NAME || "FacturaApp";
 
 	return (
-		<div className="flex h-screen overflow-hidden text-blue-950">
+    <div className="flex h-screen overflow-hidden admin-shell text-blue-950">
 
 			{/* ── Mobile Topbar ── */}
 			<div className="lg:hidden fixed top-0 inset-x-0 z-40 h-14 bg-white/95 backdrop-blur border-b border-blue-100 px-4 flex items-center justify-between">

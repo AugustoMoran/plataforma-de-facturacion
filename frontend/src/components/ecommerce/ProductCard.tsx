@@ -75,7 +75,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, showFeatured 
       </div>
 
       <div className={`${compact ? 'p-2.5' : 'p-4'} flex-1 flex flex-col`}>
-        <p className="text-[9px] text-blue-600/70 uppercase tracking-wide mb-0.5 line-clamp-1">
+        <p className="text-[9px] text-blue-700 uppercase tracking-wide mb-0.5 line-clamp-1">
           {product.subcategory ? `${product.category} · ${product.subcategory}` : product.category}
         </p>
         <h3 className={`${compact ? 'text-xs' : 'text-sm'} font-semibold text-blue-950 line-clamp-2 min-h-[2rem] leading-snug group-hover:text-brand-700 transition-colors`}>
@@ -85,7 +85,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, showFeatured 
           <div className="min-w-0">
             {onSale ? (
               <>
-                <span className="block text-[10px] text-blue-400 line-through tabular-nums">
+                <span className="block text-[10px] text-slate-500 line-through tabular-nums">
                   {formatPrice(product.price)}
                 </span>
                 <span className="text-sm font-bold text-brand-700 tabular-nums">

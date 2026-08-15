@@ -10,9 +10,9 @@
     -moz-osx-font-smoothing: grayscale;
   }
   body {
-    background: linear-gradient(160deg, #ffffff 0%, #eff6ff 35%, #bfdbfe 100%);
+    background: linear-gradient(165deg, #93c5fd 0%, #3b82f6 38%, #1d4ed8 62%, #1e3a8a 100%);
     background-attachment: fixed;
-    color: #1e3a5f;
+    color: #eff6ff;
     font-family: 'Inter', system-ui, sans-serif;
     overflow-x: hidden;
   }
@@ -24,86 +24,104 @@
 
 @layer components {
   .oso-logo-glow {
-    background: radial-gradient(circle at center, #ffffff 0%, #e0f2fe 35%, #3b82f6 72%, #1d4ed8 100%);
+    background: radial-gradient(circle at center, #ffffff 0%, #e0f2fe 28%, #3b82f6 68%, #1d4ed8 100%);
+  }
+
+  .store-shell {
+    @apply min-h-screen text-blue-50;
   }
 
   .surface {
-    @apply bg-white/85 border border-blue-100/80 shadow-inner-top backdrop-blur-sm;
+    @apply bg-white/95 border border-blue-200/90 shadow-md shadow-blue-950/10 backdrop-blur-sm;
   }
   .surface-raised {
-    @apply bg-white/95 border border-blue-200/70 shadow-inner-top;
+    @apply bg-white border border-blue-200 shadow-lg shadow-blue-950/15;
   }
 
   .card {
-    @apply surface rounded-2xl shadow-md shadow-blue-500/5;
+    @apply surface rounded-2xl;
   }
   .card-lg {
-    @apply surface rounded-3xl shadow-lg shadow-blue-500/10;
+    @apply surface-raised rounded-3xl;
   }
 
   .glass {
-    @apply bg-white/70 backdrop-blur-xl border border-blue-100/80 shadow-xl shadow-blue-500/10;
+    @apply bg-blue-900/35 backdrop-blur-xl border border-blue-300/25 shadow-xl shadow-blue-950/20;
   }
 
   .btn {
     @apply inline-flex items-center justify-center gap-2 rounded-xl font-semibold text-sm transition-all duration-200 active:scale-[0.97] select-none;
   }
   .btn-primary {
-    @apply btn bg-gradient-to-r from-brand-500 to-brand-700 hover:from-brand-400 hover:to-brand-600 text-white px-5 py-2.5 shadow-glow-sm hover:shadow-glow-md;
+    @apply btn bg-gradient-to-r from-white to-blue-100 hover:from-blue-50 hover:to-white text-blue-900 px-5 py-2.5 shadow-glow-sm hover:shadow-glow-md border border-white/40;
   }
   .btn-secondary {
-    @apply btn bg-white/90 hover:bg-blue-50 text-blue-900 border border-blue-200/80 hover:border-blue-300 px-5 py-2.5;
+    @apply btn bg-blue-950/25 hover:bg-blue-950/35 text-white border border-blue-200/40 hover:border-blue-100/60 px-5 py-2.5;
   }
   .btn-danger {
-    @apply btn bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 px-5 py-2.5;
+    @apply btn bg-red-600/90 hover:bg-red-600 text-white border border-red-400/50 px-5 py-2.5;
   }
   .btn-icon {
-    @apply btn bg-white/90 hover:bg-blue-50 text-blue-700 hover:text-blue-900 border border-blue-200/70 hover:border-blue-300 w-9 h-9 rounded-xl p-0;
+    @apply btn bg-blue-950/20 hover:bg-blue-950/30 text-white border border-blue-200/35 hover:border-blue-100/50 w-9 h-9 rounded-xl p-0;
   }
   .btn-icon-sm {
-    @apply btn bg-white/80 hover:bg-blue-50 text-blue-600 border border-blue-200/60 w-7 h-7 rounded-lg p-0;
+    @apply btn bg-blue-950/15 hover:bg-blue-950/25 text-white border border-blue-200/30 w-7 h-7 rounded-lg p-0;
   }
 
   .input {
-    @apply w-full bg-white/95 border border-blue-200/80 rounded-xl px-4 py-2.5 text-sm text-blue-950 placeholder-blue-300/80
-    focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all duration-200;
+    @apply w-full bg-white border border-blue-200 rounded-xl px-4 py-2.5 text-sm text-blue-950 placeholder-blue-400
+    focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-white/40 transition-all duration-200;
   }
 
   .badge {
     @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold;
   }
-  .badge-green  { @apply badge bg-emerald-100 text-emerald-800 ring-1 ring-emerald-200; }
-  .badge-yellow { @apply badge bg-amber-100 text-amber-800 ring-1 ring-amber-200; }
-  .badge-red    { @apply badge bg-red-100 text-red-800 ring-1 ring-red-200; }
-  .badge-blue   { @apply badge bg-blue-100 text-blue-800 ring-1 ring-blue-200; }
-  .badge-gray   { @apply badge bg-slate-100 text-slate-700 ring-1 ring-slate-200; }
+  .badge-green  { @apply badge bg-emerald-600 text-white ring-1 ring-emerald-400/50; }
+  .badge-yellow { @apply badge bg-amber-500 text-white ring-1 ring-amber-300/50; }
+  .badge-red    { @apply badge bg-red-600 text-white ring-1 ring-red-400/50; }
+  .badge-blue   { @apply badge bg-white/90 text-blue-900 ring-1 ring-white/60; }
+  .badge-gray   { @apply badge bg-blue-950/30 text-blue-50 ring-1 ring-blue-200/30; }
 
   .data-table { @apply w-full text-left border-collapse; }
-  .data-table thead tr { @apply border-b border-blue-100; }
-  .data-table th { @apply px-5 py-3 text-[11px] font-semibold text-blue-700/70 uppercase tracking-wider; }
-  .data-table tbody tr { @apply border-b border-blue-50 hover:bg-blue-50/50 transition-colors; }
-  .data-table td { @apply px-5 py-4 text-blue-950; }
+  .data-table thead tr { @apply border-b border-blue-200/40; }
+  .data-table th { @apply px-5 py-3 text-[11px] font-semibold text-blue-100 uppercase tracking-wider; }
+  .data-table tbody tr { @apply border-b border-blue-300/20 hover:bg-blue-950/15 transition-colors; }
+  .data-table td { @apply px-5 py-4 text-blue-50; }
 
   .nav-item {
-    @apply w-full text-left bg-transparent border-0 flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-blue-800/70 hover:text-blue-950 hover:bg-blue-100/60 transition-all duration-150 cursor-pointer;
+    @apply w-full text-left bg-transparent border-0 flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-blue-100 hover:text-white hover:bg-white/10 transition-all duration-150 cursor-pointer;
   }
   .nav-item.active {
-    @apply text-blue-950 bg-gradient-to-r from-brand-100 to-brand-200/80 ring-1 ring-brand-300/50;
+    @apply text-white bg-white/15 ring-1 ring-white/25;
   }
 
-  .page-title { @apply text-2xl font-bold text-blue-950 tracking-tight; }
-  .page-sub   { @apply text-sm text-blue-700/70 mt-0.5; }
+  .page-title { @apply text-2xl font-bold text-white tracking-tight drop-shadow-sm; }
+  .page-sub   { @apply text-sm text-blue-100 mt-0.5; }
 
   .stat-card {
-    @apply card p-6 flex flex-col gap-4 hover:border-brand-300/50 transition-colors duration-300;
+    @apply card p-6 flex flex-col gap-4 hover:border-white/40 transition-colors duration-300;
   }
 
   .section-heading {
-    @apply text-xs font-semibold text-blue-700/80 uppercase tracking-widest mb-1;
+    @apply text-xs font-semibold text-blue-100 uppercase tracking-widest mb-1;
   }
+
+  /* Panel admin sobre el mismo fondo azul */
+  .admin-shell .surface,
+  .admin-shell .card {
+    @apply bg-white/95 border-blue-200/90 text-blue-950;
+  }
+  .admin-shell .page-title { @apply text-blue-950 drop-shadow-none; }
+  .admin-shell .page-sub { @apply text-blue-800; }
+  .admin-shell .section-heading { @apply text-blue-800; }
+  .admin-shell .nav-item { @apply text-blue-900 hover:text-blue-950 hover:bg-blue-100/70; }
+  .admin-shell .nav-item.active { @apply text-blue-950 bg-blue-100 ring-blue-300/60; }
+  .admin-shell .input { @apply bg-white text-blue-950; }
+  .admin-shell .btn-secondary { @apply bg-white/90 text-blue-900 border-blue-200 hover:bg-white; }
+  .admin-shell .btn-icon { @apply bg-white/90 text-blue-800 border-blue-200 hover:bg-blue-50; }
 }
 
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #93c5fd; border-radius: 99px; }
-::-webkit-scrollbar-thumb:hover { background: #60a5fa; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.35); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.55); }
