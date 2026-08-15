@@ -3,10 +3,12 @@ import { Outlet } from 'react-router-dom';
 import { StoreHeader } from './StoreHeader';
 import { CartDrawer } from './CartDrawer';
 import { FloatingSocialButtons } from './FloatingSocialButtons';
+import { AndroidAppBanner } from './AndroidAppBanner';
 
 export const EcommerceLayout: React.FC = () => {
   return (
     <div className="store-shell flex flex-col">
+      <AndroidAppBanner />
       <StoreHeader />
       <main className="flex-1">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
