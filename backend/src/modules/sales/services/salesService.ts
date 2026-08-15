@@ -885,6 +885,16 @@ export const createSale = async (saleData: any, sellerId: string, requesterRoles
       await newSale.save();
     }
 
+    const saleSource = String(saleData.source || 'POS').toUpperCase();
+    if (requiresAfip && saleSource !== 'ECOMMERCE') {
+      try {
+        await enqueueSaleAfipInvoice(String(newSale._id));
+      } catch (autoInvoiceError: any) {
+        console.error('[AFIP] Auto-facturación POS fallida:', autoInvoiceError?.message || autoInvoiceError);
+      }
+      return await Sale.findById(newSale._id);
+    }
+
     return newSale;
     } catch (error: any) {
       if (session?.inTransaction()) {
@@ -920,6 +930,10 @@ export const getSaleById = async (id: string) => {
 };
 
 export const invoiceSale = async (saleId: string) => {
+  return enqueueSaleAfipInvoice(saleId);
+};
+
+export const enqueueSaleAfipInvoice = async (saleId: string) => {
   const sale = await Sale.findById(saleId);
   if (!sale) throw new Error('Venta no encontrada');
 

@@ -49,12 +49,11 @@ export const quoteShipping = async (input: ShippingQuoteInput) => {
   const methods = await getShippingMethods();
 
   const subtotal = round2(Number(input.subtotal || 0));
-  const freeShipping = settings.freeShippingThreshold > 0 && subtotal >= settings.freeShippingThreshold;
 
   const quotes = methods.map((method) => ({
     ...method,
-    cost: freeShipping ? 0 : method.cost,
-    freeShippingApplied: freeShipping,
+    cost: method.cost,
+    freeShippingApplied: false,
   }));
 
   return {

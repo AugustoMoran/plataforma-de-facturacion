@@ -5,7 +5,7 @@ import { RootState } from "../store";
 import { logout } from "../store/authSlice";
 import { useLogoutMutation } from "../services/authApi";
 
-const brandLogo = "/brand-logo.png";
+import { BrandLogo } from "./BrandLogo";
 
 const NAV_MAIN = [
 	{
@@ -131,10 +131,10 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 	const companyName = (import.meta as any).env?.VITE_COMPANY_NAME || "FacturaApp";
 
 	return (
-		<div className="flex h-screen bg-[#030712] overflow-hidden text-slate-300">
+		<div className="flex h-screen overflow-hidden text-blue-950">
 
 			{/* ── Mobile Topbar ── */}
-			<div className="lg:hidden fixed top-0 inset-x-0 z-40 h-14 bg-[#060D1F]/95 backdrop-blur border-b border-white/[0.06] px-4 flex items-center justify-between">
+			<div className="lg:hidden fixed top-0 inset-x-0 z-40 h-14 bg-white/95 backdrop-blur border-b border-blue-100 px-4 flex items-center justify-between">
 				<button
 					onClick={() => setMobileMenuOpen(true)}
 					className="btn-icon !w-9 !h-9"
@@ -144,12 +144,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 						<path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
 					</svg>
 				</button>
-				<div className="flex items-center gap-2">
-					<div className="w-8 h-8 rounded-lg bg-white/90 flex items-center justify-center ring-1 ring-white/30 overflow-hidden">
-						<img src={brandLogo} alt="Logo" className="w-6 h-6 object-contain" />
-					</div>
-					<p className="text-sm font-semibold text-white">{companyName}</p>
-				</div>
+				<BrandLogo size="sm" />
 				<button
 					onClick={handleLogout}
 					title="Cerrar sesión"
@@ -171,18 +166,16 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 			)}
 
 			{/* ── Sidebar ── */}
-			<aside className={`fixed lg:static top-0 left-0 z-50 h-full w-72 lg:w-60 flex-shrink-0 flex flex-col bg-[#060D1F] border-r border-white/[0.05] transition-transform duration-300 ${
+			<aside className={`fixed lg:static top-0 left-0 z-50 h-full w-72 lg:w-60 flex-shrink-0 flex flex-col bg-white/95 border-r border-blue-100 transition-transform duration-300 ${
 				mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
 			}`}>
 
 				{/* Logo */}
-				<div className="px-5 py-5 flex items-center gap-3 border-b border-white/[0.04]">
-					<div className="w-9 h-9 rounded-lg bg-white/90 flex items-center justify-center ring-1 ring-white/25 shadow-glow-sm overflow-hidden flex-shrink-0">
-						<img src={brandLogo} alt="Logo" className="w-7 h-7 object-contain" />
-					</div>
-					<div className="min-w-0">
-						<p className="text-sm font-semibold text-white truncate leading-tight">{companyName}</p>
-						<p className="text-[10px] text-slate-500 leading-tight">Sistema de Facturación</p>
+				<div className="px-5 py-5 flex items-center gap-3 border-b border-blue-100">
+					<BrandLogo size="md" name={companyName} className="flex-1 min-w-0" />
+					<div className="sr-only">
+						<p>{companyName}</p>
+						<p>Sistema de Facturación</p>
 					</div>
 					<button
 						className="lg:hidden ml-auto btn-icon-sm"
@@ -248,14 +241,14 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 				</nav>
 
 				{/* User footer */}
-				<div className="px-3 py-3 border-t border-white/[0.04]">
-					<div className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-white/[0.04] transition-colors">
-						<div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-600 to-blue-600 flex items-center justify-center text-white font-semibold text-xs flex-shrink-0">
+				<div className="px-3 py-3 border-t border-blue-100">
+					<div className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-blue-50/80 transition-colors">
+						<div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-white font-semibold text-xs flex-shrink-0">
 							{user.email.slice(0, 2).toUpperCase()}
 						</div>
 						<div className="flex-1 min-w-0">
-							<p className="text-xs font-medium text-white truncate">{user.email}</p>
-							<p className="text-[10px] text-slate-500 capitalize">{user.roles[0]}</p>
+							<p className="text-xs font-medium text-blue-950 truncate">{user.email}</p>
+							<p className="text-[10px] text-blue-600/70 capitalize">{user.roles[0]}</p>
 						</div>
 						<button
 							onClick={handleLogout}

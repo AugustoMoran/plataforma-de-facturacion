@@ -21,12 +21,14 @@ export interface IProduct extends Document {
   commercialDescription?: string;
   longDescription?: string;
   price: number;
+  salePrice?: number;
   costPrice: number;
   iva: number;
   margin: number;
   stock: number;
   minStock: number;
   category: string;
+  subcategory?: string;
   supplier?: mongoose.Types.ObjectId;
   barcode?: string;
   internalCode?: string;
@@ -72,12 +74,14 @@ const ProductSchema: Schema = new Schema({
   commercialDescription: { type: String },
   longDescription: { type: String },
   price: { type: Number, required: true, default: 0 },
+  salePrice: { type: Number, min: 0 },
   costPrice: { type: Number, required: true, default: 0 },
   iva: { type: Number, required: true, default: 21 },
   margin: { type: Number, required: true, default: 0 },
   stock: { type: Number, required: true, default: 0 },
   minStock: { type: Number, required: true, default: 0 },
   category: { type: String, required: true, trim: true },
+  subcategory: { type: String, trim: true },
   supplier: { type: Schema.Types.ObjectId, ref: 'Supplier' },
   barcode: { type: String, sparse: true },
   internalCode: { type: String },

@@ -1,6 +1,6 @@
 import Cart from '../models/Cart';
 import Product from '../../inventory/models/Product';
-import { CATALOG_PUBLIC_FILTER } from './catalogService';
+import { CATALOG_PUBLIC_FILTER, getEffectiveProductPrice } from './catalogService';
 
 const round2 = (value: number) => Math.round((Number(value) || 0) * 100) / 100;
 
@@ -74,7 +74,7 @@ export const addCartItem = async (cartId: string | undefined, payload: {
       product: product._id as any,
       name: product.name,
       slug: product.slug,
-      price: product.price,
+      price: getEffectiveProductPrice(product),
       quantity,
       imageUrl: product.imageUrl,
     });

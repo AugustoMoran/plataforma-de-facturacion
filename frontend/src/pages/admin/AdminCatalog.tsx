@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   useCreateCategoryMutation,
   useDeleteCategoryMutation,
@@ -19,7 +19,7 @@ import {
 } from '../../services/supplierApi';
 
 export const AdminCatalog: React.FC = () => {
-  const { data: categories = [], isLoading: loadingCategories } = useGetCategoriesQuery();
+  const { data: categories = [], isLoading: loadingCategories } = useGetCategoriesQuery(true);
   const { data: branches = [], isLoading: loadingBranches } = useGetBranchesQuery({});
   const { data: suppliers = [], isLoading: loadingSuppliers } = useGetSuppliersQuery();
   const [createCategory, { isLoading: creatingCategory }] = useCreateCategoryMutation();
@@ -33,8 +33,40 @@ export const AdminCatalog: React.FC = () => {
   const [deleteSupplier] = useDeleteSupplierMutation();
 
   const [categoryName, setCategoryName] = useState('');
+  const [categoryParent, setCategoryParent] = useState('');
+  const [categoryVisible, setCategoryVisible] = useState(true);
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const [editingCategoryName, setEditingCategoryName] = useState('');
+  const [editingCategoryParent, setEditingCategoryParent] = useState('');
+  const [editingCategoryVisible, setEditingCategoryVisible] = useState(true);
+
+  const rootCategories = useMemo(
+    () => categories.filter((c: any) => !c.parent),
+    [categories]
+  );
+
+  const getParentName = (parentId?: string | null) => {
+    if (!parentId) return '';
+    const parent = categories.find((c: any) => String(c._id) === String(parentId));
+    return parent?.name || '';
+  };
+
+  const categoryKey = (c: any) => `${normalize(c.name)}::${c.parent || ''}`;
+
+  const sortedCategories = useMemo(() => {
+    const rows: any[] = [];
+    rootCategories.forEach((root: any) => {
+      rows.push(root);
+      categories
+        .filter((c: any) => String(c.parent) === String(root._id))
+        .forEach((sub: any) => rows.push(sub));
+    });
+    const listed = new Set(rows.map((c) => String(c._id)));
+    categories.forEach((c: any) => {
+      if (!listed.has(String(c._id))) rows.push(c);
+    });
+    return rows;
+  }, [categories, rootCategories]);
 
   const [branchForm, setBranchForm] = useState({ name: '', address: '', phone: '', city: '', province: '', postalCode: '', country: 'Argentina' });
   const [editingBranchId, setEditingBranchId] = useState<string | null>(null);
@@ -65,14 +97,20 @@ export const AdminCatalog: React.FC = () => {
     const name = categoryName.trim();
     if (!name) return;
 
-    if (categories.some((c: any) => normalize(c.name) === normalize(name))) {
-      alert('La categoría ya existe');
+    if (categories.some((c: any) => categoryKey(c) === categoryKey({ name, parent: categoryParent || null }))) {
+      alert('La categoría ya existe en ese nivel');
       return;
     }
 
     try {
-      await createCategory({ name }).unwrap();
+      await createCategory({
+        name,
+        parent: categoryParent || null,
+        visibleInEcommerce: categoryVisible,
+      }).unwrap();
       setCategoryName('');
+      setCategoryParent('');
+      setCategoryVisible(true);
     } catch (err: any) {
       alert(err?.data?.message || 'Error al crear categoría');
     }
@@ -86,15 +124,31 @@ export const AdminCatalog: React.FC = () => {
       return;
     }
 
-    if (categories.some((c: any) => c._id !== editingCategoryId && normalize(c.name) === normalize(name))) {
-      alert('La categoría ya existe');
+    const parentForCheck = editingCategoryParent || null;
+    if (
+      categories.some(
+        (c: any) =>
+          c._id !== editingCategoryId &&
+          categoryKey(c) === categoryKey({ name, parent: parentForCheck })
+      )
+    ) {
+      alert('La categoría ya existe en ese nivel');
       return;
     }
 
     try {
-      await updateCategory({ id: editingCategoryId, body: { name } }).unwrap();
+      await updateCategory({
+        id: editingCategoryId,
+        body: {
+          name,
+          parent: editingCategoryParent || null,
+          visibleInEcommerce: editingCategoryVisible,
+        },
+      }).unwrap();
       setEditingCategoryId(null);
       setEditingCategoryName('');
+      setEditingCategoryParent('');
+      setEditingCategoryVisible(true);
     } catch (err: any) {
       alert(err?.data?.message || 'Error al actualizar categoría');
     }
@@ -224,18 +278,38 @@ export const AdminCatalog: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <div className="card p-6 space-y-4">
-          <h2 className="text-white font-semibold">Categorías</h2>
+        <div className="card p-6 space-y-4 xl:col-span-1">
+          <h2 className="text-blue-950 font-semibold">Categorías</h2>
+          <p className="text-xs text-blue-700/70">Creá categorías raíz o subcategorías. Marcá cuáles se muestran en la tienda online.</p>
 
-          <div className="flex flex-col sm:flex-row gap-2">
+          <div className="space-y-2">
             <input
               className="input"
-              placeholder="Ej: Electrónica"
+              placeholder="Nombre (ej: Audio, Micrófonos…)"
               value={categoryName}
               onChange={(e) => setCategoryName(e.target.value)}
             />
+            <select
+              className="input"
+              value={categoryParent}
+              onChange={(e) => setCategoryParent(e.target.value)}
+            >
+              <option value="">Categoría raíz (sin padre)</option>
+              {rootCategories.map((c: any) => (
+                <option key={c._id} value={c._id}>{c.name}</option>
+              ))}
+            </select>
+            <label className="flex items-center gap-2 text-sm text-blue-900/80 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={categoryVisible}
+                onChange={(e) => setCategoryVisible(e.target.checked)}
+                className="rounded border-blue-300 text-brand-600 focus:ring-brand-500"
+              />
+              Visible en ecommerce
+            </label>
             <button
-              className="btn-primary w-full sm:w-auto justify-center"
+              className="btn-primary w-full justify-center"
               onClick={handleCreateCategory}
               disabled={creatingCategory || !categoryName.trim()}
             >
@@ -245,41 +319,78 @@ export const AdminCatalog: React.FC = () => {
 
           <div className="surface rounded-xl p-3 max-h-72 overflow-y-auto">
             {loadingCategories ? (
-              <p className="text-sm text-slate-500">Cargando categorías...</p>
-            ) : categories.length === 0 ? (
-              <p className="text-sm text-slate-600">Aún no hay categorías creadas.</p>
+              <p className="text-sm text-blue-700/60">Cargando categorías...</p>
+            ) : sortedCategories.length === 0 ? (
+              <p className="text-sm text-blue-700/60">Aún no hay categorías creadas.</p>
             ) : (
               <div className="space-y-2">
-                {categories.map((c: any) => (
-                  <div key={c._id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 bg-white/[0.02] border border-white/[0.06] rounded-lg px-3 py-2">
+                {sortedCategories.map((c: any) => {
+                  const isSub = Boolean(c.parent);
+                  return (
+                  <div key={c._id} className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 bg-blue-50/50 border border-blue-100 rounded-lg px-3 py-2 ${isSub ? 'ml-3' : ''}`}>
                     {editingCategoryId === c._id ? (
-                      <div className="flex flex-col sm:flex-row w-full gap-2 items-stretch sm:items-center">
+                      <div className="flex flex-col w-full gap-2">
                         <input
                           className="input !py-1.5"
                           value={editingCategoryName}
                           onChange={(e) => setEditingCategoryName(e.target.value)}
                         />
-                        <button className="btn-primary !py-1.5 !px-3 w-full sm:w-auto justify-center" onClick={handleUpdateCategory} disabled={updatingCategory}>Guardar</button>
-                        <button
-                          className="btn-secondary !py-1.5 !px-3 w-full sm:w-auto"
-                          onClick={() => {
-                            setEditingCategoryId(null);
-                            setEditingCategoryName('');
-                          }}
+                        <select
+                          className="input !py-1.5"
+                          value={editingCategoryParent}
+                          onChange={(e) => setEditingCategoryParent(e.target.value)}
                         >
-                          Cancelar
-                        </button>
+                          <option value="">Categoría raíz</option>
+                          {rootCategories
+                            .filter((r: any) => r._id !== c._id)
+                            .map((r: any) => (
+                              <option key={r._id} value={r._id}>{r.name}</option>
+                            ))}
+                        </select>
+                        <label className="flex items-center gap-2 text-xs text-blue-900/80">
+                          <input
+                            type="checkbox"
+                            checked={editingCategoryVisible}
+                            onChange={(e) => setEditingCategoryVisible(e.target.checked)}
+                          />
+                          Visible en ecommerce
+                        </label>
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          <button className="btn-primary !py-1.5 !px-3 w-full sm:w-auto justify-center" onClick={handleUpdateCategory} disabled={updatingCategory}>Guardar</button>
+                          <button
+                            className="btn-secondary !py-1.5 !px-3 w-full sm:w-auto"
+                            onClick={() => {
+                              setEditingCategoryId(null);
+                              setEditingCategoryName('');
+                              setEditingCategoryParent('');
+                              setEditingCategoryVisible(true);
+                            }}
+                          >
+                            Cancelar
+                          </button>
+                        </div>
                       </div>
                     ) : (
                       <>
-                        <span className="text-sm text-white">{c.name}</span>
+                        <div className="min-w-0">
+                          <span className="text-sm text-blue-950 font-medium block truncate">
+                            {isSub ? `↳ ${c.name}` : c.name}
+                          </span>
+                          <span className="text-[10px] text-blue-600/70">
+                            {isSub ? getParentName(c.parent) : 'Raíz'}
+                            {' · '}
+                            {c.visibleInEcommerce !== false ? 'Ecommerce' : 'Solo interno'}
+                          </span>
+                        </div>
                         <div className="flex items-center gap-2 self-end sm:self-auto">
                           <button
                             onClick={() => {
                               setEditingCategoryId(c._id);
                               setEditingCategoryName(c.name);
+                              setEditingCategoryParent(c.parent ? String(c.parent) : '');
+                              setEditingCategoryVisible(c.visibleInEcommerce !== false);
                             }}
-                            className="btn-icon !text-sky-400 hover:!bg-sky-400/10 hover:!border-sky-400/20"
+                            className="btn-icon !text-sky-600 hover:!bg-sky-50 hover:!border-sky-200"
                             title="Editar categoría"
                           >
                             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -292,7 +403,7 @@ export const AdminCatalog: React.FC = () => {
                                 deleteCategory(c._id);
                               }
                             }}
-                            className="btn-icon !text-red-400 hover:!bg-red-400/10 hover:!border-red-400/20"
+                            className="btn-icon !text-red-600 hover:!bg-red-50 hover:!border-red-200"
                             title="Eliminar categoría"
                           >
                             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -303,7 +414,7 @@ export const AdminCatalog: React.FC = () => {
                       </>
                     )}
                   </div>
-                ))}
+                );})}
               </div>
             )}
           </div>

@@ -355,6 +355,16 @@ export const POS = () => {
 
       const result: any = await createSale(salePayload).unwrap();
 
+      if (invoiceType !== 'NONE') {
+        const afipMsg =
+          result.billingStatus === 'PENDING'
+            ? 'La factura AFIP se está procesando automáticamente.'
+            : result.billingStatus === 'FAILED'
+              ? 'Venta registrada, pero la factura AFIP falló. Podés reintentar desde Ventas.'
+              : '';
+        if (afipMsg) alert(afipMsg);
+      }
+
       if (invoiceType !== 'NONE' && window.confirm('¡Venta registrada! ¿Descargar comprobante?')) {
         await handleDownload(result._id, result.invoiceNumber);
       }

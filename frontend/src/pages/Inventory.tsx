@@ -27,12 +27,14 @@ interface ProductFormData {
   seoDescription: string;
   slug: string;
   price: number | '';
+  salePrice: number | '';
   costPrice: number | '';
   iva: number;
   margin: number | '';
   stock: number | '';
   minStock: number | '';
   category: string;
+  subcategory: string;
   supplier: string;
   barcode: string;
   internalCode: string;
@@ -178,7 +180,7 @@ export const Inventory = () => {
     supplier: supplierFilter || undefined,
   });
   const { data: branches } = useGetBranchesQuery({});
-  const { data: categories = [] } = useGetCategoriesQuery();
+  const { data: categories = [] } = useGetCategoriesQuery(true);
   const { data: suppliers = [] } = useGetSuppliersQuery();
   const [createProduct] = useCreateProductMutation();
   const [updateProduct] = useUpdateProductMutation();
@@ -361,9 +363,25 @@ export const Inventory = () => {
   const [formData, setFormData] = useState<ProductFormData>({
     name: '', sku: '', description: '', commercialDescription: '', longDescription: '',
     seoTitle: '', seoDescription: '', slug: '',
-    price: '', costPrice: '', iva: 21, margin: '', stock: '', minStock: '', category: '', supplier: '', barcode: '', internalCode: '',
+    price: '', salePrice: '', costPrice: '', iva: 21, margin: '', stock: '', minStock: '', category: '', subcategory: '', supplier: '', barcode: '', internalCode: '',
     weight: '', dimLength: '', dimWidth: '', dimHeight: '', displayOrder: '',
   });
+
+  const normalizeCategoryName = (value: string) => value.trim().toLowerCase();
+
+  const rootCategories = useMemo(
+    () => categories.filter((c: any) => !c.parent),
+    [categories]
+  );
+
+  const subcategoryOptions = useMemo(() => {
+    if (!formData.category) return [];
+    const parentCat = categories.find(
+      (c: any) => !c.parent && normalizeCategoryName(c.name) === normalizeCategoryName(formData.category)
+    );
+    if (!parentCat) return [];
+    return categories.filter((c: any) => String(c.parent) === String(parentCat._id));
+  }, [categories, formData.category]);
 
   const toNum = (value: any) => {
     if (value === '' || value === null || value === undefined) return 0;
@@ -403,7 +421,7 @@ export const Inventory = () => {
     return { ...base, margin: calculatedMargin };
   };
 
-  const updateNumericField = (field: 'costPrice' | 'margin' | 'iva' | 'price' | 'stock' | 'minStock', raw: string) => {
+  const updateNumericField = (field: 'costPrice' | 'margin' | 'iva' | 'price' | 'salePrice' | 'stock' | 'minStock', raw: string) => {
     const parsedValue = raw === '' ? '' : Number(raw.replace(',', '.'));
 
     setFormData((prev) => ({
@@ -470,7 +488,7 @@ export const Inventory = () => {
     setFormData({
       name: '', sku: '', description: '', commercialDescription: '', longDescription: '',
       seoTitle: '', seoDescription: '', slug: '',
-      price: '', costPrice: '', iva: 21, margin: '', stock: '', minStock: '', category: '', supplier: '',
+      price: '', salePrice: '', costPrice: '', iva: 21, margin: '', stock: '', minStock: '', category: '', subcategory: '', supplier: '',
       barcode: '', internalCode: '', weight: '', dimLength: '', dimWidth: '', dimHeight: '', displayOrder: '',
     });
     setSelectedFile(null);
@@ -512,7 +530,7 @@ export const Inventory = () => {
     }
 
     const data = new FormData();
-    const numericFields = new Set(['price', 'costPrice', 'iva', 'margin', 'stock', 'minStock']);
+    const numericFields = new Set(['price', 'salePrice', 'costPrice', 'iva', 'margin', 'stock', 'minStock']);
     const ecommerceOnlyFields = new Set([
       'commercialDescription', 'longDescription', 'seoTitle', 'seoDescription', 'slug',
       'weight', 'dimLength', 'dimWidth', 'dimHeight', 'displayOrder',
@@ -615,6 +633,8 @@ export const Inventory = () => {
       stock: p.stock,
       minStock: p.minStock,
       category: p.category || '',
+      subcategory: p.subcategory || '',
+      salePrice: p.salePrice ?? '',
       supplier: typeof p.supplier === 'object' ? (p.supplier?._id || '') : (p.supplier || ''),
       barcode: p.barcode || '',
       internalCode: p.internalCode || '',
@@ -1130,9 +1150,29 @@ export const Inventory = () => {
                   </div>
                   <div>
                     <label className="section-heading">Categoría</label>
-                    <select className="input" required value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })}>
+                    <select
+                      className="input"
+                      required
+                      value={formData.category}
+                      onChange={(e) => setFormData({ ...formData, category: e.target.value, subcategory: '' })}
+                    >
                       <option value="">Seleccionar categoría...</option>
-                      {categories.map((c: any) => (
+                      {rootCategories.map((c: any) => (
+                        <option key={c._id} value={c.name}>{c.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="section-heading">Subcategoría</label>
+                    <select
+                      className="input"
+                      value={formData.subcategory}
+                      onChange={(e) => setFormData({ ...formData, subcategory: e.target.value })}
+                      disabled={subcategoryOptions.length === 0}
+                    >
+                      <option value="">Sin subcategoría</option>
+                      {subcategoryOptions.map((c: any) => (
                         <option key={c._id} value={c.name}>{c.name}</option>
                       ))}
                     </select>
@@ -1221,6 +1261,19 @@ export const Inventory = () => {
                       }}
                       onBlur={() => setFormData((prev) => syncPriceAndMargin(prev, 'price'))}
                     />
+                  </div>
+                  <div>
+                    <label className="section-heading">Precio de oferta (opcional)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      className="input"
+                      placeholder="Dejar vacío si no hay oferta"
+                      value={formData.salePrice as any}
+                      onWheel={handleNumberWheel}
+                      onChange={(e) => updateNumericField('salePrice', e.target.value)}
+                    />
+                    <p className="text-[10px] text-blue-600/60 mt-1">Debe ser menor al precio de venta para mostrarse en la tienda.</p>
                   </div>
 
                   <div className="md:col-span-2">

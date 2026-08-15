@@ -6,13 +6,13 @@ interface TrustBadgesProps {
 }
 
 const Badge: React.FC<{ icon: React.ReactNode; title: string; subtitle: string }> = ({ icon, title, subtitle }) => (
-  <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/[0.03] ring-1 ring-white/[0.06]">
-    <div className="w-10 h-10 rounded-lg bg-brand-500/10 text-brand-400 flex items-center justify-center flex-shrink-0">
+  <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/80 border border-blue-100 shadow-sm">
+    <div className="w-10 h-10 rounded-lg bg-brand-100 text-brand-700 flex items-center justify-center flex-shrink-0">
       {icon}
     </div>
     <div>
-      <p className="text-sm font-semibold text-white">{title}</p>
-      <p className="text-xs text-slate-500">{subtitle}</p>
+      <p className="text-sm font-semibold text-blue-950">{title}</p>
+      <p className="text-xs text-blue-700/70">{subtitle}</p>
     </div>
   </div>
 );
@@ -36,8 +36,8 @@ export const TrustBadges: React.FC<TrustBadgesProps> = ({ mercadopagoEnabled = t
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
         </svg>
       }
-      title="Envíos a todo el país"
-      subtitle={envioPackEnabled ? 'Integración EnvíoPack' : 'Despacho rápido y seguro'}
+      title="Envíos cotizados"
+      subtitle={envioPackEnabled ? 'EnvíoPack — costo a cargo del cliente' : 'Despacho con cotización previa'}
     />
     <Badge
       icon={

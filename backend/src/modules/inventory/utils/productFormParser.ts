@@ -46,6 +46,12 @@ export const applyEcommerceFieldsToProductData = (req: Request, productData: Rec
   const displayOrder = toNumber(productData.displayOrder);
   productData.displayOrder = displayOrder ?? 0;
 
+  const salePrice = toNumber(productData.salePrice);
+  if (salePrice !== undefined) productData.salePrice = salePrice;
+  else if (productData.salePrice === '' || productData.salePrice === null) delete productData.salePrice;
+
+  if (productData.subcategory === '') delete productData.subcategory;
+
   const dimensions = parseJsonField(productData.dimensions);
   if (dimensions) productData.dimensions = dimensions;
   else delete productData.dimensions;

@@ -27,7 +27,7 @@ export const StoreHome: React.FC = () => {
     <div className="space-y-12 animate-slide-up">
       <SEO
         title={storeName}
-        description={settings?.storeDescription || 'Comprá online con envío a todo el país'}
+        description={settings?.storeDescription || 'Instrumentos y audio profesional — comprá online con envío cotizado'}
       />
 
       <HeroCarousel
@@ -46,10 +46,10 @@ export const StoreHome: React.FC = () => {
         <section id="destacados" className="space-y-5">
           <div className="flex items-end justify-between gap-4">
             <div>
-              <h2 className="text-xl font-bold text-white">Productos destacados</h2>
-              <p className="text-sm text-slate-500 mt-1">Selección especial de la semana</p>
+              <h2 className="text-xl font-bold text-blue-950">Productos destacados</h2>
+              <p className="text-sm text-blue-700/70 mt-1">Selección especial de la semana</p>
             </div>
-            <Link to="/products?featured=true" className="text-sm text-brand-400 hover:text-brand-300 transition-colors">
+            <Link to="/products?featured=true" className="text-sm text-brand-600 hover:text-brand-700 transition-colors">
               Ver todos →
             </Link>
           </div>
@@ -69,10 +69,10 @@ export const StoreHome: React.FC = () => {
       <section className="space-y-5">
         <div className="flex items-end justify-between gap-4">
           <div>
-            <h2 className="text-xl font-bold text-white">Últimos productos</h2>
-            <p className="text-sm text-slate-500 mt-1">Novedades del catálogo</p>
+            <h2 className="text-xl font-bold text-blue-950">Últimos productos</h2>
+            <p className="text-sm text-blue-700/70 mt-1">Novedades del catálogo</p>
           </div>
-          <Link to="/products" className="text-sm text-brand-400 hover:text-brand-300 transition-colors">
+          <Link to="/products" className="text-sm text-brand-600 hover:text-brand-700 transition-colors">
             Ver catálogo →
           </Link>
         </div>

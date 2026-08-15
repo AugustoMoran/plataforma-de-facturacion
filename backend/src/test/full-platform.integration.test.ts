@@ -247,8 +247,8 @@ describe('Full Platform Integration Tests', () => {
     });
   });
 
-  describe('POS billing flow (NOT_INVOICED + manual invoice)', () => {
-    it('should create fiscal POS sale as NOT_INVOICED and allow invoice endpoint', async () => {
+  describe('POS billing flow (auto AFIP on fiscal sale)', () => {
+    it('should auto-enqueue AFIP invoice for fiscal POS sale', async () => {
       const { agent, branchId } = await loginAsAdmin('pos-billing@test.com');
 
       const product = await Product.create({
@@ -274,18 +274,12 @@ describe('Full Platform Integration Tests', () => {
         });
 
       expect(saleRes.status).toBe(201);
-      expect(saleRes.body.billingStatus).toBe('NOT_INVOICED');
       expect(saleRes.body.invoiceType).toBe('B');
-
-      const invoiceRes = await agent
-        .post(`/api/sales/${saleRes.body._id}/invoice`)
-
-      // Without AFIP queue enabled in test env, invoice should fail gracefully or return error
-      expect([200, 400, 500]).toContain(invoiceRes.status);
+      expect(['PENDING', 'FAILED']).toContain(saleRes.body.billingStatus);
 
       const sale = await Sale.findById(saleRes.body._id);
       expect(sale).toBeTruthy();
-      expect(['PENDING', 'FAILED', 'NOT_INVOICED']).toContain(sale?.billingStatus);
+      expect(['PENDING', 'FAILED']).toContain(sale?.billingStatus);
     });
   });
 

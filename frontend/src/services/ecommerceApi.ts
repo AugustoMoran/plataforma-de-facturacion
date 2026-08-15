@@ -11,9 +11,13 @@ export interface StoreProduct {
   commercialDescription?: string;
   longDescription?: string;
   price: number;
+  salePrice?: number;
+  effectivePrice?: number;
+  onSale?: boolean;
   imageUrl?: string;
   gallery?: Array<{ url: string; alt?: string; publicId?: string }>;
   category: string;
+  subcategory?: string;
   sku: string;
   stock: number;
   featured?: boolean;
@@ -24,6 +28,12 @@ export interface StoreProduct {
   seoTitle?: string;
   seoDescription?: string;
   displayOrder?: number;
+}
+
+export interface StoreCategory {
+  _id: string;
+  name: string;
+  subcategories?: Array<{ _id: string; name: string }>;
 }
 
 export interface StoreOrderItem {
@@ -44,7 +54,10 @@ export interface StoreProductsPage {
 export interface StoreProductsQuery {
   search?: string;
   category?: string;
+  subcategory?: string;
   featured?: boolean;
+  offers?: boolean;
+  sort?: 'price_asc' | 'price_desc' | 'name_asc' | 'name_desc' | 'newest';
   page?: number;
   limit?: number;
 }
@@ -78,7 +91,10 @@ export const ecommerceApi = createApi({
         const search = new URLSearchParams();
         if (params?.search) search.set('search', params.search);
         if (params?.category) search.set('category', params.category);
+        if (params?.subcategory) search.set('subcategory', params.subcategory);
         if (params?.featured) search.set('featured', 'true');
+        if (params?.offers) search.set('offers', 'true');
+        if (params?.sort) search.set('sort', params.sort);
         search.set('limit', '100');
         const suffix = search.toString() ? `?${search.toString()}` : '';
         return `/catalog${suffix}`;
@@ -94,7 +110,10 @@ export const ecommerceApi = createApi({
         const search = new URLSearchParams();
         if (params.search) search.set('search', params.search);
         if (params.category) search.set('category', params.category);
+        if (params.subcategory) search.set('subcategory', params.subcategory);
         if (params.featured) search.set('featured', 'true');
+        if (params.offers) search.set('offers', 'true');
+        if (params.sort) search.set('sort', params.sort);
         search.set('page', String(params.page || 1));
         search.set('limit', String(params.limit || 12));
         return `/catalog?${search.toString()}`;
@@ -105,12 +124,8 @@ export const ecommerceApi = createApi({
       query: (idOrSlug) => `/catalog/${idOrSlug}`,
       providesTags: (_result, _error, id) => [{ type: 'StoreProduct', id }],
     }),
-    getStoreCategories: builder.query<{ _id: string; name: string }[], void>({
+    getStoreCategories: builder.query<StoreCategory[], void>({
       query: () => '/catalog/categories',
-      transformResponse: (response: any) => {
-        if (!Array.isArray(response)) return [];
-        return response.map((name: string) => ({ _id: name, name }));
-      },
       providesTags: ['StoreCategory'],
     }),
     createStoreOrder: builder.mutation<any, CreateOrderPayload>({

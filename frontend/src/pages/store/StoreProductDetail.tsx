@@ -36,6 +36,8 @@ export const StoreProductDetail: React.FC = () => {
   }, [galleryImages]);
 
   const outOfStock = !product || product.stock <= 0;
+  const onSale = product?.onSale && product.salePrice != null;
+  const displayPrice = product?.effectivePrice ?? product?.price ?? 0;
 
   const handleAddToCart = () => {
     if (!product || outOfStock) return;
@@ -43,7 +45,7 @@ export const StoreProductDetail: React.FC = () => {
       addToCart({
         productId: product._id,
         name: product.name,
-        price: product.price,
+        price: displayPrice,
         quantity,
         imageUrl: product.imageUrl || galleryImages[0],
         slug: product.slug,
@@ -80,7 +82,7 @@ export const StoreProductDetail: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
         <div className="space-y-3">
-          <div className="aspect-square rounded-2xl overflow-hidden bg-slate-800 card p-0">
+          <div className="aspect-square rounded-2xl overflow-hidden bg-blue-50 card p-0">
             {activeImage ? (
               <img src={activeImage} alt={product.name} className="w-full h-full object-cover" />
             ) : (
@@ -100,7 +102,7 @@ export const StoreProductDetail: React.FC = () => {
                   type="button"
                   onClick={() => setActiveImage(url)}
                   className={`w-16 h-16 rounded-lg overflow-hidden border flex-shrink-0 transition-colors ${
-                    activeImage === url ? 'border-brand-400 ring-1 ring-brand-400/40' : 'border-white/10 hover:border-white/20'
+                    activeImage === url ? 'border-brand-500 ring-1 ring-brand-400/40' : 'border-blue-200 hover:border-blue-300'
                   }`}
                 >
                   <img src={url} alt="" className="w-full h-full object-cover" />
@@ -115,22 +117,36 @@ export const StoreProductDetail: React.FC = () => {
             <div className="flex flex-wrap items-center gap-2 mb-2">
               <span className="badge-gray">{product.category}</span>
               {product.featured && <span className="badge-blue">Destacado</span>}
+              {onSale && <span className="badge-red">Oferta</span>}
               {outOfStock && <span className="badge-red">Sin stock</span>}
             </div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-white">{product.name}</h1>
-            <p className="text-xs text-slate-500 font-mono mt-2">SKU: {product.sku}</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-blue-950">{product.name}</h1>
+            <p className="text-xs text-blue-600/70 font-mono mt-2">SKU: {product.sku}</p>
           </div>
 
-          <p className="text-3xl font-bold text-brand-400 tabular-nums">
-            ${product.price.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
-          </p>
+          <div className="space-y-1">
+            {onSale ? (
+              <>
+                <p className="text-lg text-blue-400 line-through tabular-nums">
+                  ${product.price.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
+                </p>
+                <p className="text-3xl font-bold text-brand-700 tabular-nums">
+                  ${displayPrice.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
+                </p>
+              </>
+            ) : (
+              <p className="text-3xl font-bold text-brand-700 tabular-nums">
+                ${displayPrice.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
+              </p>
+            )}
+          </div>
 
           {shortDescription && (
-            <p className="text-slate-300 leading-relaxed">{shortDescription}</p>
+            <p className="text-blue-900/80 leading-relaxed">{shortDescription}</p>
           )}
 
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 bg-white/[0.04] border border-white/[0.06] rounded-xl p-1">
+            <div className="flex items-center gap-2 bg-blue-50 border border-blue-100 rounded-xl p-1">
               <button
                 onClick={() => setQuantity((q) => Math.max(1, q - 1))}
                 className="btn-icon-sm"
@@ -140,7 +156,7 @@ export const StoreProductDetail: React.FC = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
                 </svg>
               </button>
-              <span className="w-10 text-center font-bold text-white tabular-nums">{quantity}</span>
+              <span className="w-10 text-center font-bold text-blue-950 tabular-nums">{quantity}</span>
               <button
                 onClick={() => setQuantity((q) => Math.min(product.stock, q + 1))}
                 className="btn-icon-sm"
@@ -151,7 +167,7 @@ export const StoreProductDetail: React.FC = () => {
                 </svg>
               </button>
             </div>
-            <span className="text-xs text-slate-500">{product.stock} disponibles</span>
+            <span className="text-xs text-blue-700/60">{product.stock} disponibles</span>
           </div>
 
           <button
@@ -166,15 +182,15 @@ export const StoreProductDetail: React.FC = () => {
 
       {product.longDescription && (
         <div className="card p-6 mt-10 space-y-3">
-          <h2 className="text-lg font-semibold text-white">Descripción del producto</h2>
-          <div className="text-slate-400 leading-relaxed whitespace-pre-line">{product.longDescription}</div>
+          <h2 className="text-lg font-semibold text-blue-950">Descripción del producto</h2>
+          <div className="text-blue-900/70 leading-relaxed whitespace-pre-line">{product.longDescription}</div>
         </div>
       )}
 
       {(product.weight || product.dimensions) && (
         <div className="card p-6 mt-4">
-          <h2 className="text-sm font-semibold text-white mb-3">Información de envío</h2>
-          <div className="flex flex-wrap gap-4 text-sm text-slate-400">
+          <h2 className="text-sm font-semibold text-blue-950 mb-3">Información de envío</h2>
+          <div className="flex flex-wrap gap-4 text-sm text-blue-800/70">
             {product.weight ? <span>Peso: {product.weight} kg</span> : null}
             {product.dimensions?.length ? <span>Largo: {product.dimensions.length} cm</span> : null}
             {product.dimensions?.width ? <span>Ancho: {product.dimensions.width} cm</span> : null}

@@ -67,7 +67,9 @@ describe('Ecommerce Catalog Integration Tests', () => {
     const res = await request(app).get('/api/ecommerce/catalog/categories');
 
     expect(res.status).toBe(200);
-    expect(res.body).toEqual(['General']);
+    expect(res.body).toEqual([
+      { _id: 'General', name: 'General', subcategories: [] },
+    ]);
   });
 
   it('should fetch product by slug and by id', async () => {

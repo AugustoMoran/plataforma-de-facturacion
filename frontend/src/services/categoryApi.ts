@@ -8,8 +8,11 @@ export const categoryApi = createApi({
   baseQuery: createReauthBaseQuery(`${API_BASE_URL}/categories`),
   tagTypes: ['Category'],
   endpoints: (builder) => ({
-    getCategories: builder.query<any[], void>({
-      query: () => '/',
+    getCategories: builder.query<any[], boolean | void>({
+      query: (includeInternal) => ({
+        url: '/',
+        params: includeInternal ? { includeInternal: 'true' } : undefined,
+      }),
       providesTags: ['Category'],
     }),
     createCategory: builder.mutation({

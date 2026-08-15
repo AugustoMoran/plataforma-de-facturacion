@@ -5,6 +5,7 @@ import * as salesService from '../../sales/services/salesService';
 import * as settingsService from '../../settings/services/settingsService';
 import Cart from '../models/Cart';
 import Product from '../../inventory/models/Product';
+import { getEffectiveProductPrice } from './catalogService';
 
 const round2 = (value: number) => Math.round((Number(value) || 0) * 100) / 100;
 
@@ -67,7 +68,7 @@ const buildSaleItems = async (rawItems: Array<{ productId?: string; product?: st
       product: productId,
       name: product.name,
       quantity: raw.quantity,
-      price: product.price,
+      price: getEffectiveProductPrice(product),
       ivaRate: product.iva ?? 21,
     });
   }
@@ -140,6 +141,10 @@ export const checkoutDirect = async (input: {
     sellerId,
     ['admin']
   );
+
+  if (!sale) {
+    throw new Error('No se pudo crear la venta');
+  }
 
   if (shippingCost > 0) {
     sale.total = round2(Number(sale.total) + shippingCost);

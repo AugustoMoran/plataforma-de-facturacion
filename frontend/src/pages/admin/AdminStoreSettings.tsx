@@ -17,7 +17,6 @@ export const AdminStoreSettings: React.FC = () => {
 
   const [storeName, setStoreName] = useState('');
   const [storeDescription, setStoreDescription] = useState('');
-  const [freeShippingThreshold, setFreeShippingThreshold] = useState('');
   const [initialized, setInitialized] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
@@ -26,7 +25,6 @@ export const AdminStoreSettings: React.FC = () => {
     if (settings && !initialized) {
       setStoreName(settings.storeName || '');
       setStoreDescription(settings.storeDescription || '');
-      setFreeShippingThreshold(String(settings.freeShippingThreshold || 0));
       setInitialized(true);
     }
   }, [settings, initialized]);
@@ -78,7 +76,7 @@ export const AdminStoreSettings: React.FC = () => {
       await updateSettings({
         storeName: storeName.trim() || 'Tienda Online',
         storeDescription: storeDescription.trim(),
-        freeShippingThreshold: Number(freeShippingThreshold) || 0,
+        freeShippingThreshold: 0,
       }).unwrap();
       alert('Configuración guardada');
     } catch (err: any) {
@@ -104,22 +102,15 @@ export const AdminStoreSettings: React.FC = () => {
               <h2 className="text-lg font-semibold text-white">Datos de la tienda</h2>
               <p className="text-sm text-slate-500 mt-1">Nombre y descripción visibles en el home</p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               <div>
                 <label className="label">Nombre de la tienda</label>
                 <input className="input" value={storeName} onChange={(e) => setStoreName(e.target.value)} />
               </div>
-              <div>
-                <label className="label">Umbral envío gratis ($)</label>
-                <input
-                  className="input"
-                  type="number"
-                  min={0}
-                  value={freeShippingThreshold}
-                  onChange={(e) => setFreeShippingThreshold(e.target.value)}
-                />
-              </div>
             </div>
+            <p className="text-xs text-blue-700/70">
+              Los envíos se cotizan con EnvíoPack al checkout y son a cargo del cliente.
+            </p>
             <div>
               <label className="label">Descripción</label>
               <textarea
