@@ -186,6 +186,18 @@ describe('Ecommerce Catalog Integration Tests', () => {
     ]);
   });
 
+  it('should expose sitemap xml for public catalog urls', async () => {
+    process.env.SITE_URL = 'https://www.ososoundmusic.com';
+
+    const res = await request(app).get('/api/ecommerce/sitemap.xml');
+    expect(res.status).toBe(200);
+    expect(res.headers['content-type']).toMatch(/application\/xml/);
+    expect(res.text).toContain('<urlset');
+    expect(res.text).toContain('https://www.ososoundmusic.com/');
+    expect(res.text).toContain('https://www.ososoundmusic.com/products');
+    expect(res.text).toContain('https://www.ososoundmusic.com/products/producto-visible');
+  });
+
   it('should fetch product by slug and by id', async () => {
     const product = await Product.findOne({ sku: 'VIS-001' });
 

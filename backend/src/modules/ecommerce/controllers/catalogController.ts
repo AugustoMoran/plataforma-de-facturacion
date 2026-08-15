@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import * as catalogService from '../services/catalogService';
+import * as sitemapService from '../services/sitemapService';
 
 export const getCatalogController = async (req: Request, res: Response) => {
   try {
@@ -34,6 +35,17 @@ export const getFeaturedProductsController = async (req: Request, res: Response)
     const limit = Number(req.query.limit) || 8;
     const products = await catalogService.getFeaturedProducts(limit);
     res.json(products);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const getSitemapController = async (_req: Request, res: Response) => {
+  try {
+    const xml = await sitemapService.getSitemapXml();
+    res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    res.send(xml);
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }

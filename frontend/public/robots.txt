@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+
+Disallow: /dashboard
+Disallow: /login
+Disallow: /register
+Disallow: /maintenance
+Disallow: /pos
+Disallow: /inventory
+Disallow: /sales
+Disallow: /admin
+
+Sitemap: https://www.ososoundmusic.com/sitemap.xml

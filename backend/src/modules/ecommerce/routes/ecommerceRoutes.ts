@@ -4,6 +4,7 @@ import {
   getCatalogProductController,
   getCatalogCategoriesController,
   getFeaturedProductsController,
+  getSitemapController,
 } from '../controllers/catalogController';
 import {
   getCartController,
@@ -21,6 +22,7 @@ const router = Router();
 router.get('/catalog', getCatalogController);
 router.get('/catalog/categories', getCatalogCategoriesController);
 router.get('/catalog/featured', getFeaturedProductsController);
+router.get('/sitemap.xml', getSitemapController);
 router.get('/catalog/:slug', getCatalogProductController);
 
 router.get('/cart', getCartController);
