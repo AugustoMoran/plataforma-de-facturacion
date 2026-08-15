@@ -1,7 +1,9 @@
 import { Request, Response } from 'express';
 import Category from '../models/Category';
+import Product from '../../inventory/models/Product';
 
 const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const normalizeCategoryName = (value: string) => String(value || '').trim().toLowerCase();
 
 export const getCategories = async (req: Request, res: Response) => {
   try {
@@ -95,6 +97,28 @@ export const updateCategory = async (req: Request, res: Response) => {
       return res.status(409).json({ message: 'La categoría ya existe' });
     }
     res.status(400).json({ message: error.message });
+  }
+};
+
+export const getOrphanProductCategories = async (_req: Request, res: Response) => {
+  try {
+    const [productCategories, dbCategories] = await Promise.all([
+      Product.distinct('category', { isActive: true }),
+      Category.find({ isActive: true }).select('name').lean(),
+    ]);
+
+    const known = new Set(
+      dbCategories.map((c) => normalizeCategoryName(c.name)).filter(Boolean)
+    );
+
+    const orphans = productCategories
+      .map((name) => String(name || '').trim())
+      .filter((name) => name && !known.has(normalizeCategoryName(name)))
+      .sort((a, b) => a.localeCompare(b, 'es'));
+
+    res.json(orphans);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
   }
 };
 

@@ -38,11 +38,24 @@ const getHiddenCategoryNames = async () => {
   return hidden.map((c) => c.name).filter(Boolean);
 };
 
-const isCategoryVisible = async (categoryName: string) => {
-  const name = String(categoryName || '').trim();
-  if (!name) return true;
+const normalizeCategoryName = (value: string) => String(value || '').trim().toLowerCase();
 
-  const category = await Category.findOne({ isActive: true, name, parent: null }).lean();
+const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const categoryRegex = (value: string) => new RegExp(`^${escapeRegex(String(value || '').trim())}$`, 'i');
+
+const findRootCategoryByName = async (categoryName: string) => {
+  const name = String(categoryName || '').trim();
+  if (!name) return null;
+  return Category.findOne({
+    isActive: true,
+    parent: null,
+    name: categoryRegex(name),
+  }).lean();
+};
+
+const isCategoryVisible = async (categoryName: string) => {
+  const category = await findRootCategoryByName(categoryName);
   if (!category) return true;
   return category.visibleInEcommerce !== false;
 };
@@ -61,11 +74,11 @@ export const getCatalogProducts = async (query: any = {}) => {
     if (!visible) {
       return { items: [], pagination: { page: 1, limit: 24, total: 0, pages: 1 } };
     }
-    filters.category = categoryName;
+    filters.category = categoryRegex(categoryName);
   }
 
   if (query.subcategory) {
-    filters.subcategory = String(query.subcategory).trim();
+    filters.subcategory = categoryRegex(String(query.subcategory).trim());
   }
 
   if (query.featured === 'true') {
@@ -179,35 +192,106 @@ export const getCatalogProductByIdOrSlug = async (idOrSlug: string) => {
 };
 
 export const getCatalogCategories = async () => {
-  const parents = await Category.find({
+  const allVisible = await Category.find({
     isActive: true,
     visibleInEcommerce: true,
-    $or: [{ parent: null }, { parent: { $exists: false } }],
   })
     .sort({ name: 1 })
     .lean();
 
-  if (parents.length === 0) {
+  if (allVisible.length === 0) {
     const names = await Product.distinct('category', CATALOG_PUBLIC_FILTER);
-    return names.filter(Boolean).sort().map((name) => ({ _id: name, name, subcategories: [] }));
+    const deduped = new Map<string, string>();
+    names.filter(Boolean).forEach((name) => {
+      const key = normalizeCategoryName(String(name));
+      if (!deduped.has(key)) deduped.set(key, String(name).trim());
+    });
+    return Array.from(deduped.values())
+      .sort((a, b) => a.localeCompare(b, 'es'))
+      .map((name) => ({ _id: name, name, subcategories: [] }));
   }
 
-  const parentIds = parents.map((p) => p._id);
-  const subs = await Category.find({
-    isActive: true,
-    visibleInEcommerce: true,
-    parent: { $in: parentIds },
-  })
-    .sort({ name: 1 })
-    .lean();
+  const rootsRaw = allVisible.filter((c) => !c.parent);
+  const subsRaw = allVisible.filter((c) => c.parent);
 
-  return parents.map((parent) => ({
-    _id: String(parent._id),
-    name: parent.name,
-    subcategories: subs
-      .filter((s) => String(s.parent) === String(parent._id))
-      .map((s) => ({ _id: String(s._id), name: s.name })),
-  }));
+  const productSubRows = await Product.aggregate([
+    { $match: { ...CATALOG_PUBLIC_FILTER, subcategory: { $exists: true, $nin: [null, ''] } } },
+    {
+      $group: {
+        _id: {
+          category: '$category',
+          subcategory: '$subcategory',
+        },
+      },
+    },
+  ]);
+
+  const rootMap = new Map<string, { _id: string; name: string; subcategories: Map<string, { _id: string; name: string }> }>();
+
+  const ensureRoot = (name: string, id?: string) => {
+    const trimmed = String(name || '').trim();
+    if (!trimmed) return null;
+    const key = normalizeCategoryName(trimmed);
+    if (!rootMap.has(key)) {
+      rootMap.set(key, {
+        _id: id ? String(id) : trimmed,
+        name: trimmed,
+        subcategories: new Map(),
+      });
+    }
+    return rootMap.get(key)!;
+  };
+
+  rootsRaw.forEach((root) => {
+    const key = normalizeCategoryName(root.name);
+    const existing = rootMap.get(key);
+    if (!existing) {
+      rootMap.set(key, {
+        _id: String(root._id),
+        name: root.name,
+        subcategories: new Map(),
+      });
+      return;
+    }
+    const preferNew =
+      root.name !== root.name.toLowerCase() && existing.name === existing.name.toLowerCase();
+    if (preferNew || root.name.length > existing.name.length) {
+      existing.name = root.name;
+      existing._id = String(root._id);
+    }
+  });
+
+  subsRaw.forEach((sub) => {
+    const parent = allVisible.find((c) => String(c._id) === String(sub.parent));
+    if (!parent) return;
+    const root = ensureRoot(parent.name, String(parent._id));
+    if (!root) return;
+    const subKey = normalizeCategoryName(sub.name);
+    root.subcategories.set(subKey, { _id: String(sub._id), name: sub.name });
+  });
+
+  productSubRows.forEach((row: any) => {
+    const categoryName = String(row?._id?.category || '').trim();
+    const subName = String(row?._id?.subcategory || '').trim();
+    if (!categoryName || !subName) return;
+
+    const root = rootMap.get(normalizeCategoryName(categoryName));
+    if (!root) return;
+    const subKey = normalizeCategoryName(subName);
+    if (!root.subcategories.has(subKey)) {
+      root.subcategories.set(subKey, { _id: subKey, name: subName });
+    }
+  });
+
+  return Array.from(rootMap.values())
+    .sort((a, b) => a.name.localeCompare(b.name, 'es'))
+    .map((root) => ({
+      _id: root._id,
+      name: root.name,
+      subcategories: Array.from(root.subcategories.values()).sort((a, b) =>
+        a.name.localeCompare(b.name, 'es')
+      ),
+    }));
 };
 
 export const getFeaturedProducts = async (limit = 8) => {

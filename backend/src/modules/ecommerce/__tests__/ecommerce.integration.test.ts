@@ -2,6 +2,7 @@ import request from 'supertest';
 import bcrypt from 'bcrypt';
 import { app } from '../../../app';
 import Product from '../../inventory/models/Product';
+import Category from '../../categories/models/Category';
 import Branch from '../../branches/models/Branch';
 import { User } from '../../auth/models/User';
 
@@ -70,6 +71,81 @@ describe('Ecommerce Catalog Integration Tests', () => {
     expect(res.body).toEqual([
       { _id: 'General', name: 'General', subcategories: [] },
     ]);
+  });
+
+  it('should return subcategories nested under parent categories', async () => {
+    const parent = await Category.create({ name: 'Accesorios', visibleInEcommerce: true });
+    await Category.create({
+      name: 'Cables',
+      parent: parent._id,
+      visibleInEcommerce: true,
+    });
+    await Product.create({
+      name: 'Cable XLR',
+      sku: 'CBL-001',
+      slug: 'cable-xlr',
+      price: 1500,
+      costPrice: 700,
+      stock: 4,
+      category: 'Accesorios',
+      subcategory: 'Cables',
+      isActive: true,
+      paused: false,
+    });
+
+    const res = await request(app).get('/api/ecommerce/catalog/categories');
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual([
+      {
+        _id: String(parent._id),
+        name: 'Accesorios',
+        subcategories: [{ _id: expect.any(String), name: 'Cables' }],
+      },
+    ]);
+  });
+
+  it('should filter by subcategory case-insensitively', async () => {
+    const parent = await Category.create({ name: 'Accesorios', visibleInEcommerce: true });
+    await Category.create({ name: 'Cables', parent: parent._id, visibleInEcommerce: true });
+    await Product.create({
+      name: 'Cable filtrable',
+      sku: 'CBL-002',
+      slug: 'cable-filtrable',
+      price: 1800,
+      costPrice: 900,
+      stock: 2,
+      category: 'accesorios',
+      subcategory: 'cables',
+      isActive: true,
+      paused: false,
+    });
+
+    const res = await request(app).get('/api/ecommerce/catalog?category=Accesorios&subcategory=Cables');
+    expect(res.status).toBe(200);
+    expect(res.body.items).toHaveLength(1);
+    expect(res.body.items[0].name).toBe('Cable filtrable');
+  });
+
+  it('should not expose orphan product category names as filter roots', async () => {
+    await Category.create({ name: 'ACCESORIOS', visibleInEcommerce: true });
+    await Product.create({
+      name: 'Producto typo categoria',
+      sku: 'TYP-001',
+      slug: 'producto-typo-categoria',
+      price: 500,
+      costPrice: 200,
+      stock: 1,
+      category: 'acsesorios',
+      subcategory: 'Varios',
+      isActive: true,
+      paused: false,
+    });
+
+    const res = await request(app).get('/api/ecommerce/catalog/categories');
+    expect(res.status).toBe(200);
+    const names = res.body.map((c: { name: string }) => c.name.toLowerCase());
+    expect(names).not.toContain('acsesorios');
+    expect(names).toContain('accesorios');
   });
 
   it('should fetch product by slug and by id', async () => {

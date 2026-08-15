@@ -15,6 +15,10 @@ export const categoryApi = createApi({
       }),
       providesTags: ['Category'],
     }),
+    getOrphanProductCategories: builder.query<string[], void>({
+      query: () => '/orphans/products',
+      providesTags: ['Category'],
+    }),
     createCategory: builder.mutation({
       query: (body) => ({
         url: '/',
@@ -43,6 +47,7 @@ export const categoryApi = createApi({
 
 export const {
   useGetCategoriesQuery,
+  useGetOrphanProductCategoriesQuery,
   useCreateCategoryMutation,
   useUpdateCategoryMutation,
   useDeleteCategoryMutation,

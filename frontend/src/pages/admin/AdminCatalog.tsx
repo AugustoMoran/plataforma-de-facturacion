@@ -3,6 +3,7 @@ import {
   useCreateCategoryMutation,
   useDeleteCategoryMutation,
   useGetCategoriesQuery,
+  useGetOrphanProductCategoriesQuery,
   useUpdateCategoryMutation,
 } from '../../services/categoryApi';
 import {
@@ -20,6 +21,7 @@ import {
 
 export const AdminCatalog: React.FC = () => {
   const { data: categories = [], isLoading: loadingCategories } = useGetCategoriesQuery(true);
+  const { data: orphanProductCategories = [] } = useGetOrphanProductCategoriesQuery();
   const { data: branches = [], isLoading: loadingBranches } = useGetBranchesQuery({});
   const { data: suppliers = [], isLoading: loadingSuppliers } = useGetSuppliersQuery();
   const [createCategory, { isLoading: creatingCategory }] = useCreateCategoryMutation();
@@ -292,6 +294,16 @@ export const AdminCatalog: React.FC = () => {
         <div className="card p-6 space-y-4 xl:col-span-1">
           <h2 className="text-blue-950 font-semibold">Categorías</h2>
           <p className="text-xs text-blue-800">Creá categorías principales y agregá subcategorías desde cada una (ej: Accesorios → Cables).</p>
+
+          {orphanProductCategories.length > 0 && (
+            <div className="rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-950">
+              <p className="font-semibold mb-1">Categorías huérfanas en productos</p>
+              <p className="mb-1">
+                Estos nombres están en el inventario pero no existen en el panel. Corregilos en Inventario para evitar filtros duplicados:
+              </p>
+              <p className="font-mono text-[11px]">{orphanProductCategories.join(' · ')}</p>
+            </div>
+          )}
 
           <div className="space-y-2">
             <label className="section-heading">Nueva categoría principal</label>
