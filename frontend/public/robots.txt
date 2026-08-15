@@ -11,3 +11,4 @@ Disallow: /sales
 Disallow: /admin
 
 Sitemap: https://www.ososoundmusic.com/sitemap.xml
+Sitemap: https://ososoundmusic.com/sitemap.xml

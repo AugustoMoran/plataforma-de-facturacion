@@ -65,5 +65,6 @@ Variables recomendadas en Render:
 
 Variable requerida en Vercel:
 - `VITE_API_URL=https://tu-backend.onrender.com/api`
+- `VITE_ANDROID_APP_URL=https://play.google.com/store/apps/details?id=com.ososound.app` (opcional)
 
-El archivo `frontend/vercel.json` ya incluye rewrite SPA para que las rutas de React funcionen correctamente.
+El sitemap público está en `/sitemap.xml` (proxy serverless → backend).
