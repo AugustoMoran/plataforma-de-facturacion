@@ -226,11 +226,8 @@ export const InstrumentTuner: React.FC = () => {
                   className="btn-icon-sm"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M15.536 8.464a5 5 0 010 7.072M12 6v12m-7-4h.01M5 10h.01M19 10h.01M5 14h.01M19 14h.01"
-                    />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M11 5L6 9H3v6h3l5 4V5z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.54 8.46a5 5 0 010 7.07" />
                   </svg>
                 </button>
               </div>
