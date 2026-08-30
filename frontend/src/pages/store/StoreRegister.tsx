@@ -51,7 +51,7 @@ export const StoreRegister: React.FC = () => {
               <img src={brandLogo} alt="Logo" className="w-10 h-10 object-contain" />
             </div>
             <h1 className="text-xl font-bold text-white">Crear cuenta</h1>
-            <p className="text-sm text-slate-500 mt-1">Registrate para comprar online</p>
+            <p className="text-sm text-blue-100/90 mt-1">Registrate para comprar online</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -79,7 +79,7 @@ export const StoreRegister: React.FC = () => {
             </button>
           </form>
 
-          <p className="text-center text-sm text-slate-600 mt-6">
+          <p className="text-center text-sm text-blue-100/90 mt-6">
             ¿Ya tenés cuenta?{' '}
             <Link to="/login" className="text-brand-400 hover:text-brand-300 transition-colors">Iniciar sesión</Link>
           </p>

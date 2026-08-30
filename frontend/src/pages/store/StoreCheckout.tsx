@@ -271,7 +271,7 @@ export const StoreCheckout: React.FC = () => {
               <button
                 type="button"
                 onClick={() => { setStep('method'); setError(''); }}
-                className="text-xs text-slate-500 hover:text-brand-400 transition-colors"
+                className="text-xs text-blue-800 hover:text-brand-600 transition-colors"
               >
                 ← Volver a elegir método
               </button>
@@ -312,7 +312,7 @@ export const StoreCheckout: React.FC = () => {
               <button
                 type="button"
                 onClick={() => { setStep('method'); setError(''); }}
-                className="text-xs text-slate-500 hover:text-brand-400 transition-colors"
+                className="text-xs text-blue-800 hover:text-brand-600 transition-colors"
               >
                 ← Volver a elegir método
               </button>

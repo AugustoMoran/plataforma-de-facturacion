@@ -219,37 +219,95 @@
 
   /* Tienda: cards blancas con texto oscuro legible */
   .store-shell .card,
-  .store-shell .surface {
+  .store-shell .surface,
+  .store-shell .stat-card {
     @apply bg-white border-blue-200 text-blue-950 shadow-md shadow-blue-900/10;
   }
 
+  .store-shell .page-sub {
+    color: #dbeafe;
+  }
+
+  .store-shell .card .page-sub,
+  .store-shell .surface .page-sub,
+  .store-shell .stat-card .page-sub {
+    @apply text-blue-700;
+  }
+
+  .store-shell .card .section-heading,
+  .store-shell .surface .section-heading,
+  .store-shell .stat-card .section-heading {
+    @apply text-blue-900;
+  }
+
   .store-shell .card :is(.text-white),
-  .store-shell .surface :is(.text-white) {
+  .store-shell .surface :is(.text-white),
+  .store-shell .stat-card :is(.text-white) {
     color: #172554;
   }
 
+  .store-shell .card .text-blue-100,
+  .store-shell .surface .text-blue-100,
+  .store-shell .stat-card .text-blue-100 {
+    color: #1e40af;
+  }
+
   .store-shell .card .text-slate-300,
-  .store-shell .surface .text-slate-300 {
+  .store-shell .surface .text-slate-300,
+  .store-shell .stat-card .text-slate-300 {
     color: #1e3a8a;
   }
 
   .store-shell .card .text-slate-400,
-  .store-shell .surface .text-slate-400 {
+  .store-shell .surface .text-slate-400,
+  .store-shell .stat-card .text-slate-400 {
     color: #1e40af;
   }
 
   .store-shell .card .text-slate-500,
-  .store-shell .surface .text-slate-500 {
+  .store-shell .surface .text-slate-500,
+  .store-shell .stat-card .text-slate-500 {
     color: #1d4ed8;
   }
 
+  .store-shell .card .text-slate-600,
+  .store-shell .surface .text-slate-600,
+  .store-shell .stat-card .text-slate-600 {
+    color: #1e3a8a;
+  }
+
+  .store-shell .card .text-slate-700,
+  .store-shell .surface .text-slate-700,
+  .store-shell .stat-card .text-slate-700 {
+    color: #172554;
+  }
+
+  .store-shell .card .btn-primary,
+  .store-shell .surface .btn-primary,
+  .store-shell .stat-card .btn-primary {
+    @apply from-brand-600 to-brand-700 hover:from-brand-500 hover:to-brand-600 border-transparent;
+    color: #ffffff;
+  }
+
+  .store-shell .card .btn-secondary,
+  .store-shell .surface .btn-secondary,
+  .store-shell .stat-card .btn-secondary {
+    @apply bg-blue-50 text-blue-900 border-blue-200 hover:bg-blue-100;
+  }
+
   .store-shell .card .border-white\/\[0\.05\],
-  .store-shell .card .border-white\/\[0\.08\] {
+  .store-shell .card .border-white\/\[0\.08\],
+  .store-shell .surface .border-white\/\[0\.05\],
+  .store-shell .surface .border-white\/\[0\.08\] {
     border-color: #dbeafe;
   }
 
-  .store-shell .card .bg-white\/\[0\.02\] {
-    background-color: #f8fafc;
+  .store-shell .glass .text-slate-500 {
+    color: #bfdbfe;
+  }
+
+  .store-shell .glass .text-slate-600 {
+    color: #dbeafe;
   }
 }
 

@@ -34,7 +34,7 @@ export const Maintenance: React.FC = () => {
             <p className="text-amber-400 font-semibold mt-2">En mantenimiento</p>
           </div>
 
-          <p className="text-slate-400 text-sm leading-relaxed">
+          <p className="text-blue-100/90 text-sm leading-relaxed">
             {settings?.maintenanceMessage ||
               'Estamos realizando mejoras en la tienda. Volvé a intentar en unos minutos.'}
           </p>
