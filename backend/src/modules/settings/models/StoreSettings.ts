@@ -19,6 +19,8 @@ export interface IStoreSettings extends Document {
     whatsapp?: string;
   };
   bannerImages: string[];
+  promoTripletImages: string[];
+  promoBannerImage?: string;
   updatedAt: Date;
 }
 
@@ -41,6 +43,8 @@ const StoreSettingsSchema = new Schema({
     whatsapp: { type: String },
   },
   bannerImages: { type: [String], default: [] },
+  promoTripletImages: { type: [String], default: [] },
+  promoBannerImage: { type: String },
 }, {
   timestamps: { createdAt: false, updatedAt: true },
   versionKey: false,
