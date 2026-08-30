@@ -56,13 +56,13 @@ export const StoreProductDetail: React.FC = () => {
   };
 
   if (isLoading) {
-    return <div className="text-slate-500 text-sm py-20 text-center">Cargando producto...</div>;
+    return <div className="text-blue-100/90 text-sm py-20 text-center">Cargando producto...</div>;
   }
 
   if (isError || !product) {
     return (
       <div className="card p-12 text-center space-y-4">
-        <p className="text-slate-400">Producto no encontrado</p>
+        <p className="text-blue-800">Producto no encontrado</p>
         <Link to="/products" className="btn-secondary inline-flex">Volver al catálogo</Link>
       </div>
     );

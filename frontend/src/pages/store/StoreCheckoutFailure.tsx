@@ -18,7 +18,7 @@ export const StoreCheckoutFailure: React.FC = () => {
 
       <div>
         <h1 className="text-2xl font-bold text-white">Pago no completado</h1>
-        <p className="text-slate-400 mt-2">
+        <p className="text-blue-100/90 mt-2">
           El pago fue cancelado o no pudo procesarse. Podés intentar nuevamente o contactarnos por WhatsApp.
         </p>
       </div>

@@ -22,13 +22,13 @@ export const StoreWhatsAppSent: React.FC = () => {
 
       <div>
         <h1 className="text-2xl font-bold text-white">¡Consulta enviada!</h1>
-        <p className="text-slate-400 mt-2 leading-relaxed">
+        <p className="text-blue-100/90 mt-2 leading-relaxed">
           Abrimos WhatsApp con el detalle de tu pedido. Un asesor te responderá pronto para coordinar pago y envío.
         </p>
       </div>
 
-      <div className="card p-5 text-sm text-slate-400 text-left space-y-2">
-        <p>Este pedido <strong className="text-slate-300">no reserva stock</strong> automáticamente.</p>
+      <div className="card p-5 text-sm text-blue-800 text-left space-y-2">
+        <p>Este pedido <strong className="text-blue-950">no reserva stock</strong> automáticamente.</p>
         <p>Cuando confirmes la compra con nuestro equipo, podremos registrar la venta manualmente.</p>
       </div>
 

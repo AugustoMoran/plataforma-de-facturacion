@@ -19,13 +19,13 @@ export const StoreCheckoutConfirmation: React.FC = () => {
   }, [orderId, trackEvent, syncPaywayStatus]);
 
   if (isLoading) {
-    return <div className="text-slate-500 text-sm py-20 text-center">Cargando confirmación...</div>;
+    return <div className="text-blue-100/90 text-sm py-20 text-center">Cargando confirmación...</div>;
   }
 
   if (isError || !order) {
     return (
       <div className="card p-12 text-center space-y-4 max-w-lg mx-auto">
-        <p className="text-slate-400">No se pudo cargar la confirmación del pedido.</p>
+        <p className="text-blue-800">No se pudo cargar la confirmación del pedido.</p>
         <Link to="/" className="btn-primary inline-flex">Volver al inicio</Link>
       </div>
     );
@@ -43,7 +43,7 @@ export const StoreCheckoutConfirmation: React.FC = () => {
 
       <div>
         <h1 className="text-2xl font-bold text-white">¡Pedido confirmado!</h1>
-        <p className="text-slate-400 mt-2">
+        <p className="text-blue-100/90 mt-2">
           Recibimos tu pedido y te contactaremos a la brevedad.
         </p>
       </div>
