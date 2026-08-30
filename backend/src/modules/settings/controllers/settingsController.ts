@@ -65,3 +65,61 @@ export const clearBannerImagesController = async (_req: Request, res: Response) 
     res.status(400).json({ message: error.message });
   }
 };
+
+export const uploadPromoTripletImagesController = async (req: Request, res: Response) => {
+  try {
+    const urls = extractUploadedBannerUrls(req);
+    if (!urls.length) {
+      return res.status(400).json({ message: 'No se recibieron imágenes válidas' });
+    }
+
+    const settings = await settingsService.replacePromoTripletImages(urls);
+    res.json({
+      promoTripletImages: settings.promoTripletImages,
+      message: 'Banner triple actualizado correctamente',
+    });
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const clearPromoTripletImagesController = async (_req: Request, res: Response) => {
+  try {
+    await settingsService.clearPromoTripletImages();
+    res.json({
+      promoTripletImages: [],
+      message: 'Banner triple eliminado',
+    });
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const uploadPromoBannerImageController = async (req: Request, res: Response) => {
+  try {
+    const urls = extractUploadedBannerUrls(req);
+    if (!urls.length) {
+      return res.status(400).json({ message: 'No se recibió una imagen válida' });
+    }
+
+    const settings = await settingsService.replacePromoBannerImage(urls[0]);
+    res.json({
+      promoBannerImage: settings.promoBannerImage,
+      message: 'Banner promocional actualizado correctamente',
+    });
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const clearPromoBannerImageController = async (_req: Request, res: Response) => {
+  try {
+    await settingsService.clearPromoBannerImage();
+    res.json({
+      promoBannerImage: '',
+      message: 'Banner promocional eliminado',
+    });
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};

@@ -32,6 +32,8 @@ export const getPublicSettings = async () => {
     envioPackEnabled: settings.envioPackEnabled,
     socialLinks: settings.socialLinks,
     bannerImages: resolveBannerImages(settings.bannerImages),
+    promoTripletImages: (settings.promoTripletImages || []).filter(Boolean),
+    promoBannerImage: settings.promoBannerImage || '',
   };
 };
 
@@ -45,7 +47,7 @@ export const updateSettings = async (payload: Partial<IStoreSettings>) => {
     'storeName', 'storeDescription', 'contactEmail', 'contactPhone',
     'enableEcommerce', 'maintenanceMode', 'minOrderAmount', 'freeShippingThreshold',
     'defaultShippingCost', 'mercadopagoEnabled', 'envioPackEnabled', 'defaultBranch',
-    'socialLinks', 'bannerImages',
+    'socialLinks', 'bannerImages', 'promoTripletImages', 'promoBannerImage',
   ];
 
   for (const key of allowed) {
@@ -75,6 +77,47 @@ export const replaceBannerImages = async (urls: string[]) => {
 export const clearBannerImages = async () => {
   const settings = await getSettingsDoc();
   settings.bannerImages = [];
+  await settings.save();
+  return settings;
+};
+
+export const MAX_PROMO_TRIPLET_IMAGES = 3;
+
+export const replacePromoTripletImages = async (urls: string[]) => {
+  if (!urls.length) {
+    throw new Error('Debe subir al menos una imagen');
+  }
+  if (urls.length > MAX_PROMO_TRIPLET_IMAGES) {
+    throw new Error(`Máximo ${MAX_PROMO_TRIPLET_IMAGES} imágenes en el banner triple`);
+  }
+
+  const settings = await getSettingsDoc();
+  settings.promoTripletImages = urls;
+  await settings.save();
+  return settings;
+};
+
+export const clearPromoTripletImages = async () => {
+  const settings = await getSettingsDoc();
+  settings.promoTripletImages = [];
+  await settings.save();
+  return settings;
+};
+
+export const replacePromoBannerImage = async (url: string) => {
+  if (!url) {
+    throw new Error('Debe subir una imagen');
+  }
+
+  const settings = await getSettingsDoc();
+  settings.promoBannerImage = url;
+  await settings.save();
+  return settings;
+};
+
+export const clearPromoBannerImage = async () => {
+  const settings = await getSettingsDoc();
+  settings.promoBannerImage = undefined;
   await settings.save();
   return settings;
 };

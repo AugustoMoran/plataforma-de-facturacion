@@ -1,25 +1,42 @@
 import React, { useRef, useState, useEffect } from 'react';
 import {
   useClearBannerImagesMutation,
+  useClearPromoBannerImageMutation,
+  useClearPromoTripletImagesMutation,
   useGetAdminSettingsQuery,
   useUpdateSettingsMutation,
   useUploadBannerImagesMutation,
+  useUploadPromoBannerImageMutation,
+  useUploadPromoTripletImagesMutation,
 } from '../../services/settingsApi';
 
 const MAX_BANNERS = 10;
+const MAX_PROMO_TRIPLET = 3;
 
 export const AdminStoreSettings: React.FC = () => {
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const carouselInputRef = useRef<HTMLInputElement>(null);
+  const tripletInputRef = useRef<HTMLInputElement>(null);
+  const singleInputRef = useRef<HTMLInputElement>(null);
+
   const { data: settings, isLoading } = useGetAdminSettingsQuery();
   const [uploadBanners, { isLoading: uploading }] = useUploadBannerImagesMutation();
   const [clearBanners, { isLoading: clearing }] = useClearBannerImagesMutation();
+  const [uploadTriplet, { isLoading: uploadingTriplet }] = useUploadPromoTripletImagesMutation();
+  const [clearTriplet, { isLoading: clearingTriplet }] = useClearPromoTripletImagesMutation();
+  const [uploadSingle, { isLoading: uploadingSingle }] = useUploadPromoBannerImageMutation();
+  const [clearSingle, { isLoading: clearingSingle }] = useClearPromoBannerImageMutation();
   const [updateSettings, { isLoading: saving }] = useUpdateSettingsMutation();
 
   const [storeName, setStoreName] = useState('');
   const [storeDescription, setStoreDescription] = useState('');
   const [initialized, setInitialized] = useState(false);
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+
+  const [carouselFiles, setCarouselFiles] = useState<File[]>([]);
+  const [carouselPreviews, setCarouselPreviews] = useState<string[]>([]);
+  const [tripletFiles, setTripletFiles] = useState<File[]>([]);
+  const [tripletPreviews, setTripletPreviews] = useState<string[]>([]);
+  const [singleFile, setSingleFile] = useState<File | null>(null);
+  const [singlePreview, setSinglePreview] = useState<string | null>(null);
 
   useEffect(() => {
     if (settings && !initialized) {
@@ -29,33 +46,45 @@ export const AdminStoreSettings: React.FC = () => {
     }
   }, [settings, initialized]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const revokePreviews = (urls: string[]) => urls.forEach((url) => URL.revokeObjectURL(url));
+
+  const handleCarouselChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []).slice(0, MAX_BANNERS);
-    setSelectedFiles(files);
-    previewUrls.forEach((url) => URL.revokeObjectURL(url));
-    setPreviewUrls(files.map((f) => URL.createObjectURL(f)));
+    setCarouselFiles(files);
+    revokePreviews(carouselPreviews);
+    setCarouselPreviews(files.map((f) => URL.createObjectURL(f)));
+  };
+
+  const handleTripletChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []).slice(0, MAX_PROMO_TRIPLET);
+    setTripletFiles(files);
+    revokePreviews(tripletPreviews);
+    setTripletPreviews(files.map((f) => URL.createObjectURL(f)));
+  };
+
+  const handleSingleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = (e.target.files || [])[0] || null;
+    setSingleFile(file);
+    if (singlePreview) URL.revokeObjectURL(singlePreview);
+    setSinglePreview(file ? URL.createObjectURL(file) : null);
   };
 
   const handleUploadBanners = async () => {
-    if (!selectedFiles.length) {
+    if (!carouselFiles.length) {
       alert('Seleccioná al menos una imagen');
-      return;
-    }
-    if (selectedFiles.length > MAX_BANNERS) {
-      alert(`Máximo ${MAX_BANNERS} imágenes`);
       return;
     }
 
     const formData = new FormData();
-    selectedFiles.forEach((file) => formData.append('banners', file));
+    carouselFiles.forEach((file) => formData.append('banners', file));
 
     try {
       await uploadBanners(formData).unwrap();
-      setSelectedFiles([]);
-      previewUrls.forEach((url) => URL.revokeObjectURL(url));
-      setPreviewUrls([]);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-      alert('Carrusel actualizado. Las imágenes anteriores fueron reemplazadas.');
+      setCarouselFiles([]);
+      revokePreviews(carouselPreviews);
+      setCarouselPreviews([]);
+      if (carouselInputRef.current) carouselInputRef.current.value = '';
+      alert('Carrusel actualizado.');
     } catch (err: any) {
       alert(err?.data?.message || 'Error al subir imágenes');
     }
@@ -68,6 +97,68 @@ export const AdminStoreSettings: React.FC = () => {
       alert('Carrusel restaurado a imágenes por defecto');
     } catch (err: any) {
       alert(err?.data?.message || 'Error al restaurar carrusel');
+    }
+  };
+
+  const handleUploadTriplet = async () => {
+    if (!tripletFiles.length) {
+      alert('Seleccioná al menos una imagen');
+      return;
+    }
+
+    const formData = new FormData();
+    tripletFiles.forEach((file) => formData.append('promo', file));
+
+    try {
+      await uploadTriplet(formData).unwrap();
+      setTripletFiles([]);
+      revokePreviews(tripletPreviews);
+      setTripletPreviews([]);
+      if (tripletInputRef.current) tripletInputRef.current.value = '';
+      alert('Banner triple actualizado.');
+    } catch (err: any) {
+      alert(err?.data?.message || 'Error al subir imágenes');
+    }
+  };
+
+  const handleClearTriplet = async () => {
+    if (!confirm('¿Eliminar el banner triple del home?')) return;
+    try {
+      await clearTriplet().unwrap();
+      alert('Banner triple eliminado');
+    } catch (err: any) {
+      alert(err?.data?.message || 'Error al eliminar banner triple');
+    }
+  };
+
+  const handleUploadSingle = async () => {
+    if (!singleFile) {
+      alert('Seleccioná una imagen');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('promo', singleFile);
+
+    try {
+      await uploadSingle(formData).unwrap();
+      setSingleFile(null);
+      if (singlePreview) URL.revokeObjectURL(singlePreview);
+      setSinglePreview(null);
+      if (singleInputRef.current) singleInputRef.current.value = '';
+      alert('Banner único actualizado.');
+    } catch (err: any) {
+      alert(err?.data?.message || 'Error al subir imagen');
+    }
+  };
+
+  const handleClearSingle = async () => {
+    if (!confirm('¿Eliminar el banner único del home?')) return;
+    try {
+      await clearSingle().unwrap();
+      alert('Banner único eliminado');
+    } catch (err: any) {
+      alert(err?.data?.message || 'Error al eliminar banner');
     }
   };
 
@@ -85,12 +176,14 @@ export const AdminStoreSettings: React.FC = () => {
   };
 
   const currentBanners = settings?.bannerImages || [];
+  const currentTriplet = settings?.promoTripletImages || [];
+  const currentSingle = settings?.promoBannerImage || '';
 
   return (
     <div className="space-y-8 animate-slide-up">
       <div>
         <h1 className="page-title">Tienda online</h1>
-        <p className="page-sub">Carrusel del home, textos y promociones</p>
+        <p className="page-sub">Carrusel, banners promocionales y textos del home</p>
       </div>
 
       {isLoading ? (
@@ -158,16 +251,16 @@ export const AdminStoreSettings: React.FC = () => {
 
             <div className="border border-dashed border-white/10 rounded-xl p-5 space-y-4">
               <input
-                ref={fileInputRef}
+                ref={carouselInputRef}
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
                 multiple
                 className="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-brand-500/20 file:text-brand-300 hover:file:bg-brand-500/30"
-                onChange={handleFileChange}
+                onChange={handleCarouselChange}
               />
-              {previewUrls.length > 0 && (
+              {carouselPreviews.length > 0 && (
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-                  {previewUrls.map((url, index) => (
+                  {carouselPreviews.map((url, index) => (
                     <div key={url} className="aspect-[16/9] rounded-lg overflow-hidden ring-1 ring-brand-500/30">
                       <img src={url} alt={`Preview ${index + 1}`} className="w-full h-full object-cover" />
                     </div>
@@ -178,9 +271,114 @@ export const AdminStoreSettings: React.FC = () => {
                 type="button"
                 className="btn-primary"
                 onClick={handleUploadBanners}
-                disabled={uploading || !selectedFiles.length}
+                disabled={uploading || !carouselFiles.length}
               >
-                {uploading ? 'Subiendo...' : `Subir y reemplazar carrusel (${selectedFiles.length || 0}/${MAX_BANNERS})`}
+                {uploading ? 'Subiendo...' : `Subir carrusel (${carouselFiles.length || 0}/${MAX_BANNERS})`}
+              </button>
+            </div>
+          </section>
+
+          <section className="card p-6 space-y-5">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-semibold text-white">Banner triple (3 imágenes)</h2>
+                <p className="text-sm text-slate-500 mt-1">
+                  Tres imágenes en fila debajo del carrusel. Hasta {MAX_PROMO_TRIPLET} imágenes.
+                </p>
+              </div>
+              <button
+                type="button"
+                className="btn-secondary text-xs"
+                onClick={handleClearTriplet}
+                disabled={clearingTriplet || currentTriplet.length === 0}
+              >
+                Eliminar banner triple
+              </button>
+            </div>
+
+            {currentTriplet.length > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {currentTriplet.map((url, index) => (
+                  <div key={`${url}-${index}`} className="aspect-[4/3] rounded-lg overflow-hidden ring-1 ring-white/10">
+                    <img src={url} alt={`Promo ${index + 1}`} className="w-full h-full object-cover" />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="border border-dashed border-white/10 rounded-xl p-5 space-y-4">
+              <input
+                ref={tripletInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                multiple
+                className="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-brand-500/20 file:text-brand-300 hover:file:bg-brand-500/30"
+                onChange={handleTripletChange}
+              />
+              {tripletPreviews.length > 0 && (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {tripletPreviews.map((url, index) => (
+                    <div key={url} className="aspect-[4/3] rounded-lg overflow-hidden ring-1 ring-brand-500/30">
+                      <img src={url} alt={`Preview ${index + 1}`} className="w-full h-full object-cover" />
+                    </div>
+                  ))}
+                </div>
+              )}
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={handleUploadTriplet}
+                disabled={uploadingTriplet || !tripletFiles.length}
+              >
+                {uploadingTriplet ? 'Subiendo...' : `Subir banner triple (${tripletFiles.length || 0}/${MAX_PROMO_TRIPLET})`}
+              </button>
+            </div>
+          </section>
+
+          <section className="card p-6 space-y-5">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-semibold text-white">Banner único</h2>
+                <p className="text-sm text-slate-500 mt-1">
+                  Una imagen ancha debajo del banner triple.
+                </p>
+              </div>
+              <button
+                type="button"
+                className="btn-secondary text-xs"
+                onClick={handleClearSingle}
+                disabled={clearingSingle || !currentSingle}
+              >
+                Eliminar banner único
+              </button>
+            </div>
+
+            {currentSingle && (
+              <div className="aspect-[21/6] rounded-lg overflow-hidden ring-1 ring-white/10 max-h-48">
+                <img src={currentSingle} alt="Banner único actual" className="w-full h-full object-cover" />
+              </div>
+            )}
+
+            <div className="border border-dashed border-white/10 rounded-xl p-5 space-y-4">
+              <input
+                ref={singleInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-brand-500/20 file:text-brand-300 hover:file:bg-brand-500/30"
+                onChange={handleSingleChange}
+              />
+              {singlePreview && (
+                <div className="aspect-[21/6] rounded-lg overflow-hidden ring-1 ring-brand-500/30 max-h-48">
+                  <img src={singlePreview} alt="Preview banner único" className="w-full h-full object-cover" />
+                </div>
+              )}
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={handleUploadSingle}
+                disabled={uploadingSingle || !singleFile}
+              >
+                {uploadingSingle ? 'Subiendo...' : 'Subir banner único'}
               </button>
             </div>
           </section>

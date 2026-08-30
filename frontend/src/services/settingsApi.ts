@@ -24,6 +24,8 @@ export interface PublicStoreSettings {
     whatsapp?: string;
   };
   bannerImages?: string[];
+  promoTripletImages?: string[];
+  promoBannerImage?: string;
 }
 
 export interface AdminStoreSettings extends PublicStoreSettings {
@@ -66,6 +68,36 @@ export const settingsApi = createApi({
       }),
       invalidatesTags: ['Settings'],
     }),
+    uploadPromoTripletImages: builder.mutation<{ promoTripletImages: string[]; message: string }, FormData>({
+      query: (formData) => ({
+        url: '/promo-triplet',
+        method: 'POST',
+        body: formData,
+      }),
+      invalidatesTags: ['Settings'],
+    }),
+    clearPromoTripletImages: builder.mutation<{ promoTripletImages: string[]; message: string }, void>({
+      query: () => ({
+        url: '/promo-triplet',
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Settings'],
+    }),
+    uploadPromoBannerImage: builder.mutation<{ promoBannerImage: string; message: string }, FormData>({
+      query: (formData) => ({
+        url: '/promo-banner',
+        method: 'POST',
+        body: formData,
+      }),
+      invalidatesTags: ['Settings'],
+    }),
+    clearPromoBannerImage: builder.mutation<{ promoBannerImage: string; message: string }, void>({
+      query: () => ({
+        url: '/promo-banner',
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Settings'],
+    }),
   }),
 });
 
@@ -75,4 +107,8 @@ export const {
   useUpdateSettingsMutation,
   useUploadBannerImagesMutation,
   useClearBannerImagesMutation,
+  useUploadPromoTripletImagesMutation,
+  useClearPromoTripletImagesMutation,
+  useUploadPromoBannerImageMutation,
+  useClearPromoBannerImageMutation,
 } = settingsApi;

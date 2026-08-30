@@ -5,6 +5,10 @@ import {
   updateSettingsController,
   uploadBannerImagesController,
   clearBannerImagesController,
+  uploadPromoTripletImagesController,
+  clearPromoTripletImagesController,
+  uploadPromoBannerImageController,
+  clearPromoBannerImageController,
 } from '../controllers/settingsController';
 import { authenticate } from '../../../middleware/authMiddleware';
 import { authorize } from '../../../middleware/roleMiddleware';
@@ -23,5 +27,21 @@ router.post(
   uploadBannerImagesController
 );
 router.delete('/banners', authenticate, authorize(['admin']), clearBannerImagesController);
+router.post(
+  '/promo-triplet',
+  authenticate,
+  authorize(['admin']),
+  bannerUpload.array('promo', 3),
+  uploadPromoTripletImagesController
+);
+router.delete('/promo-triplet', authenticate, authorize(['admin']), clearPromoTripletImagesController);
+router.post(
+  '/promo-banner',
+  authenticate,
+  authorize(['admin']),
+  bannerUpload.single('promo'),
+  uploadPromoBannerImageController
+);
+router.delete('/promo-banner', authenticate, authorize(['admin']), clearPromoBannerImageController);
 
 export default router;
