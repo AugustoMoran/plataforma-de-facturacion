@@ -238,7 +238,7 @@ describe('Full Platform Integration Tests', () => {
     });
   });
 
-  describe('Mercado Pago config', () => {
+  describe('Payway config', () => {
     it('should expose payway config endpoint', async () => {
       const res = await request(app).get('/api/payments/payway/config');
       expect(res.status).toBe(200);
