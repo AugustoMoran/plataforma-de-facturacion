@@ -17,6 +17,7 @@ export interface PublicStoreSettings {
   freeShippingThreshold?: number;
   defaultShippingCost?: number;
   mercadopagoEnabled?: boolean;
+  paywayEnabled?: boolean;
   envioPackEnabled?: boolean;
   socialLinks?: {
     instagram?: string;

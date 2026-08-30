@@ -43,7 +43,8 @@ export const getPublicSettings = async () => {
     minOrderAmount: settings.minOrderAmount,
     freeShippingThreshold: settings.freeShippingThreshold,
     defaultShippingCost: settings.defaultShippingCost,
-    mercadopagoEnabled: settings.mercadopagoEnabled,
+    mercadopagoEnabled: settings.paywayEnabled ?? settings.mercadopagoEnabled,
+    paywayEnabled: settings.paywayEnabled ?? settings.mercadopagoEnabled,
     envioPackEnabled: settings.envioPackEnabled,
     socialLinks: settings.socialLinks,
     bannerImages: resolveBannerImages(settings.bannerImages),
@@ -61,7 +62,7 @@ export const updateSettings = async (payload: Partial<IStoreSettings>) => {
   const allowed = [
     'storeName', 'storeDescription', 'contactEmail', 'contactPhone',
     'enableEcommerce', 'maintenanceMode', 'minOrderAmount', 'freeShippingThreshold',
-    'defaultShippingCost', 'mercadopagoEnabled', 'envioPackEnabled', 'defaultBranch',
+    'defaultShippingCost', 'mercadopagoEnabled', 'paywayEnabled', 'envioPackEnabled', 'defaultBranch',
     'socialLinks', 'bannerImages', 'promoTripletImages', 'promoBannerImage',
   ];
 

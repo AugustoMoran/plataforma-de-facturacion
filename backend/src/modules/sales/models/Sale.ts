@@ -18,7 +18,7 @@ export interface ISale extends Document {
   discountType?: 'NONE' | 'PERCENTAGE' | 'FIXED';
   discountValue?: number;
   discountAmount?: number;
-  paymentMethod: 'efectivo' | 'tarjeta' | 'transferencia' | 'mercadopago';
+  paymentMethod: 'efectivo' | 'tarjeta' | 'transferencia' | 'mercadopago' | 'payway';
   source: 'POS' | 'ECOMMERCE';
   invoiceType: 'A' | 'B' | 'C' | 'Ticket' | 'NONE';
   invoiceNumber: string;
@@ -72,7 +72,7 @@ const SaleSchema: Schema = new Schema({
   discountAmount: { type: Number, default: 0 },
   paymentMethod: {
     type: String,
-    enum: ['efectivo', 'tarjeta', 'transferencia', 'mercadopago'],
+    enum: ['efectivo', 'tarjeta', 'transferencia', 'mercadopago', 'payway'],
     default: 'efectivo',
   },
   source: {

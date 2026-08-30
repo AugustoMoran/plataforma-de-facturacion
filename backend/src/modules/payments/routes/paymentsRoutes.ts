@@ -1,17 +1,18 @@
 import { Router } from 'express';
 import {
-  getMercadoPagoConfigController,
-  createPreferenceController,
-  mercadoPagoWebhookController,
-  getPaymentStatusController,
+  getPaywayConfigController,
+  createPaywayCheckoutController,
+  paywayWebhookController,
+  getPaywayPaymentStatusController,
+  syncPaywaySaleStatusController,
 } from '../controllers/paymentsController';
-import { authenticate } from '../../../middleware/authMiddleware';
 
 const router = Router();
 
-router.get('/mercadopago/config', getMercadoPagoConfigController);
-router.post('/mercadopago/preference', createPreferenceController);
-router.post('/mercadopago/webhook', mercadoPagoWebhookController);
-router.get('/mercadopago/payment/:paymentId', authenticate, getPaymentStatusController);
+router.get('/payway/config', getPaywayConfigController);
+router.post('/payway/checkout', createPaywayCheckoutController);
+router.post('/payway/webhook', paywayWebhookController);
+router.get('/payway/payment/:paymentId', getPaywayPaymentStatusController);
+router.get('/payway/sync/:saleId', syncPaywaySaleStatusController);
 
 export default router;

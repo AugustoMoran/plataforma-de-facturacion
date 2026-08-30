@@ -11,6 +11,7 @@ export interface IStoreSettings extends Document {
   freeShippingThreshold: number;
   defaultShippingCost: number;
   mercadopagoEnabled: boolean;
+  paywayEnabled: boolean;
   envioPackEnabled: boolean;
   defaultBranch?: mongoose.Types.ObjectId;
   socialLinks: {
@@ -35,6 +36,7 @@ const StoreSettingsSchema = new Schema({
   freeShippingThreshold: { type: Number, default: 0 },
   defaultShippingCost: { type: Number, default: 0 },
   mercadopagoEnabled: { type: Boolean, default: true },
+  paywayEnabled: { type: Boolean, default: true },
   envioPackEnabled: { type: Boolean, default: false },
   defaultBranch: { type: Schema.Types.ObjectId, ref: 'Branch' },
   socialLinks: {

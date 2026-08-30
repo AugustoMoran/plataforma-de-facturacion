@@ -125,7 +125,7 @@ export const checkoutDirect = async (input: {
   const sale = await salesService.createSale(
     {
       items,
-      paymentMethod: input.paymentMethod || 'mercadopago',
+      paymentMethod: input.paymentMethod || 'payway',
       invoiceType: input.invoiceType || 'NONE',
       clientName,
       clientAddress,
