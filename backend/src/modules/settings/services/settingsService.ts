@@ -1,11 +1,26 @@
 import StoreSettings, { IStoreSettings } from '../models/StoreSettings';
-import { DEFAULT_BANNER_IMAGES, MAX_BANNER_IMAGES } from '../constants/defaultBannerImages';
+import {
+  DEFAULT_BANNER_IMAGES,
+  DEFAULT_PROMO_BANNER_IMAGE,
+  DEFAULT_PROMO_TRIPLET_IMAGES,
+  MAX_BANNER_IMAGES,
+} from '../constants/defaultBannerImages';
 
 const SETTINGS_ID = 'store-settings';
 
 export const resolveBannerImages = (bannerImages: string[] = []) => {
   const custom = (bannerImages || []).filter(Boolean);
   return custom.length > 0 ? custom : DEFAULT_BANNER_IMAGES;
+};
+
+export const resolvePromoTripletImages = (promoTripletImages: string[] = []) => {
+  const custom = (promoTripletImages || []).filter(Boolean);
+  return custom.length > 0 ? custom : DEFAULT_PROMO_TRIPLET_IMAGES;
+};
+
+export const resolvePromoBannerImage = (promoBannerImage?: string) => {
+  const custom = (promoBannerImage || '').trim();
+  return custom || DEFAULT_PROMO_BANNER_IMAGE;
 };
 
 const getSettingsDoc = async () => {
@@ -32,8 +47,8 @@ export const getPublicSettings = async () => {
     envioPackEnabled: settings.envioPackEnabled,
     socialLinks: settings.socialLinks,
     bannerImages: resolveBannerImages(settings.bannerImages),
-    promoTripletImages: (settings.promoTripletImages || []).filter(Boolean),
-    promoBannerImage: settings.promoBannerImage || '',
+    promoTripletImages: resolvePromoTripletImages(settings.promoTripletImages),
+    promoBannerImage: resolvePromoBannerImage(settings.promoBannerImage),
   };
 };
 

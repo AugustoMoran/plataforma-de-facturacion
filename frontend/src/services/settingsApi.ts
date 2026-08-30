@@ -30,6 +30,8 @@ export interface PublicStoreSettings {
 
 export interface AdminStoreSettings extends PublicStoreSettings {
   usingDefaultBanners?: boolean;
+  usingDefaultPromoTriplet?: boolean;
+  usingDefaultPromoBanner?: boolean;
 }
 
 export const settingsApi = createApi({
