@@ -75,9 +75,13 @@ export const POS = () => {
   const [supplierFilter, setSupplierFilter] = useState('');
   const hasActiveFilters = Boolean(search || categoryFilter || supplierFilter);
 
-  const { data: products = [] } = useGetProductsQuery();
+  const { data: products = [] } = useGetProductsQuery({
+    search: search.trim() || undefined,
+    category: categoryFilter || undefined,
+    supplier: supplierFilter || undefined,
+  });
   const { data: branches = [] } = useGetBranchesQuery({});
-  const { data: categories = [] } = useGetCategoriesQuery();
+  const { data: categories = [] } = useGetCategoriesQuery(true);
   const { data: suppliers = [] } = useGetSuppliersQuery();
   const [createSale, { isLoading: isSaving }] = useCreateSaleMutation();
   const [downloadInvoice] = useLazyGetSaleInvoiceQuery();
@@ -204,24 +208,20 @@ export const POS = () => {
     }
   }, [isAdmin, selectedBranchId, branches]);
 
-  const normalizedSearch = search.trim().toLowerCase();
+  const categoryOptions = useMemo(() => {
+    const roots = categories.filter((c: any) => !c.parent);
+    const options: Array<{ key: string; value: string; label: string }> = [];
 
-  const filteredProducts = (products ?? []).filter((p: any) => {
-    const name = String(p?.name || '').toLowerCase();
-    const sku = String(p?.sku || '').toLowerCase();
-    const barcode = String(p?.barcode || '').toLowerCase();
+    for (const root of roots) {
+      options.push({ key: root._id, value: root.name, label: root.name });
+      const subs = categories.filter((c: any) => String(c.parent) === String(root._id));
+      for (const sub of subs) {
+        options.push({ key: sub._id, value: sub.name, label: `— ${sub.name}` });
+      }
+    }
 
-    const matchesText = !normalizedSearch ||
-      name.includes(normalizedSearch) ||
-      sku.includes(normalizedSearch) ||
-      barcode.includes(normalizedSearch);
-
-    const matchesCategory = !categoryFilter || String(p?.category || '') === categoryFilter;
-    const supplierId = typeof p?.supplier === 'object' ? p?.supplier?._id : p?.supplier;
-    const matchesSupplier = !supplierFilter || String(supplierId || '') === String(supplierFilter);
-
-    return matchesText && matchesCategory && matchesSupplier;
-  });
+    return options;
+  }, [categories]);
 
   const grossTotal = useMemo(
     () => cart.reduce((acc, item) => acc + item.price * item.quantity, 0),
@@ -569,8 +569,8 @@ export const POS = () => {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full 2xl:w-auto 2xl:flex 2xl:items-center 2xl:gap-3">
               <select className="input py-2 text-sm w-full 2xl:w-52" value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
                 <option value="">Todas las categorías</option>
-                {categories.map((c: any) => (
-                  <option key={c._id} value={c.name}>{c.name}</option>
+                {categoryOptions.map((option) => (
+                  <option key={option.key} value={option.value}>{option.label}</option>
                 ))}
               </select>
 
@@ -627,7 +627,7 @@ export const POS = () => {
 
         <div className="flex-1 overflow-y-auto p-4 sm:p-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4">
-            {filteredProducts.map((p: any) => (
+            {products.map((p: any) => (
               <button
                 key={p._id}
                 onClick={() => addToCart(p)}

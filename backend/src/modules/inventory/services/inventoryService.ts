@@ -90,9 +90,16 @@ export const getProducts = async (query: any = {}) => {
 
 const buildProductFilters = (query: any = {}) => {
   const filters: any = { isActive: true };
+  const andConditions: any[] = [];
 
   if (query.category) {
-    filters.category = String(query.category).trim();
+    const category = String(query.category).trim();
+    if (category) {
+      const exact = new RegExp(`^${category.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i');
+      andConditions.push({
+        $or: [{ category: exact }, { subcategory: exact }],
+      });
+    }
   }
 
   if (query.supplier) {
@@ -103,12 +110,21 @@ const buildProductFilters = (query: any = {}) => {
     const search = String(query.search).trim();
     if (search) {
       const regex = new RegExp(search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
-      filters.$or = [
-        { name: regex },
-        { sku: regex },
-        { barcode: regex },
-      ];
+      andConditions.push({
+        $or: [
+          { name: regex },
+          { sku: regex },
+          { barcode: regex },
+          { internalCode: regex },
+        ],
+      });
     }
+  }
+
+  if (andConditions.length === 1) {
+    Object.assign(filters, andConditions[0]);
+  } else if (andConditions.length > 1) {
+    filters.$and = andConditions;
   }
 
   return filters;
