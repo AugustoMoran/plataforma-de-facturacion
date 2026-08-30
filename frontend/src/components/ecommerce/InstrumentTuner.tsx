@@ -60,7 +60,7 @@ const TunerGauge: React.FC<{ cents: number; inTune: boolean; active: boolean }> 
   );
 };
 
-export const InstrumentTuner: React.FC = () => {
+export const InstrumentTuner: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
   const [instrument, setInstrument] = useState<InstrumentId>('guitar');
   const [selectedStringId, setSelectedStringId] = useState<string | null>(null);
   const [manualMode, setManualMode] = useState(false);
@@ -97,45 +97,63 @@ export const InstrumentTuner: React.FC = () => {
   };
 
   return (
-    <section className="card p-5 sm:p-6" aria-label="Afinador de instrumentos">
-      <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <p className="section-heading">Herramienta</p>
-          <h2 className="text-xl font-bold text-blue-950">Afinador en línea</h2>
-          <p className="text-sm text-slate-600 mt-1">
+    <section
+      className={embedded ? 'p-4 sm:p-5' : 'card p-5 sm:p-6'}
+      aria-label="Afinador de instrumentos"
+    >
+      {!embedded ? (
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p className="section-heading">Herramienta</p>
+            <h2 className="text-xl font-bold text-blue-950">Afinador en línea</h2>
+            <p className="text-sm text-slate-600 mt-1">
+              Afiná guitarra, bajo o ukelele con el micrófono. Referencia A4 = 440 Hz.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleMicToggle}
+            className={`btn px-5 py-2.5 shrink-0 ${isListening ? 'btn-danger' : 'btn-primary'}`}
+          >
+            {isListening ? (
+              <>
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
+                  <rect x="6" y="6" width="12" height="12" rx="2" />
+                </svg>
+                Detener micrófono
+              </>
+            ) : (
+              <>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 1.5a3 3 0 00-3 3v7a3 3 0 006 0v-7a3 3 0 00-3-3z"
+                  />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-14 0M12 18v4m-4 0h8" />
+                </svg>
+                Activar micrófono
+              </>
+            )}
+          </button>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-slate-600">
             Afiná guitarra, bajo o ukelele con el micrófono. Referencia A4 = 440 Hz.
           </p>
+          <button
+            type="button"
+            onClick={handleMicToggle}
+            className={`btn px-5 py-2.5 shrink-0 ${isListening ? 'btn-danger' : 'btn-primary'}`}
+          >
+            {isListening ? 'Detener micrófono' : 'Activar micrófono'}
+          </button>
         </div>
+      )}
 
-        <button
-          type="button"
-          onClick={handleMicToggle}
-          className={`btn px-5 py-2.5 shrink-0 ${isListening ? 'btn-danger' : 'btn-primary'}`}
-        >
-          {isListening ? (
-            <>
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
-                <rect x="6" y="6" width="12" height="12" rx="2" />
-              </svg>
-              Detener micrófono
-            </>
-          ) : (
-            <>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M12 1.5a3 3 0 00-3 3v7a3 3 0 006 0v-7a3 3 0 00-3-3z"
-                />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-14 0M12 18v4m-4 0h8" />
-              </svg>
-              Activar micrófono
-            </>
-          )}
-        </button>
-      </div>
-
-      <div className="mt-5 grid gap-4 sm:grid-cols-2">
+      <div className={embedded ? 'mt-4 grid gap-4 sm:grid-cols-2' : 'mt-5 grid gap-4 sm:grid-cols-2'}>
         <label className="block">
           <span className="section-heading">Instrumento</span>
           <select

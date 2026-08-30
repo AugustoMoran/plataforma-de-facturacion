@@ -6,7 +6,6 @@ import { ProductGridSkeleton } from '../../components/ecommerce/ProductCardSkele
 import { HeroCarousel } from '../../components/ecommerce/HeroCarousel';
 import { PromoTripletBanner } from '../../components/ecommerce/PromoTripletBanner';
 import { PromoSingleBanner } from '../../components/ecommerce/PromoSingleBanner';
-import { InstrumentTuner } from '../../components/ecommerce/InstrumentTuner';
 import { useGetStoreProductsQuery } from '../../services/ecommerceApi';
 import { useGetPublicSettingsQuery } from '../../services/settingsApi';
 import { useTrackEventMutation } from '../../services/analyticsApi';
@@ -37,7 +36,6 @@ export const StoreHome: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         <PromoTripletBanner images={promoTripletImages} />
         <PromoSingleBanner image={promoBannerImage} />
-        <InstrumentTuner />
 
         <section className="space-y-5">
           <div className="flex items-end justify-between gap-4">
