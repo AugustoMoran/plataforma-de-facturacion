@@ -54,7 +54,7 @@ export const StoreHome: React.FC = () => {
               No hay productos disponibles en este momento.
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
               {products.slice(0, 12).map((p) => (
                 <ProductCard key={p._id} product={p} showFeatured={false} />
               ))}
