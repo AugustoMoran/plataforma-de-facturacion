@@ -1,6 +1,7 @@
 import React from 'react';
 
 interface TrustBadgesProps {
+  paywayEnabled?: boolean;
   mercadopagoEnabled?: boolean;
   envioPackEnabled?: boolean;
 }
@@ -17,9 +18,16 @@ const Badge: React.FC<{ icon: React.ReactNode; title: string; subtitle: string }
   </div>
 );
 
-export const TrustBadges: React.FC<TrustBadgesProps> = ({ mercadopagoEnabled = true, envioPackEnabled }) => (
+export const TrustBadges: React.FC<TrustBadgesProps> = ({
+  paywayEnabled,
+  mercadopagoEnabled = true,
+  envioPackEnabled,
+}) => {
+  const onlinePaymentsEnabled = paywayEnabled ?? mercadopagoEnabled;
+
+  return (
   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-    {mercadopagoEnabled && (
+    {onlinePaymentsEnabled && (
       <Badge
         icon={
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -27,7 +35,7 @@ export const TrustBadges: React.FC<TrustBadgesProps> = ({ mercadopagoEnabled = t
           </svg>
         }
         title="Pagos seguros"
-        subtitle="Mercado Pago integrado"
+        subtitle="Payway integrado"
       />
     )}
     <Badge
@@ -58,4 +66,5 @@ export const TrustBadges: React.FC<TrustBadgesProps> = ({ mercadopagoEnabled = t
       subtitle="Asesoramiento incluido"
     />
   </div>
-);
+  );
+};

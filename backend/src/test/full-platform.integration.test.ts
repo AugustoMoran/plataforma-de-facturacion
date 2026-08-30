@@ -239,8 +239,8 @@ describe('Full Platform Integration Tests', () => {
   });
 
   describe('Mercado Pago config', () => {
-    it('should expose mercadopago config endpoint', async () => {
-      const res = await request(app).get('/api/payments/mercadopago/config');
+    it('should expose payway config endpoint', async () => {
+      const res = await request(app).get('/api/payments/payway/config');
       expect(res.status).toBe(200);
       expect(res.body).toHaveProperty('enabled');
       expect(res.body).toHaveProperty('publicKey');

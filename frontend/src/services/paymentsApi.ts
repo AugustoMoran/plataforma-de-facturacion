@@ -7,20 +7,30 @@ export const paymentsApi = createApi({
   reducerPath: 'paymentsApi',
   baseQuery: createReauthBaseQuery(`${API_BASE_URL}/payments`),
   endpoints: (builder) => ({
-    getMercadoPagoConfig: builder.query<{ publicKey: string; enabled: boolean }, void>({
-      query: () => '/mercadopago/config',
+    getPaywayConfig: builder.query<{ publicKey: string; enabled: boolean; environment?: string }, void>({
+      query: () => '/payway/config',
     }),
-    createPreference: builder.mutation<
-      { id: string; initPoint: string; sandboxInitPoint?: string },
+    createPaywayCheckout: builder.mutation<
+      { id: string; checkoutUrl: string; transactionId?: string },
       { saleId: string; payerEmail?: string }
     >({
       query: (body) => ({
-        url: '/mercadopago/preference',
+        url: '/payway/checkout',
         method: 'POST',
         body,
       }),
     }),
+    syncPaywaySaleStatus: builder.query<
+      { saleId: string; paymentStatus: string; paymentId?: string; rawStatus?: string },
+      string
+    >({
+      query: (saleId) => `/payway/sync/${saleId}`,
+    }),
   }),
 });
 
-export const { useGetMercadoPagoConfigQuery, useCreatePreferenceMutation } = paymentsApi;
+export const {
+  useGetPaywayConfigQuery,
+  useCreatePaywayCheckoutMutation,
+  useLazySyncPaywaySaleStatusQuery,
+} = paymentsApi;

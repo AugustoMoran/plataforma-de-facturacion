@@ -4,11 +4,11 @@ import { useSelector, useDispatch } from 'react-redux';
 import { SEO } from '../../components/ecommerce/SEO';
 import { selectCartItems, selectCartTotal, clearCart, CartItem } from '../../store/cartSlice';
 import { useCreateStoreOrderMutation } from '../../services/ecommerceApi';
-import { useGetMercadoPagoConfigQuery, useCreatePreferenceMutation } from '../../services/paymentsApi';
+import { useGetPaywayConfigQuery, useCreatePaywayCheckoutMutation } from '../../services/paymentsApi';
 import { useTrackEventMutation } from '../../services/analyticsApi';
 import { buildWhatsAppQuickOrderUrl } from '../../utils/whatsappOrderMessage';
 
-type PaymentChoice = 'mercadopago' | 'whatsapp';
+type PaymentChoice = 'payway' | 'whatsapp';
 type CheckoutStep = 'method' | 'details';
 
 const OrderSummary: React.FC<{
@@ -47,7 +47,7 @@ const PaymentMethodCard: React.FC<{
   title: string;
   subtitle: string;
   description: string;
-  accent: 'mp' | 'wa';
+  accent: 'payway' | 'wa';
   wide?: boolean;
 }> = ({ selected, onSelect, title, subtitle, description, accent, wide }) => {
   const selectedStyles =
@@ -95,13 +95,13 @@ export const StoreCheckout: React.FC = () => {
   const items = useSelector(selectCartItems);
   const total = useSelector(selectCartTotal);
   const [createOrder, { isLoading: creatingOrder }] = useCreateStoreOrderMutation();
-  const [createPreference, { isLoading: creatingPreference }] = useCreatePreferenceMutation();
-  const { data: mpConfig } = useGetMercadoPagoConfigQuery();
+  const [createPaywayCheckout, { isLoading: creatingCheckout }] = useCreatePaywayCheckoutMutation();
+  const { data: paywayConfig } = useGetPaywayConfigQuery();
   const [trackEvent] = useTrackEventMutation();
 
   const [step, setStep] = useState<CheckoutStep>('method');
   const [paymentChoice, setPaymentChoice] = useState<PaymentChoice | null>(null);
-  const [mpForm, setMpForm] = useState({
+  const [paywayForm, setPaywayForm] = useState({
     customerName: '',
     customerEmail: '',
     customerPhone: '',
@@ -119,8 +119,8 @@ export const StoreCheckout: React.FC = () => {
   });
   const [error, setError] = useState('');
 
-  const isLoading = creatingOrder || creatingPreference;
-  const mpEnabled = Boolean(mpConfig?.enabled);
+  const isLoading = creatingOrder || creatingCheckout;
+  const paywayEnabled = Boolean(paywayConfig?.enabled);
 
   useEffect(() => {
     trackEvent({ event: 'page_view', path: '/checkout' }).catch(() => {});
@@ -133,10 +133,10 @@ export const StoreCheckout: React.FC = () => {
   }, [items.length, navigate]);
 
   useEffect(() => {
-    if (!mpEnabled) {
+    if (!paywayEnabled) {
       setPaymentChoice('whatsapp');
     }
-  }, [mpEnabled]);
+  }, [paywayEnabled]);
 
   const handleContinueFromMethod = () => {
     if (!paymentChoice) {
@@ -159,34 +159,33 @@ export const StoreCheckout: React.FC = () => {
     navigate('/checkout/consulta-enviada');
   };
 
-  const handleMercadoPagoCheckout = async () => {
+  const handlePaywayCheckout = async () => {
     const order = await createOrder({
       items: items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
-      customerName: mpForm.customerName.trim(),
-      customerEmail: mpForm.customerEmail.trim(),
-      customerPhone: mpForm.customerPhone.trim() || undefined,
+      customerName: paywayForm.customerName.trim(),
+      customerEmail: paywayForm.customerEmail.trim(),
+      customerPhone: paywayForm.customerPhone.trim() || undefined,
       shippingAddress: {
-        street: mpForm.street.trim(),
-        city: mpForm.city.trim(),
-        province: mpForm.province.trim(),
-        postalCode: mpForm.postalCode.trim(),
-        country: mpForm.country.trim(),
+        street: paywayForm.street.trim(),
+        city: paywayForm.city.trim(),
+        province: paywayForm.province.trim(),
+        postalCode: paywayForm.postalCode.trim(),
+        country: paywayForm.country.trim(),
       },
-      notes: mpForm.notes.trim() || undefined,
-      paymentMethod: 'mercadopago',
+      notes: paywayForm.notes.trim() || undefined,
+      paymentMethod: 'payway',
     }).unwrap();
 
     trackEvent({ event: 'purchase', metadata: { orderId: order._id, total } }).catch(() => {});
 
-    const preference = await createPreference({
+    const checkout = await createPaywayCheckout({
       saleId: order._id,
-      payerEmail: mpForm.customerEmail.trim(),
+      payerEmail: paywayForm.customerEmail.trim(),
     }).unwrap();
 
     dispatch(clearCart());
-    const redirectUrl = preference.initPoint || preference.sandboxInitPoint;
-    if (redirectUrl) {
-      window.location.href = redirectUrl;
+    if (checkout.checkoutUrl) {
+      window.location.href = checkout.checkoutUrl;
       return;
     }
 
@@ -203,12 +202,12 @@ export const StoreCheckout: React.FC = () => {
         return;
       }
 
-      if (!mpEnabled) {
-        setError('Mercado Pago no está disponible. Elegí consultar por WhatsApp.');
+      if (!paywayEnabled) {
+        setError('Payway no está disponible. Elegí consultar por WhatsApp.');
         return;
       }
 
-      await handleMercadoPagoCheckout();
+      await handlePaywayCheckout();
     } catch (err: any) {
       setError(err?.data?.message || 'Error al procesar el pedido');
     }
@@ -240,14 +239,14 @@ export const StoreCheckout: React.FC = () => {
           {step === 'method' && (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {mpEnabled && (
+                {paywayEnabled && (
                   <PaymentMethodCard
-                    selected={paymentChoice === 'mercadopago'}
-                    onSelect={() => setPaymentChoice('mercadopago')}
-                    title="Pagar con Mercado Pago"
-                    subtitle="Pago online seguro"
-                    description="Completás tus datos, confirmás el pedido y pagás en Mercado Pago."
-                    accent="mp"
+                    selected={paymentChoice === 'payway'}
+                    onSelect={() => setPaymentChoice('payway')}
+                    title="Pagar con tarjeta"
+                    subtitle="Payway — pago online seguro"
+                    description="Completás tus datos, confirmás el pedido y pagás con tarjeta de crédito o débito."
+                    accent="payway"
                   />
                 )}
                 <PaymentMethodCard
@@ -257,7 +256,7 @@ export const StoreCheckout: React.FC = () => {
                   subtitle="Coordinar con un asesor"
                   description="Enviás el pedido por WhatsApp. No reserva stock ni genera venta automática."
                   accent="wa"
-                  wide={!mpEnabled}
+                  wide={!paywayEnabled}
                 />
               </div>
 
@@ -308,7 +307,7 @@ export const StoreCheckout: React.FC = () => {
             </form>
           )}
 
-          {step === 'details' && paymentChoice === 'mercadopago' && (
+          {step === 'details' && paymentChoice === 'payway' && (
             <form onSubmit={handleSubmitDetails} className="space-y-4">
               <button
                 type="button"
@@ -318,66 +317,57 @@ export const StoreCheckout: React.FC = () => {
                 ← Volver a elegir método
               </button>
 
-              <h2 className="text-sm font-semibold text-blue-950">Datos de contacto</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="sm:col-span-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
                   <label className="section-heading">Nombre completo</label>
-                  <input className="input" required value={mpForm.customerName}
-                    onChange={(e) => setMpForm({ ...mpForm, customerName: e.target.value })} />
+                  <input className="input" required value={paywayForm.customerName}
+                    onChange={(e) => setPaywayForm({ ...paywayForm, customerName: e.target.value })} />
                 </div>
                 <div>
                   <label className="section-heading">Email</label>
-                  <input type="email" className="input" required value={mpForm.customerEmail}
-                    onChange={(e) => setMpForm({ ...mpForm, customerEmail: e.target.value })} />
-                </div>
-                <div>
-                  <label className="section-heading">Teléfono</label>
-                  <input className="input" value={mpForm.customerPhone}
-                    onChange={(e) => setMpForm({ ...mpForm, customerPhone: e.target.value })} />
+                  <input className="input" type="email" required value={paywayForm.customerEmail}
+                    onChange={(e) => setPaywayForm({ ...paywayForm, customerEmail: e.target.value })} />
                 </div>
               </div>
 
-              <h2 className="text-sm font-semibold text-blue-950 pt-2">Dirección de envío</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="sm:col-span-2">
-                  <label className="section-heading">Calle y número</label>
-                  <input className="input" required value={mpForm.street}
-                    onChange={(e) => setMpForm({ ...mpForm, street: e.target.value })} />
-                </div>
+              <div>
+                <label className="section-heading">Teléfono</label>
+                <input className="input" value={paywayForm.customerPhone}
+                  onChange={(e) => setPaywayForm({ ...paywayForm, customerPhone: e.target.value })} />
+              </div>
+
+              <div>
+                <label className="section-heading">Dirección</label>
+                <input className="input" required value={paywayForm.street}
+                  onChange={(e) => setPaywayForm({ ...paywayForm, street: e.target.value })} />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="section-heading">Ciudad</label>
-                  <input className="input" required value={mpForm.city}
-                    onChange={(e) => setMpForm({ ...mpForm, city: e.target.value })} />
+                  <input className="input" required value={paywayForm.city}
+                    onChange={(e) => setPaywayForm({ ...paywayForm, city: e.target.value })} />
                 </div>
                 <div>
                   <label className="section-heading">Provincia</label>
-                  <input className="input" required value={mpForm.province}
-                    onChange={(e) => setMpForm({ ...mpForm, province: e.target.value })} />
+                  <input className="input" required value={paywayForm.province}
+                    onChange={(e) => setPaywayForm({ ...paywayForm, province: e.target.value })} />
                 </div>
                 <div>
                   <label className="section-heading">Código postal</label>
-                  <input className="input" required value={mpForm.postalCode}
-                    onChange={(e) => setMpForm({ ...mpForm, postalCode: e.target.value })} />
-                </div>
-                <div>
-                  <label className="section-heading">País</label>
-                  <input className="input" value={mpForm.country}
-                    onChange={(e) => setMpForm({ ...mpForm, country: e.target.value })} />
+                  <input className="input" required value={paywayForm.postalCode}
+                    onChange={(e) => setPaywayForm({ ...paywayForm, postalCode: e.target.value })} />
                 </div>
               </div>
 
               <div>
                 <label className="section-heading">Notas (opcional)</label>
-                <textarea className="input min-h-[80px]" value={mpForm.notes}
-                  onChange={(e) => setMpForm({ ...mpForm, notes: e.target.value })} />
+                <textarea className="input min-h-[90px]" value={paywayForm.notes}
+                  onChange={(e) => setPaywayForm({ ...paywayForm, notes: e.target.value })} />
               </div>
 
-              <p className="text-xs text-slate-500">
-                Serás redirigido a Mercado Pago para completar el pago de forma segura.
-              </p>
-
-              <button type="submit" disabled={isLoading} className="btn-primary w-full py-3">
-                {isLoading ? 'Procesando...' : 'Continuar al pago'}
+              <button type="submit" className="btn-primary w-full py-3" disabled={isLoading}>
+                {isLoading ? 'Procesando...' : 'Ir a pagar con Payway'}
               </button>
             </form>
           )}
@@ -388,11 +378,9 @@ export const StoreCheckout: React.FC = () => {
             items={items}
             total={total}
             hint={
-              step === 'details' && paymentChoice === 'whatsapp'
-                ? 'Al confirmar se abrirá WhatsApp con el detalle del pedido.'
-                : step === 'details' && paymentChoice === 'mercadopago'
-                  ? 'Tu pedido se registrará antes de ir a Mercado Pago.'
-                  : undefined
+              step === 'details' && paymentChoice === 'payway'
+                ? 'Serás redirigido al formulario seguro de Payway para completar el pago.'
+                : undefined
             }
           />
         </div>

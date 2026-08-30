@@ -2,18 +2,21 @@ import React, { useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { SEO } from '../../components/ecommerce/SEO';
 import { useGetStoreOrderQuery } from '../../services/ecommerceApi';
+import { useLazySyncPaywaySaleStatusQuery } from '../../services/paymentsApi';
 import { useTrackEventMutation } from '../../services/analyticsApi';
 
 export const StoreCheckoutConfirmation: React.FC = () => {
   const { orderId } = useParams<{ orderId: string }>();
   const { data: order, isLoading, isError } = useGetStoreOrderQuery(orderId || '', { skip: !orderId });
+  const [syncPaywayStatus] = useLazySyncPaywaySaleStatusQuery();
   const [trackEvent] = useTrackEventMutation();
 
   useEffect(() => {
     if (orderId) {
       trackEvent({ event: 'order_confirmation', metadata: { orderId } }).catch(() => {});
+      syncPaywayStatus(orderId).catch(() => {});
     }
-  }, [orderId, trackEvent]);
+  }, [orderId, trackEvent, syncPaywayStatus]);
 
   if (isLoading) {
     return <div className="text-slate-500 text-sm py-20 text-center">Cargando confirmación...</div>;
