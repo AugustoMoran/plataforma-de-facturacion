@@ -7,4 +7,15 @@ export const DEFAULT_BANNER_IMAGES = [
   'https://images.unsplash.com/photo-1520523839897-bd0b52f945a0?auto=format&fit=crop&w=1600&q=80',
 ];
 
+/** Tres imágenes por defecto para el banner triple del home */
+export const DEFAULT_PROMO_TRIPLET_IMAGES = [
+  'https://images.unsplash.com/photo-1516924962500-2b4b3b99ea02?auto=format&fit=crop&w=800&q=80',
+  'https://images.unsplash.com/photo-1519892303439-2d1b2e8b0e8b?auto=format&fit=crop&w=800&q=80',
+  'https://images.unsplash.com/photo-1598488035139-bdbb2231bb04?auto=format&fit=crop&w=800&q=80',
+];
+
+/** Imagen por defecto para el banner único del home */
+export const DEFAULT_PROMO_BANNER_IMAGE =
+  'https://images.unsplash.com/photo-1511379938547-c1f69419868d?auto=format&fit=crop&w=1600&q=80';
+
 export const MAX_BANNER_IMAGES = 10;

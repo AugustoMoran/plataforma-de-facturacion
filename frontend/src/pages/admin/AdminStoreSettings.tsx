@@ -122,12 +122,12 @@ export const AdminStoreSettings: React.FC = () => {
   };
 
   const handleClearTriplet = async () => {
-    if (!confirm('¿Eliminar el banner triple del home?')) return;
+    if (!confirm('¿Restaurar las imágenes por defecto del banner triple?')) return;
     try {
       await clearTriplet().unwrap();
-      alert('Banner triple eliminado');
+      alert('Banner triple restaurado a imágenes por defecto');
     } catch (err: any) {
-      alert(err?.data?.message || 'Error al eliminar banner triple');
+      alert(err?.data?.message || 'Error al restaurar banner triple');
     }
   };
 
@@ -153,12 +153,12 @@ export const AdminStoreSettings: React.FC = () => {
   };
 
   const handleClearSingle = async () => {
-    if (!confirm('¿Eliminar el banner único del home?')) return;
+    if (!confirm('¿Restaurar la imagen por defecto del banner único?')) return;
     try {
       await clearSingle().unwrap();
-      alert('Banner único eliminado');
+      alert('Banner único restaurado a imagen por defecto');
     } catch (err: any) {
-      alert(err?.data?.message || 'Error al eliminar banner');
+      alert(err?.data?.message || 'Error al restaurar banner');
     }
   };
 
@@ -285,14 +285,17 @@ export const AdminStoreSettings: React.FC = () => {
                 <p className="text-sm text-slate-500 mt-1">
                   Tres imágenes en fila debajo del carrusel. Hasta {MAX_PROMO_TRIPLET} imágenes.
                 </p>
+                {settings?.usingDefaultPromoTriplet && (
+                  <span className="inline-block mt-2 badge-blue text-[10px]">Usando imágenes por defecto</span>
+                )}
               </div>
               <button
                 type="button"
                 className="btn-secondary text-xs"
                 onClick={handleClearTriplet}
-                disabled={clearingTriplet || currentTriplet.length === 0}
+                disabled={clearingTriplet || settings?.usingDefaultPromoTriplet}
               >
-                Eliminar banner triple
+                Restaurar defaults
               </button>
             </div>
 
@@ -342,14 +345,17 @@ export const AdminStoreSettings: React.FC = () => {
                 <p className="text-sm text-slate-500 mt-1">
                   Una imagen ancha debajo del banner triple.
                 </p>
+                {settings?.usingDefaultPromoBanner && (
+                  <span className="inline-block mt-2 badge-blue text-[10px]">Usando imagen por defecto</span>
+                )}
               </div>
               <button
                 type="button"
                 className="btn-secondary text-xs"
                 onClick={handleClearSingle}
-                disabled={clearingSingle || !currentSingle}
+                disabled={clearingSingle || settings?.usingDefaultPromoBanner}
               >
-                Eliminar banner único
+                Restaurar default
               </button>
             </div>
 

@@ -1,6 +1,10 @@
 import { Request, Response } from 'express';
 import * as settingsService from '../services/settingsService';
-import { resolveBannerImages } from '../services/settingsService';
+import {
+  resolveBannerImages,
+  resolvePromoBannerImage,
+  resolvePromoTripletImages,
+} from '../services/settingsService';
 import { extractUploadedBannerUrls } from '../utils/bannerUploadParser';
 
 export const getPublicSettingsController = async (_req: Request, res: Response) => {
@@ -20,6 +24,10 @@ export const getSettingsController = async (_req: Request, res: Response) => {
       ...doc,
       bannerImages: resolveBannerImages(doc.bannerImages),
       usingDefaultBanners: !(doc.bannerImages || []).filter(Boolean).length,
+      promoTripletImages: resolvePromoTripletImages(doc.promoTripletImages),
+      usingDefaultPromoTriplet: !(doc.promoTripletImages || []).filter(Boolean).length,
+      promoBannerImage: resolvePromoBannerImage(doc.promoBannerImage),
+      usingDefaultPromoBanner: !(doc.promoBannerImage || '').trim(),
     });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
@@ -76,6 +84,7 @@ export const uploadPromoTripletImagesController = async (req: Request, res: Resp
     const settings = await settingsService.replacePromoTripletImages(urls);
     res.json({
       promoTripletImages: settings.promoTripletImages,
+      usingDefaultPromoTriplet: false,
       message: 'Banner triple actualizado correctamente',
     });
   } catch (error: any) {
@@ -87,8 +96,9 @@ export const clearPromoTripletImagesController = async (_req: Request, res: Resp
   try {
     await settingsService.clearPromoTripletImages();
     res.json({
-      promoTripletImages: [],
-      message: 'Banner triple eliminado',
+      promoTripletImages: resolvePromoTripletImages([]),
+      usingDefaultPromoTriplet: true,
+      message: 'Banner triple restaurado a imágenes por defecto',
     });
   } catch (error: any) {
     res.status(400).json({ message: error.message });
@@ -105,6 +115,7 @@ export const uploadPromoBannerImageController = async (req: Request, res: Respon
     const settings = await settingsService.replacePromoBannerImage(urls[0]);
     res.json({
       promoBannerImage: settings.promoBannerImage,
+      usingDefaultPromoBanner: false,
       message: 'Banner promocional actualizado correctamente',
     });
   } catch (error: any) {
@@ -116,8 +127,9 @@ export const clearPromoBannerImageController = async (_req: Request, res: Respon
   try {
     await settingsService.clearPromoBannerImage();
     res.json({
-      promoBannerImage: '',
-      message: 'Banner promocional eliminado',
+      promoBannerImage: resolvePromoBannerImage(''),
+      usingDefaultPromoBanner: true,
+      message: 'Banner promocional restaurado a imagen por defecto',
     });
   } catch (error: any) {
     res.status(400).json({ message: error.message });
