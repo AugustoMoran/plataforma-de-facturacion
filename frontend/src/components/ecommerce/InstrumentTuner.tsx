@@ -24,41 +24,63 @@ const TunerGauge: React.FC<{ cents: number; inTune: boolean; active: boolean }> 
   active,
 }) => {
   const clamped = Math.max(-50, Math.min(50, cents));
-  const rotation = (clamped / 50) * 42;
+  const position = ((clamped + 50) / 100) * 100;
+
+  const statusText = !active
+    ? 'Tocá una cuerda cerca del micrófono'
+    : inTune
+      ? '¡Perfecto! Estás afinado'
+      : cents > 0
+        ? 'Muy agudo — bajá la afinación'
+        : 'Muy grave — subí la afinación';
 
   const statusClass = !active
-    ? 'text-slate-400'
+    ? 'text-blue-200/80'
     : inTune
-      ? 'text-emerald-600'
+      ? 'text-emerald-300'
       : Math.abs(cents) <= CLOSE_THRESHOLD_CENTS
-        ? 'text-amber-600'
-        : 'text-red-600';
+        ? 'text-amber-300'
+        : 'text-rose-300';
 
   return (
-    <div className="relative mx-auto w-full max-w-md">
-      <div className="relative h-28 overflow-hidden">
-        <div className="absolute inset-x-6 bottom-0 h-24 rounded-t-full border-[3px] border-blue-200 bg-gradient-to-t from-blue-50 to-white" />
-        <div className="absolute left-1/2 bottom-0 h-24 w-0.5 -translate-x-1/2 bg-emerald-500/80" />
-        <div className="absolute left-[18%] bottom-2 text-[10px] font-semibold text-slate-400">-50</div>
-        <div className="absolute right-[18%] bottom-2 text-[10px] font-semibold text-slate-400">+50</div>
+    <div className="w-full">
+      <div className="relative px-1 pt-2">
+        <div className="relative h-3 overflow-hidden rounded-full bg-blue-950/50 ring-1 ring-white/10">
+          <div className="absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-rose-500/70 via-amber-400/50 to-transparent" />
+          <div className="absolute inset-y-0 right-0 w-1/2 bg-gradient-to-l from-rose-500/70 via-amber-400/50 to-transparent" />
+          <div className="absolute inset-y-0 left-1/2 w-8 -translate-x-1/2 rounded-full bg-emerald-400/35" />
+          <div className="absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2 bg-white/70" />
+        </div>
+
         <div
-          className="absolute left-1/2 bottom-0 h-[4.5rem] w-1 origin-bottom rounded-full bg-blue-900 transition-transform duration-75"
-          style={{ transform: `translateX(-50%) rotate(${rotation}deg)` }}
+          className={`absolute top-0 h-5 w-5 -translate-x-1/2 rounded-full border-2 border-white shadow-lg shadow-brand-500/40 transition-all duration-75 ${
+            active ? (inTune ? 'bg-emerald-400 scale-110' : 'bg-white') : 'bg-blue-300/40'
+          }`}
+          style={{ left: `${position}%` }}
         />
-        <div className="absolute left-1/2 bottom-0 h-3 w-3 -translate-x-1/2 rounded-full bg-blue-900 ring-2 ring-white" />
+
+        <div className="mt-3 flex justify-between text-[10px] font-semibold uppercase tracking-wider text-blue-200/50">
+          <span>Grave</span>
+          <span>0 ct</span>
+          <span>Agudo</span>
+        </div>
       </div>
-      <div className={`mt-2 text-center text-sm font-semibold ${statusClass}`}>
-        {!active
-          ? 'Tocá una cuerda cerca del micrófono'
-          : inTune
-            ? '¡Afinado!'
-            : cents > 0
-              ? 'Muy agudo — bajá la afinación'
-              : 'Muy grave — subí la afinación'}
-      </div>
+
+      <p className={`mt-3 text-center text-sm font-semibold ${statusClass}`}>{statusText}</p>
     </div>
   );
 };
+
+const MicIcon: React.FC<{ className?: string }> = ({ className = 'w-5 h-5' }) => (
+  <svg className={className} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M12 1.5a3 3 0 00-3 3v7a3 3 0 006 0v-7a3 3 0 00-3-3z"
+    />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-14 0M12 18v4m-4 0h8" />
+  </svg>
+);
 
 export const InstrumentTuner: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
   const [instrument, setInstrument] = useState<InstrumentId>('guitar');
@@ -81,7 +103,7 @@ export const InstrumentTuner: React.FC<{ embedded?: boolean }> = ({ embedded = f
 
   const targetLabel = reading?.targetString
     ? `${reading.targetString.label} · ${reading.targetString.note}${reading.targetString.octave}`
-    : '—';
+    : 'Esperando señal';
 
   const handleMicToggle = () => {
     if (isListening) {
@@ -97,153 +119,194 @@ export const InstrumentTuner: React.FC<{ embedded?: boolean }> = ({ embedded = f
   };
 
   return (
-    <section
-      className={embedded ? 'p-4 sm:p-5' : 'card p-5 sm:p-6'}
-      aria-label="Afinador de instrumentos"
-    >
+    <section className={embedded ? 'p-4 sm:p-5' : 'card p-5 sm:p-6'} aria-label="Afinador de instrumentos">
       {!embedded ? (
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <p className="section-heading">Herramienta</p>
+            <p className="section-heading">Herramienta OsoSound</p>
             <h2 className="text-xl font-bold text-blue-950">Afinador en línea</h2>
-            <p className="text-sm text-slate-600 mt-1">
+            <p className="mt-1 text-sm text-slate-600">
               Afiná guitarra, bajo o ukelele con el micrófono. Referencia A4 = 440 Hz.
             </p>
           </div>
-
-          <button
-            type="button"
-            onClick={handleMicToggle}
-            className={`btn px-5 py-2.5 shrink-0 ${isListening ? 'btn-danger' : 'btn-primary'}`}
-          >
-            {isListening ? (
-              <>
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
-                  <rect x="6" y="6" width="12" height="12" rx="2" />
-                </svg>
-                Detener micrófono
-              </>
-            ) : (
-              <>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M12 1.5a3 3 0 00-3 3v7a3 3 0 006 0v-7a3 3 0 00-3-3z"
-                  />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-14 0M12 18v4m-4 0h8" />
-                </svg>
-                Activar micrófono
-              </>
-            )}
-          </button>
         </div>
-      ) : (
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-slate-600">
-            Afiná guitarra, bajo o ukelele con el micrófono. Referencia A4 = 440 Hz.
-          </p>
-          <button
-            type="button"
-            onClick={handleMicToggle}
-            className={`btn px-5 py-2.5 shrink-0 ${isListening ? 'btn-danger' : 'btn-primary'}`}
-          >
-            {isListening ? 'Detener micrófono' : 'Activar micrófono'}
-          </button>
-        </div>
-      )}
+      ) : null}
 
-      <div className={embedded ? 'mt-4 grid gap-4 sm:grid-cols-2' : 'mt-5 grid gap-4 sm:grid-cols-2'}>
-        <label className="block">
-          <span className="section-heading">Instrumento</span>
-          <select
-            className="input mt-1"
-            value={instrument}
-            onChange={(event) => handleInstrumentChange(event.target.value as InstrumentId)}
-          >
-            {INSTRUMENT_OPTIONS.map((option) => (
-              <option key={option.id} value={option.id}>
+      <div className={embedded ? 'space-y-4' : 'mt-5 space-y-4'}>
+        <div className="flex flex-wrap items-center gap-2">
+          {INSTRUMENT_OPTIONS.map((option) => {
+            const active = instrument === option.id;
+            return (
+              <button
+                key={option.id}
+                type="button"
+                onClick={() => handleInstrumentChange(option.id)}
+                className={`rounded-full px-3.5 py-2 text-xs font-semibold transition-all sm:text-sm ${
+                  active
+                    ? 'bg-gradient-to-r from-brand-600 to-brand-700 text-white shadow-glow-sm'
+                    : 'bg-blue-50 text-blue-900 ring-1 ring-blue-200 hover:bg-blue-100'
+                }`}
+              >
                 {option.name}
-              </option>
-            ))}
-          </select>
-        </label>
+              </button>
+            );
+          })}
+        </div>
 
-        <label className="block">
-          <span className="section-heading">Modo</span>
-          <select
-            className="input mt-1"
-            value={manualMode ? 'manual' : 'auto'}
-            onChange={(event) => {
-              const isManual = event.target.value === 'manual';
-              setManualMode(isManual);
-              if (!isManual) setSelectedStringId(null);
+        <div className="inline-flex rounded-xl bg-blue-50 p-1 ring-1 ring-blue-200">
+          <button
+            type="button"
+            onClick={() => {
+              setManualMode(false);
+              setSelectedStringId(null);
             }}
+            className={`rounded-lg px-4 py-2 text-xs font-semibold transition-all sm:text-sm ${
+              !manualMode ? 'bg-white text-blue-950 shadow-sm' : 'text-blue-700 hover:text-blue-900'
+            }`}
           >
-            <option value="auto">Automático (detecta la cuerda)</option>
-            <option value="manual">Manual (elegís la cuerda)</option>
-          </select>
-        </label>
+            Automático
+          </button>
+          <button
+            type="button"
+            onClick={() => setManualMode(true)}
+            className={`rounded-lg px-4 py-2 text-xs font-semibold transition-all sm:text-sm ${
+              manualMode ? 'bg-white text-blue-950 shadow-sm' : 'text-blue-700 hover:text-blue-900'
+            }`}
+          >
+            Manual
+          </button>
+        </div>
       </div>
 
-      <div className="mt-6 rounded-2xl border border-blue-100 bg-blue-50/60 p-4 sm:p-6">
-        <div className="flex flex-col items-center gap-1 text-center">
-          <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">Nota detectada</p>
+      <div
+        className={`relative mt-5 overflow-hidden rounded-3xl bg-gradient-to-br from-brand-800 via-brand-700 to-brand-900 p-5 sm:p-6 shadow-glow-md ring-1 ring-white/15 ${
+          reading?.inTune ? 'shadow-emerald-500/20' : ''
+        }`}
+      >
+        <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
+        <div className="pointer-events-none absolute -bottom-10 -left-6 h-28 w-28 rounded-full bg-brand-400/20 blur-2xl" />
+
+        <div className="relative flex flex-col items-center text-center">
+          <div className="flex items-center gap-2">
+            <span
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider ${
+                isListening
+                  ? 'bg-white/15 text-white ring-1 ring-white/25'
+                  : 'bg-blue-950/30 text-blue-100 ring-1 ring-white/10'
+              }`}
+            >
+              {isListening ? (
+                <>
+                  <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
+                  Escuchando
+                </>
+              ) : (
+                'Micrófono inactivo'
+              )}
+            </span>
+            {reading?.inTune ? (
+              <span className="rounded-full bg-emerald-400/20 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-emerald-200 ring-1 ring-emerald-300/30">
+                Afinado
+              </span>
+            ) : null}
+          </div>
+
+          <p className="mt-4 text-xs font-semibold uppercase tracking-[0.2em] text-blue-100/80">Nota detectada</p>
           <p
-            className={`text-5xl sm:text-6xl font-black tracking-tight tabular-nums ${
-              reading?.inTune ? 'text-emerald-600' : 'text-blue-950'
+            className={`mt-1 text-6xl font-black tracking-tight tabular-nums sm:text-7xl ${
+              reading?.inTune ? 'text-emerald-300 drop-shadow-[0_0_24px_rgba(110,231,183,0.45)]' : 'text-white'
             }`}
           >
             {displayNote}
           </p>
-          <p className="text-sm text-slate-600">
-            Objetivo: <span className="font-semibold text-blue-900">{targetLabel}</span>
+
+          <p className="mt-2 text-sm text-blue-100/90">
+            Objetivo: <span className="font-semibold text-white">{targetLabel}</span>
             {reading ? (
-              <span className="ml-2 text-slate-500">
+              <span className="ml-2 text-blue-200/80">
                 · {reading.frequency.toFixed(1)} Hz · {formatCents(reading.cents)} ct
               </span>
             ) : null}
           </p>
-        </div>
 
-        <div className="mt-4">
-          <TunerGauge cents={reading?.cents ?? 0} inTune={reading?.inTune ?? false} active={Boolean(reading)} />
-        </div>
+          <div className="mt-6 w-full max-w-lg">
+            <TunerGauge cents={reading?.cents ?? 0} inTune={reading?.inTune ?? false} active={Boolean(reading)} />
+          </div>
 
-        <p className="mt-3 text-center text-xs text-slate-500">
-          Tolerancia ±{IN_TUNE_THRESHOLD_CENTS} centavos para considerar afinado.
-        </p>
+          <p className="mt-4 text-xs text-blue-200/70">
+            Tolerancia ±{IN_TUNE_THRESHOLD_CENTS} centavos para considerar afinado.
+          </p>
+        </div>
       </div>
 
-      <div className="mt-5">
+      <div className="mt-5 flex justify-center">
+        <button
+          type="button"
+          onClick={handleMicToggle}
+          className={`relative inline-flex items-center gap-2.5 rounded-2xl px-6 py-3.5 text-sm font-bold transition-all active:scale-[0.98] ${
+            isListening
+              ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/30 hover:bg-rose-600'
+              : 'bg-gradient-to-r from-brand-600 to-brand-700 text-white shadow-glow-md hover:from-brand-500 hover:to-brand-600'
+          }`}
+        >
+          {isListening ? (
+            <>
+              <span className="inline-flex h-2.5 w-2.5 rounded-sm bg-white" />
+              Detener micrófono
+            </>
+          ) : (
+            <>
+              <span className="relative flex h-9 w-9 items-center justify-center rounded-full bg-white/15 ring-1 ring-white/25">
+                <MicIcon className="w-4 h-4" />
+                <span className="absolute inset-0 animate-ping rounded-full bg-white/20" />
+              </span>
+              Activar micrófono
+            </>
+          )}
+        </button>
+      </div>
+
+      <div className="mt-6">
         <p className="section-heading">Cuerdas y tono de referencia</p>
-        <div className="mt-2 flex flex-wrap gap-2">
+        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
           {strings.map((item) => {
             const isSelected = manualMode && selectedStringId === item.id;
             return (
-              <div key={item.id} className="flex items-center gap-1">
+              <div
+                key={item.id}
+                className={`flex items-center justify-between gap-2 rounded-2xl border p-2.5 transition-all ${
+                  isSelected
+                    ? 'border-brand-500 bg-gradient-to-r from-brand-50 to-blue-50 shadow-glow-sm'
+                    : 'border-blue-100 bg-white hover:border-blue-200 hover:bg-blue-50/50'
+                }`}
+              >
                 <button
                   type="button"
                   onClick={() => {
                     if (!manualMode) setManualMode(true);
                     setSelectedStringId(item.id);
                   }}
-                  className={`rounded-xl border px-3 py-2 text-sm font-semibold transition-colors ${
-                    isSelected
-                      ? 'border-blue-600 bg-blue-600 text-white'
-                      : 'border-blue-200 bg-white text-blue-900 hover:bg-blue-50'
-                  }`}
+                  className="min-w-0 flex-1 text-left"
                 >
-                  {item.label} {item.note}
-                  <span className="text-xs opacity-80">{item.octave}</span>
+                  <p className={`text-[11px] font-semibold uppercase tracking-wide ${isSelected ? 'text-brand-700' : 'text-blue-600'}`}>
+                    {item.label}
+                  </p>
+                  <p className={`text-base font-bold ${isSelected ? 'text-brand-800' : 'text-blue-950'}`}>
+                    {item.note}
+                    <span className="text-xs font-semibold opacity-70">{item.octave}</span>
+                  </p>
                 </button>
                 <button
                   type="button"
                   aria-label={`Escuchar ${item.note}${item.octave}`}
                   onClick={() => void playReferenceTone(item.frequency)}
-                  className="btn-icon-sm"
+                  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors ${
+                    isSelected
+                      ? 'bg-brand-600 text-white hover:bg-brand-500'
+                      : 'bg-blue-50 text-brand-700 ring-1 ring-blue-200 hover:bg-blue-100'
+                  }`}
                 >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M11 5L6 9H3v6h3l5 4V5z" />
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15.54 8.46a5 5 0 010 7.07" />
                   </svg>
@@ -255,11 +318,11 @@ export const InstrumentTuner: React.FC<{ embedded?: boolean }> = ({ embedded = f
       </div>
 
       {error ? (
-        <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>
+        <p className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>
       ) : null}
 
       {!isListening && !error ? (
-        <p className="mt-4 text-xs text-slate-500">
+        <p className="mt-4 rounded-2xl bg-blue-50 px-4 py-3 text-center text-xs text-blue-800 ring-1 ring-blue-100">
           En celular, tocá &quot;Activar micrófono&quot; y aceptá el permiso. Usá un ambiente silencioso y colocá el
           instrumento cerca del micrófono.
         </p>

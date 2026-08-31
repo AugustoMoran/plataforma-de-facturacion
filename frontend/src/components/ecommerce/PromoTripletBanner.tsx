@@ -42,19 +42,20 @@ export const PromoTripletBanner: React.FC<PromoTripletBannerProps> = ({ images }
           <button
             type="button"
             onClick={() => setTunerOpen(true)}
-            className={`${tileClassName} group relative w-full cursor-pointer border-0 p-0 text-left transition-transform duration-200 hover:scale-[1.02] focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80`}
+            className={`${tileClassName} group relative w-full cursor-pointer border-0 p-0 text-left transition-all duration-300 hover:scale-[1.02] hover:ring-2 hover:ring-brand-400/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80`}
             aria-label="Abrir afinador de instrumentos"
           >
             <img
               src={tunerImage}
               alt=""
               aria-hidden
-              className="absolute inset-0 h-full w-full object-cover"
+              className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
               loading="lazy"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-blue-950/90 via-blue-900/55 to-blue-800/25 transition-colors group-hover:from-blue-950/95 group-hover:via-blue-900/65" />
+            <div className="absolute inset-0 bg-gradient-to-t from-brand-900/95 via-brand-800/60 to-brand-600/20 transition-colors group-hover:from-brand-900 group-hover:via-brand-800/70" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(255,255,255,0.18),transparent_55%)]" />
             <div className="relative flex h-full flex-col items-center justify-end p-2 sm:p-4 text-center">
-              <div className="mb-2 flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-full bg-white/15 ring-1 ring-white/30 backdrop-blur-sm">
+              <div className="mb-2 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-white/25 to-white/10 ring-1 ring-white/35 backdrop-blur-md shadow-glow-sm transition-transform duration-300 group-hover:scale-110">
                 <svg
                   className="h-4 w-4 sm:h-5 sm:w-5 text-white"
                   fill="none"
@@ -71,8 +72,10 @@ export const PromoTripletBanner: React.FC<PromoTripletBannerProps> = ({ images }
                   <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-14 0M12 18v4m-4 0h8" />
                 </svg>
               </div>
-              <p className="text-[10px] sm:text-xs font-bold uppercase tracking-[0.18em] text-white/90">Afinador</p>
-              <p className="mt-0.5 text-xs sm:text-sm font-semibold text-white">Tocá para abrir</p>
+              <p className="text-[10px] sm:text-xs font-bold uppercase tracking-[0.2em] text-white/95">Afinador</p>
+              <p className="mt-0.5 rounded-full bg-white/10 px-2.5 py-0.5 text-[10px] sm:text-xs font-semibold text-white ring-1 ring-white/20">
+                Tocá para abrir
+              </p>
             </div>
           </button>
         </div>
