@@ -32,7 +32,7 @@ export const createEnvioPackPedidoForSale = async (saleId: string) => {
     id_externo: String(sale._id).slice(-12),
     nombre,
     apellido,
-    email: sale.customerEmail || 'ventas@ososoundmusic.com',
+    email: sale.customerEmail || 'musicaoesteventas@gmail.com',
     telefono: sale.customerPhone || undefined,
     monto: sale.total,
     fecha_alta: formatDate(sale.createdAt || new Date()),

@@ -1,6 +1,6 @@
 export const STORE_WHATSAPP_NUMBER = '5491128802698';
 export const STORE_INSTAGRAM_HANDLE = 'ososoundmoron';
-export const STORE_EMAIL = 'ventas@ososoundmusic.com';
+export const STORE_EMAIL = 'musicaoesteventas@gmail.com';
 export const STORE_WHATSAPP_GREETING =
   'Hola! Vi su página y quiero atención personalizada.';
 
