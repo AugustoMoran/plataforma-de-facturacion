@@ -18,9 +18,22 @@ export const getShippingStatusController = async (_req: Request, res: Response) 
   }
 };
 
+export const getLocalidadesController = async (req: Request, res: Response) => {
+  try {
+    const province = String(req.query.province || '');
+    if (!province) {
+      return res.status(400).json({ message: 'province es requerido' });
+    }
+    const localidades = await envioPackService.getLocalidades(province);
+    res.json(localidades);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
 export const quoteShippingController = async (req: Request, res: Response) => {
   try {
-    const { postalCode, city, province, items, subtotal } = req.body || {};
+    const { postalCode, city, province, items, subtotal, modalidad, localidadId } = req.body || {};
     if (!postalCode) {
       return res.status(400).json({ message: 'postalCode es requerido' });
     }
@@ -36,6 +49,8 @@ export const quoteShippingController = async (req: Request, res: Response) => {
       city,
       province: String(province),
       subtotal: Number(subtotal),
+      modalidad: modalidad === 'D' || modalidad === 'S' ? modalidad : 'all',
+      localidadId: localidadId ? Number(localidadId) : undefined,
       items: items.map((item: any) => ({
         productId: String(item.productId),
         quantity: Number(item.quantity),

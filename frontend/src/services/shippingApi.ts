@@ -56,6 +56,9 @@ export const shippingApi = createApi({
     getProvinces: builder.query<ShippingProvince[], void>({
       query: () => '/provinces',
     }),
+    getLocalidades: builder.query<Array<{ id: number; nombre: string }>, string>({
+      query: (province) => `/localidades?province=${encodeURIComponent(province)}`,
+    }),
     quoteShipping: builder.mutation<
       ShippingQuoteResponse,
       {
@@ -63,7 +66,9 @@ export const shippingApi = createApi({
         province: string;
         postalCode: string;
         city?: string;
+        localidadId?: number;
         subtotal?: number;
+        modalidad?: 'D' | 'S';
       }
     >({
       query: (body) => ({
@@ -96,6 +101,7 @@ export const shippingApi = createApi({
 export const {
   useGetShippingStatusQuery,
   useGetProvincesQuery,
+  useGetLocalidadesQuery,
   useQuoteShippingMutation,
   useGetDispatchOrdersQuery,
   useCreateDispatchShipmentMutation,

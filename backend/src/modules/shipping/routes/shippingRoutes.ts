@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
   createDispatchController,
   envioPackWebhookController,
+  getLocalidadesController,
   getProvincesController,
   getShippingStatusController,
   listDispatchController,
@@ -15,6 +16,7 @@ const router = Router();
 
 router.get('/status', getShippingStatusController);
 router.get('/provinces', getProvincesController);
+router.get('/localidades', getLocalidadesController);
 router.post('/quote', quoteShippingController);
 router.get('/enviopack/webhook', envioPackWebhookController);
 
