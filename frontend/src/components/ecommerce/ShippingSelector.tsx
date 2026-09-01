@@ -1,10 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   ShippingOption,
-  useGetLocalidadesQuery,
   useGetProvincesQuery,
   useQuoteShippingMutation,
 } from '../../services/shippingApi';
+import { useGetPublicBranchesQuery } from '../../services/branchApi';
 import { CartItem } from '../../store/cartSlice';
 
 interface ShippingSelectorProps {
@@ -20,12 +20,36 @@ interface ShippingSelectorProps {
   onSelectOption: (option: ShippingOption | null) => void;
 }
 
-const normalizeText = (value: string) =>
-  value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .trim();
+const branchToShippingOption = (branch: {
+  _id: string;
+  name: string;
+  address: string;
+  city?: string;
+  province?: string;
+  postalCode?: string;
+  phone?: string;
+}): ShippingOption => ({
+  id: `store-${branch._id}`,
+  modalidad: 'S',
+  label: `Retiro en sucursal · ${branch.name}`,
+  description: [branch.address, branch.city, branch.province].filter(Boolean).join(' · '),
+  carrierId: 'store',
+  carrierName: 'OsoSound',
+  service: 'PICKUP',
+  despacho: 'S',
+  customerCost: 0,
+  sellerCost: 0,
+  isFree: true,
+  pickupBranch: {
+    id: branch._id,
+    name: branch.name,
+    address: branch.address,
+    city: branch.city,
+    province: branch.province,
+    postalCode: branch.postalCode,
+    phone: branch.phone,
+  },
+});
 
 export const ShippingSelector: React.FC<ShippingSelectorProps> = ({
   items,
@@ -40,36 +64,26 @@ export const ShippingSelector: React.FC<ShippingSelectorProps> = ({
   onSelectOption,
 }) => {
   const { data: provinces = [] } = useGetProvincesQuery();
-  const { data: localidades = [], isFetching: loadingLocalidades } = useGetLocalidadesQuery(province, {
-    skip: !province,
-  });
+  const { data: storeBranches = [], isLoading: loadingBranches } = useGetPublicBranchesQuery();
   const [quoteShipping, { isLoading, error }] = useQuoteShippingMutation();
   const [deliveryMode, setDeliveryMode] = useState<'D' | 'S' | null>(null);
-  const [localidadId, setLocalidadId] = useState<number | ''>('');
-  const [options, setOptions] = useState<ShippingOption[]>([]);
+  const [domicilioOptions, setDomicilioOptions] = useState<ShippingOption[]>([]);
   const [quoteMessage, setQuoteMessage] = useState('');
 
-  const matchedLocalidad = useMemo(() => {
-    if (!city || localidades.length === 0) return null;
-    const normalizedCity = normalizeText(city);
-    return (
-      localidades.find((item) => normalizeText(item.nombre) === normalizedCity) ||
-      localidades.find((item) => {
-        const name = normalizeText(item.nombre);
-        return name.includes(normalizedCity) || normalizedCity.includes(name);
-      }) ||
-      null
-    );
-  }, [city, localidades]);
+  const storeOptions = useMemo(
+    () => storeBranches.map((branch) => branchToShippingOption(branch)),
+    [storeBranches]
+  );
+
+  const options = deliveryMode === 'S' ? storeOptions : domicilioOptions;
 
   useEffect(() => {
-    if (matchedLocalidad) {
-      setLocalidadId(matchedLocalidad.id);
-    }
-  }, [matchedLocalidad]);
+    if (deliveryMode !== 'S' || storeOptions.length !== 1) return;
+    onSelectOption(storeOptions[0]);
+  }, [deliveryMode, onSelectOption, storeOptions]);
 
   const resetQuote = () => {
-    setOptions([]);
+    setDomicilioOptions([]);
     setQuoteMessage('');
     onSelectOption(null);
   };
@@ -77,6 +91,9 @@ export const ShippingSelector: React.FC<ShippingSelectorProps> = ({
   const handleModeChange = (mode: 'D' | 'S') => {
     setDeliveryMode(mode);
     resetQuote();
+    if (mode === 'S' && storeOptions.length === 1) {
+      onSelectOption(storeOptions[0]);
+    }
   };
 
   const handleQuote = async () => {
@@ -88,10 +105,6 @@ export const ShippingSelector: React.FC<ShippingSelectorProps> = ({
       setQuoteMessage('Completá provincia y código postal de 4 dígitos.');
       return;
     }
-    if (deliveryMode === 'S' && !localidadId) {
-      setQuoteMessage('Seleccioná tu localidad para ver sucursales disponibles.');
-      return;
-    }
 
     setQuoteMessage('');
     onSelectOption(null);
@@ -101,21 +114,16 @@ export const ShippingSelector: React.FC<ShippingSelectorProps> = ({
         province,
         postalCode,
         city,
-        localidadId: localidadId ? Number(localidadId) : undefined,
         subtotal,
-        modalidad: deliveryMode,
+        modalidad: 'D',
       }).unwrap();
-      setOptions(result.options);
+      setDomicilioOptions(result.options);
       if (result.options.length === 1) {
         onSelectOption(result.options[0]);
       }
-      setQuoteMessage(
-        deliveryMode === 'S'
-          ? `Encontramos ${result.options.length} sucursal(es) para retiro gratis.`
-          : `Encontramos ${result.options.length} opción(es) de envío a domicilio.`
-      );
+      setQuoteMessage(`Encontramos ${result.options.length} opción(es) de envío a domicilio.`);
     } catch (err: any) {
-      setOptions([]);
+      setDomicilioOptions([]);
       setQuoteMessage(err?.data?.message || 'No pudimos calcular el envío. Revisá los datos e intentá de nuevo.');
     }
   };
@@ -125,7 +133,7 @@ export const ShippingSelector: React.FC<ShippingSelectorProps> = ({
       <div>
         <h3 className="text-sm font-bold text-blue-950">¿Cómo querés recibir tu pedido?</h3>
         <p className="mt-1 text-xs text-blue-800">
-          Elegí el tipo de entrega y después calculamos las opciones disponibles para tu zona.
+          Elegí el tipo de entrega y después seleccioná la opción que prefieras.
         </p>
       </div>
 
@@ -140,8 +148,8 @@ export const ShippingSelector: React.FC<ShippingSelectorProps> = ({
           }`}
         >
           <p className="text-sm font-bold text-blue-950">Retiro en sucursal</p>
-          <p className="mt-1 text-xs text-emerald-700 font-semibold">Gratis</p>
-          <p className="mt-1 text-xs text-blue-800">Retirás en Andreani, OCA u otro correo cerca tuyo.</p>
+          <p className="mt-1 text-xs font-semibold text-emerald-700">Gratis</p>
+          <p className="mt-1 text-xs text-blue-800">Retirás en una de nuestras sucursales OsoSound.</p>
         </button>
 
         <button
@@ -154,104 +162,85 @@ export const ShippingSelector: React.FC<ShippingSelectorProps> = ({
           }`}
         >
           <p className="text-sm font-bold text-blue-950">Envío a domicilio</p>
-          <p className="mt-1 text-xs text-brand-700 font-semibold">Costo según tu CP</p>
+          <p className="mt-1 text-xs font-semibold text-brand-700">Costo según tu CP</p>
           <p className="mt-1 text-xs text-blue-800">Te lo enviamos a la dirección que indiques.</p>
         </button>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div>
-          <label className="section-heading">Provincia</label>
-          <select
-            className="input mt-1"
-            required
-            value={province}
-            onChange={(e) => {
-              onProvinceChange(e.target.value);
-              setLocalidadId('');
-              resetQuote();
-            }}
-          >
-            <option value="">Seleccioná</option>
-            {provinces.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="section-heading">Ciudad / Localidad</label>
-          <input
-            className="input mt-1"
-            required
-            value={city}
-            onChange={(e) => {
-              onCityChange(e.target.value);
-              setLocalidadId('');
-              resetQuote();
-            }}
-            placeholder="Ej: Morón"
-          />
-        </div>
-        <div>
-          <label className="section-heading">Código postal</label>
-          <input
-            className="input mt-1"
-            required
-            inputMode="numeric"
-            maxLength={4}
-            value={postalCode}
-            onChange={(e) => {
-              onPostalCodeChange(e.target.value.replace(/\D/g, '').slice(0, 4));
-              resetQuote();
-            }}
-            placeholder="Ej: 1708"
-          />
-        </div>
-      </div>
+      {deliveryMode === 'D' ? (
+        <>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div>
+              <label className="section-heading">Provincia</label>
+              <select
+                className="input mt-1"
+                required
+                value={province}
+                onChange={(e) => {
+                  onProvinceChange(e.target.value);
+                  resetQuote();
+                }}
+              >
+                <option value="">Seleccioná</option>
+                {provinces.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="section-heading">Ciudad / Localidad</label>
+              <input
+                className="input mt-1"
+                required
+                value={city}
+                onChange={(e) => {
+                  onCityChange(e.target.value);
+                  resetQuote();
+                }}
+                placeholder="Ej: Morón"
+              />
+            </div>
+            <div>
+              <label className="section-heading">Código postal</label>
+              <input
+                className="input mt-1"
+                required
+                inputMode="numeric"
+                maxLength={4}
+                value={postalCode}
+                onChange={(e) => {
+                  onPostalCodeChange(e.target.value.replace(/\D/g, '').slice(0, 4));
+                  resetQuote();
+                }}
+                placeholder="Ej: 1708"
+              />
+            </div>
+          </div>
 
-      {deliveryMode === 'S' ? (
-        <div>
-          <label className="section-heading">Localidad para sucursales</label>
-          <select
-            className="input mt-1"
-            value={localidadId}
-            onChange={(e) => {
-              setLocalidadId(e.target.value ? Number(e.target.value) : '');
-              resetQuote();
-            }}
-            disabled={!province || loadingLocalidades}
+          <button
+            type="button"
+            onClick={handleQuote}
+            className="btn-secondary w-full sm:w-auto"
+            disabled={isLoading}
           >
-            <option value="">
-              {loadingLocalidades ? 'Cargando localidades...' : 'Seleccioná tu localidad'}
-            </option>
-            {localidades.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.nombre}
-              </option>
-            ))}
-          </select>
-          <p className="mt-1 text-[11px] text-blue-700">
-            Si tu ciudad no aparece, elegí la localidad más cercana para ver sucursales disponibles.
-          </p>
-        </div>
+            {isLoading ? 'Calculando...' : 'Calcular envío a domicilio'}
+          </button>
+        </>
       ) : null}
 
-      <button
-        type="button"
-        onClick={handleQuote}
-        className="btn-secondary w-full sm:w-auto"
-        disabled={isLoading || !deliveryMode}
-      >
-        {isLoading
-          ? 'Calculando...'
-          : deliveryMode === 'S'
-            ? 'Buscar sucursales gratis'
-            : deliveryMode === 'D'
-              ? 'Calcular envío a domicilio'
-              : 'Elegí un tipo de entrega'}
-      </button>
+      {deliveryMode === 'S' ? (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-4 text-sm text-blue-900">
+          {loadingBranches ? (
+            <p>Cargando sucursales...</p>
+          ) : storeOptions.length > 0 ? (
+            <p>Elegí la sucursal donde querés retirar tu pedido. El retiro es gratis.</p>
+          ) : (
+            <p>No hay sucursales cargadas en este momento. Contactanos para coordinar el retiro.</p>
+          )}
+        </div>
+      ) : null}
 
       {quoteMessage ? <p className="text-xs text-blue-800">{quoteMessage}</p> : null}
       {error ? <p className="text-xs text-red-600">{(error as any)?.data?.message || 'Error al cotizar envío'}</p> : null}
@@ -278,8 +267,8 @@ export const ShippingSelector: React.FC<ShippingSelectorProps> = ({
                   <div>
                     <p className="text-sm font-semibold text-blue-950">{option.label}</p>
                     <p className="mt-1 text-xs text-blue-800">{option.description}</p>
-                    {option.sucursal?.horario ? (
-                      <p className="mt-1 text-[11px] text-blue-700">Horario: {option.sucursal.horario}</p>
+                    {option.pickupBranch?.phone ? (
+                      <p className="mt-1 text-[11px] text-blue-700">Tel: {option.pickupBranch.phone}</p>
                     ) : null}
                   </div>
                   <div className="text-right">

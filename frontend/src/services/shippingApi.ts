@@ -21,6 +21,15 @@ export interface ShippingOption {
   sellerCost: number;
   estimatedHours?: number;
   isFree: boolean;
+  pickupBranch?: {
+    id: string;
+    name: string;
+    address: string;
+    city?: string;
+    province?: string;
+    postalCode?: string;
+    phone?: string;
+  };
   sucursal?: {
     id: number;
     nombre: string;

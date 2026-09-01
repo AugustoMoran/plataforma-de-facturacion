@@ -1,6 +1,18 @@
 import { Request, Response } from 'express';
 import Branch from '../models/Branch';
 
+export const getPublicBranches = async (_req: Request, res: Response) => {
+  try {
+    const branches = await Branch.find({ isActive: true })
+      .select('name address city province postalCode country phone isMain')
+      .sort({ isMain: -1, name: 1 })
+      .lean();
+    res.json(branches);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 export const getBranches = async (req: Request, res: Response) => {
   try {
     const branches = await Branch.find({ isActive: true });

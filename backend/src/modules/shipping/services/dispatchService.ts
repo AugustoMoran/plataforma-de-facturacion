@@ -128,6 +128,7 @@ export const listDispatchOrders = async () => {
   return Sale.find({
     source: 'ECOMMERCE',
     paymentStatus: 'approved',
+    'shippingQuote.carrierId': { $ne: 'store' },
     shippingStatus: { $in: ['awaiting_dispatch', 'label_ready', 'shipped'] },
   })
     .sort({ createdAt: -1 })

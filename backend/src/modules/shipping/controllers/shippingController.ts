@@ -34,22 +34,27 @@ export const getLocalidadesController = async (req: Request, res: Response) => {
 export const quoteShippingController = async (req: Request, res: Response) => {
   try {
     const { postalCode, city, province, items, subtotal, modalidad, localidadId } = req.body || {};
-    if (!postalCode) {
-      return res.status(400).json({ message: 'postalCode es requerido' });
-    }
-    if (!province) {
-      return res.status(400).json({ message: 'province es requerido' });
-    }
+    const selectedModalidad = modalidad === 'D' || modalidad === 'S' ? modalidad : 'all';
+
     if (!Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ message: 'items es requerido' });
     }
 
+    if (selectedModalidad !== 'S') {
+      if (!postalCode) {
+        return res.status(400).json({ message: 'postalCode es requerido' });
+      }
+      if (!province) {
+        return res.status(400).json({ message: 'province es requerido' });
+      }
+    }
+
     const quote = await envioPackService.quoteShipping({
-      postalCode: String(postalCode),
+      postalCode: postalCode ? String(postalCode) : '',
       city,
-      province: String(province),
+      province: province ? String(province) : '',
       subtotal: Number(subtotal),
-      modalidad: modalidad === 'D' || modalidad === 'S' ? modalidad : 'all',
+      modalidad: selectedModalidad,
       localidadId: localidadId ? Number(localidadId) : undefined,
       items: items.map((item: any) => ({
         productId: String(item.productId),

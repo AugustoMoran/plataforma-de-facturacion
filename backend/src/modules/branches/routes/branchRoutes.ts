@@ -5,6 +5,8 @@ import { authorize } from '../../../middleware/roleMiddleware';
 
 const router = Router();
 
+router.get('/public', branchController.getPublicBranches);
+
 router.use(authenticate);
 
 router.get('/', branchController.getBranches);

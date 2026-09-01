@@ -6,6 +6,7 @@ import {
   getEnvioPackDepositId,
 } from './envioPackClient';
 import { buildPackagesFromItems } from './packageBuilder';
+import { getStorePickupOptions, resolveStorePickupOption } from './storePickupService';
 import {
   ARGENTINA_PROVINCES,
   provinceIdFromName,
@@ -38,6 +39,15 @@ export interface ShippingOption {
   sellerCost: number;
   estimatedHours?: number;
   isFree: boolean;
+  pickupBranch?: {
+    id: string;
+    name: string;
+    address: string;
+    city?: string;
+    province?: string;
+    postalCode?: string;
+    phone?: string;
+  };
   sucursal?: {
     id: number;
     nombre: string;
@@ -205,6 +215,37 @@ export const verifyQuoteToken = (token: string, expected: Record<string, unknown
 export const getProvinces = () => ARGENTINA_PROVINCES;
 
 export const quoteShipping = async (input: ShippingQuoteInput): Promise<ShippingQuoteResult> => {
+  const modalidadFilter = input.modalidad || 'all';
+
+  if (modalidadFilter === 'S') {
+    const storeOptions = await getStorePickupOptions();
+    if (!storeOptions.length) {
+      throw new Error('No hay sucursales disponibles para retiro. Contactanos para coordinar tu pedido.');
+    }
+
+    const provinceId = normalizeProvinceId(input.province || '');
+    const postalCode = String(input.postalCode || '').replace(/\D/g, '').slice(0, 4);
+    const { weight, paquetes } = await buildPackagesFromItems(input.items);
+
+    return {
+      provider: 'enviopack',
+      province: provinceId || 'B',
+      provinceName: provinceNameById(provinceId || 'B'),
+      postalCode: postalCode || '0000',
+      city: input.city,
+      weight,
+      paquetes,
+      options: storeOptions,
+      quoteToken: buildQuoteToken({
+        provinceId: provinceId || 'B',
+        postalCode: postalCode || '0000',
+        weight,
+        paquetes,
+        optionIds: storeOptions.map((item) => item.id),
+      }),
+    };
+  }
+
   assertEnvioPackConfigured();
 
   const provinceId = normalizeProvinceId(input.province);
@@ -213,7 +254,6 @@ export const quoteShipping = async (input: ShippingQuoteInput): Promise<Shipping
     throw new Error('Ingresá una provincia y un código postal válido de 4 dígitos');
   }
 
-  const modalidadFilter = input.modalidad || 'all';
   const { weight, paquetes } = await buildPackagesFromItems(input.items);
   const depositId = getEnvioPackDepositId();
   const options: ShippingOption[] = [];
@@ -274,83 +314,9 @@ export const quoteShipping = async (input: ShippingQuoteInput): Promise<Shipping
     }
   }
 
-  if (modalidadFilter === 'S' || modalidadFilter === 'all') {
-    const localidad = await resolveLocalidadId(provinceId, input.city, input.localidadId);
-    if (!localidad) {
-      if (modalidadFilter === 'S') {
-        throw new Error(
-          'No encontramos tu localidad para retiro en sucursal. Elegila del listado o revisá el nombre de la ciudad.'
-        );
-      }
-    } else {
-      const sucursalRows = await envioPackGet<EnvioPackQuoteRow[]>('/cotizar/precio/a-sucursal', {
-        provincia: provinceId,
-        localidad: localidad.id,
-        peso: weight,
-        paquetes,
-        direccion_envio: depositId,
-      });
-
-      const branchMap = new Map<number, EnvioPackQuoteRow>();
-      for (const row of sucursalRows || []) {
-        const branchId = row.sucursal?.id;
-        if (!branchId) continue;
-        const current = branchMap.get(branchId);
-        if (!current || Number(row.valor) < Number(current.valor)) {
-          branchMap.set(branchId, row);
-        }
-      }
-
-      for (const row of branchMap.values()) {
-        if (!row.sucursal) continue;
-        const carrierId = row.sucursal.correo?.id || row.correo?.id || 'andreani';
-        const carrierName = row.sucursal.correo?.nombre || row.correo?.nombre || 'Correo';
-        const sellerCost = await safeSellerCost(
-          {
-            provinceId,
-            postalCode: row.sucursal.codigo_postal || postalCode,
-            weight,
-            paquetes,
-            modalidad: 'S',
-            carrierId,
-            service: row.servicio || 'N',
-            despacho: 'D',
-          },
-          round2(Number(row.valor || 0))
-        );
-
-        options.push({
-          id: `sucursal-${row.sucursal.id}`,
-          modalidad: 'S',
-          label: `Retiro en sucursal · ${row.sucursal.nombre}`,
-          description: `${carrierName} · ${row.sucursal.calle} ${row.sucursal.numero} · Gratis`,
-          carrierId,
-          carrierName,
-          service: row.servicio || 'N',
-          despacho: 'D',
-          customerCost: 0,
-          sellerCost,
-          estimatedHours: row.horas_entrega,
-          isFree: true,
-          sucursal: {
-            id: row.sucursal.id,
-            nombre: row.sucursal.nombre,
-            calle: row.sucursal.calle,
-            numero: row.sucursal.numero,
-            localidad: row.sucursal.localidad?.nombre || localidad.nombre,
-            codigoPostal: row.sucursal.codigo_postal,
-            horario: row.sucursal.horario,
-            correo: carrierName,
-          },
-        });
-      }
-
-      if (modalidadFilter === 'S' && options.length === 0) {
-        throw new Error(
-          `No hay sucursales disponibles para ${localidad.nombre}. Probá con otra localidad cercana.`
-        );
-      }
-    }
+  if (modalidadFilter === 'all') {
+    const storeOptions = await getStorePickupOptions();
+    options.push(...storeOptions);
   }
 
   if (!options.length) {
@@ -387,7 +353,12 @@ export const resolveShippingOption = async (
   input: ShippingQuoteInput,
   optionId: string
 ): Promise<ShippingOption> => {
-  const modalidad = optionId.startsWith('sucursal-') ? 'S' : optionId.startsWith('domicilio-') ? 'D' : 'all';
+  const storeOption = await resolveStorePickupOption(optionId);
+  if (storeOption) {
+    return storeOption;
+  }
+
+  const modalidad = optionId.startsWith('domicilio-') ? 'D' : 'all';
   const quote = await quoteShipping({ ...input, modalidad });
   const option = quote.options.find((item) => item.id === optionId);
   if (!option) {

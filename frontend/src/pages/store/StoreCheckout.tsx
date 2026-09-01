@@ -400,8 +400,14 @@ export const StoreCheckout: React.FC = () => {
                 </div>
               ) : selectedShipping?.modalidad === 'S' ? (
                 <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-blue-900">
-                  Retirás gratis en: <strong>{selectedShipping.sucursal?.nombre}</strong>
-                  {selectedShipping.sucursal ? (
+                  Retirás gratis en:{' '}
+                  <strong>{selectedShipping.pickupBranch?.name || selectedShipping.sucursal?.nombre}</strong>
+                  {selectedShipping.pickupBranch ? (
+                    <>
+                      {' '}· {selectedShipping.pickupBranch.address}
+                      {selectedShipping.pickupBranch.city ? `, ${selectedShipping.pickupBranch.city}` : ''}
+                    </>
+                  ) : selectedShipping.sucursal ? (
                     <>
                       {' '}· {selectedShipping.sucursal.calle} {selectedShipping.sucursal.numero}, {selectedShipping.sucursal.localidad}
                     </>
