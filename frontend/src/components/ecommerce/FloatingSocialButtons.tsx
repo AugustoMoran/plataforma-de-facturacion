@@ -6,7 +6,7 @@ export const FloatingSocialButtons: React.FC = () => {
   const instagramUrl = buildInstagramUrl();
 
   return (
-    <div className="fixed bottom-5 right-5 z-40 flex flex-col gap-3">
+    <div className="fixed bottom-5 right-5 z-40 flex flex-col gap-3 lg:hidden">
       <a
         href={instagramUrl}
         target="_blank"
