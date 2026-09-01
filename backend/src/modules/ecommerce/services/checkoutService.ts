@@ -167,6 +167,7 @@ export const checkoutDirect = async (input: {
       sellerCost: selected.sellerCost,
       estimatedHours: selected.estimatedHours,
       sucursal: selected.sucursal,
+      pickupBranch: selected.pickupBranch,
     };
 
     if (Math.abs(validatedShippingCost - shippingCost) > 1) {

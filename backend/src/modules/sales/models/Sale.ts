@@ -71,11 +71,20 @@ export interface ISale extends Document {
       horario?: string;
       correo?: string;
     };
+    pickupBranch?: {
+      id?: string;
+      name?: string;
+      address?: string;
+      city?: string;
+      province?: string;
+      postalCode?: string;
+      phone?: string;
+    };
   };
   envioPackPedidoId?: number;
   envioPackEnvioId?: number;
   envioPackSellerCost?: number;
-  shippingStatus?: 'pending_payment' | 'awaiting_dispatch' | 'label_ready' | 'shipped' | 'delivered';
+  shippingStatus?: 'pending_payment' | 'awaiting_dispatch' | 'awaiting_pickup' | 'label_ready' | 'shipped' | 'delivered';
   trackingNumber?: string;
   paymentId?: string;
   paymentStatus?: string;
@@ -175,13 +184,22 @@ const SaleSchema: Schema = new Schema({
       horario: { type: String },
       correo: { type: String },
     },
+    pickupBranch: {
+      id: { type: String },
+      name: { type: String },
+      address: { type: String },
+      city: { type: String },
+      province: { type: String },
+      postalCode: { type: String },
+      phone: { type: String },
+    },
   },
   envioPackPedidoId: { type: Number },
   envioPackEnvioId: { type: Number },
   envioPackSellerCost: { type: Number },
   shippingStatus: {
     type: String,
-    enum: ['pending_payment', 'awaiting_dispatch', 'label_ready', 'shipped', 'delivered'],
+    enum: ['pending_payment', 'awaiting_dispatch', 'awaiting_pickup', 'label_ready', 'shipped', 'delivered'],
     default: 'pending_payment',
   },
   trackingNumber: { type: String },

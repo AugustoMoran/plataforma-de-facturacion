@@ -10,6 +10,7 @@ const money = (value?: number) =>
 
 const statusLabel: Record<string, string> = {
   awaiting_dispatch: 'Pendiente de despacho',
+  awaiting_pickup: 'Pendiente de retiro en tienda',
   label_ready: 'Etiqueta lista',
   shipped: 'En camino',
   delivered: 'Entregado',
@@ -101,7 +102,11 @@ export const AdminDispatch: React.FC = () => {
                     </td>
                     <td>
                       <p className="text-sm text-blue-950">{order.shippingMethod || '—'}</p>
-                      {order.shippingQuote?.sucursal ? (
+                      {order.shippingQuote?.pickupBranch ? (
+                        <p className="text-xs text-blue-700">
+                          {order.shippingQuote.pickupBranch.name} · {order.shippingQuote.pickupBranch.address}
+                        </p>
+                      ) : order.shippingQuote?.sucursal ? (
                         <p className="text-xs text-blue-700">
                           {order.shippingQuote.sucursal.nombre} · {order.shippingQuote.sucursal.calle}{' '}
                           {order.shippingQuote.sucursal.numero}
