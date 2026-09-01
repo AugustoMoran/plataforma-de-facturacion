@@ -874,6 +874,11 @@ export const createSale = async (saleData: any, sellerId: string, requesterRoles
       shippingAddress: saleData.shippingAddress,
       shippingMethod: saleData.shippingMethod,
       shippingCost: saleData.shippingCost,
+      customerEmail: saleData.customerEmail,
+      customerPhone: saleData.customerPhone,
+      shippingModalidad: saleData.shippingModalidad,
+      shippingQuote: saleData.shippingQuote,
+      shippingStatus: saleData.shippingStatus,
       paymentId: saleData.paymentId,
       paymentStatus: saleData.paymentStatus,
     });

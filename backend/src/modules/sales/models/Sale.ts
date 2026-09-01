@@ -45,6 +45,38 @@ export interface ISale extends Document {
   };
   shippingMethod?: string;
   shippingCost?: number;
+  customerEmail?: string;
+  customerPhone?: string;
+  shippingModalidad?: 'D' | 'S';
+  shippingQuote?: {
+    optionId?: string;
+    provinceId?: string;
+    modalidad?: 'D' | 'S';
+    carrierId?: string;
+    carrierName?: string;
+    service?: string;
+    despacho?: string;
+    customerCost?: number;
+    sellerCost?: number;
+    estimatedHours?: number;
+    paquetes?: string;
+    weight?: number;
+    sucursal?: {
+      id?: number;
+      nombre?: string;
+      calle?: string;
+      numero?: string;
+      localidad?: string;
+      codigoPostal?: string;
+      horario?: string;
+      correo?: string;
+    };
+  };
+  envioPackPedidoId?: number;
+  envioPackEnvioId?: number;
+  envioPackSellerCost?: number;
+  shippingStatus?: 'pending_payment' | 'awaiting_dispatch' | 'label_ready' | 'shipped' | 'delivered';
+  trackingNumber?: string;
   paymentId?: string;
   paymentStatus?: string;
   createdAt: Date;
@@ -117,6 +149,42 @@ const SaleSchema: Schema = new Schema({
   },
   shippingMethod: { type: String },
   shippingCost: { type: Number, default: 0 },
+  customerEmail: { type: String },
+  customerPhone: { type: String },
+  shippingModalidad: { type: String, enum: ['D', 'S'] },
+  shippingQuote: {
+    optionId: { type: String },
+    provinceId: { type: String },
+    modalidad: { type: String, enum: ['D', 'S'] },
+    carrierId: { type: String },
+    carrierName: { type: String },
+    service: { type: String },
+    despacho: { type: String },
+    customerCost: { type: Number },
+    sellerCost: { type: Number },
+    estimatedHours: { type: Number },
+    paquetes: { type: String },
+    weight: { type: Number },
+    sucursal: {
+      id: { type: Number },
+      nombre: { type: String },
+      calle: { type: String },
+      numero: { type: String },
+      localidad: { type: String },
+      codigoPostal: { type: String },
+      horario: { type: String },
+      correo: { type: String },
+    },
+  },
+  envioPackPedidoId: { type: Number },
+  envioPackEnvioId: { type: Number },
+  envioPackSellerCost: { type: Number },
+  shippingStatus: {
+    type: String,
+    enum: ['pending_payment', 'awaiting_dispatch', 'label_ready', 'shipped', 'delivered'],
+    default: 'pending_payment',
+  },
+  trackingNumber: { type: String },
   paymentId: { type: String },
   paymentStatus: { type: String },
 }, {

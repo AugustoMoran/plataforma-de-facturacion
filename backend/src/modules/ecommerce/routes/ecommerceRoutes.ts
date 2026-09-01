@@ -15,6 +15,7 @@ import {
   clearCartController,
 } from '../controllers/cartController';
 import { checkoutController } from '../controllers/checkoutController';
+import { getStoreOrderController } from '../controllers/orderController';
 import { optionalAuthenticate } from '../../../middleware/authMiddleware';
 
 const router = Router();
@@ -34,5 +35,6 @@ router.delete('/cart/:cartId/items/:productId', removeCartItemController);
 router.delete('/cart/:cartId', clearCartController);
 
 router.post('/checkout', optionalAuthenticate, checkoutController);
+router.get('/orders/:id', getStoreOrderController);
 
 export default router;

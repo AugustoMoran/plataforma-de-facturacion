@@ -76,6 +76,10 @@ export interface CreateOrderPayload {
   };
   notes?: string;
   paymentMethod?: string;
+  shippingOptionId?: string;
+  shippingModalidad?: 'D' | 'S';
+  shippingMethod?: string;
+  shippingCost?: number;
 }
 
 export const ecommerceApi = createApi({
@@ -138,6 +142,10 @@ export const ecommerceApi = createApi({
           customerEmail: body.customerEmail,
           customerPhone: body.customerPhone,
           shippingAddress: body.shippingAddress,
+          shippingOptionId: body.shippingOptionId,
+          shippingModalidad: body.shippingModalidad,
+          shippingMethod: body.shippingMethod,
+          shippingCost: body.shippingCost,
           notes: body.notes,
           paymentMethod: body.paymentMethod,
         },

@@ -7,15 +7,20 @@ import { useCreateStoreOrderMutation } from '../../services/ecommerceApi';
 import { useGetPaywayConfigQuery, useCreatePaywayCheckoutMutation } from '../../services/paymentsApi';
 import { useTrackEventMutation } from '../../services/analyticsApi';
 import { buildWhatsAppQuickOrderUrl } from '../../utils/whatsappOrderMessage';
+import { ShippingSelector } from '../../components/ecommerce/ShippingSelector';
+import { ShippingOption } from '../../services/shippingApi';
 
 type PaymentChoice = 'payway' | 'whatsapp';
 type CheckoutStep = 'method' | 'details';
 
 const OrderSummary: React.FC<{
   items: CartItem[];
-  total: number;
+  subtotal: number;
+  shippingCost: number;
   hint?: string;
-}> = ({ items, total, hint }) => (
+}> = ({ items, subtotal, shippingCost, hint }) => {
+  const total = subtotal + shippingCost;
+  return (
   <div className="card p-6 space-y-4 h-fit">
     <h2 className="text-sm font-semibold text-blue-950">Resumen</h2>
     <div className="space-y-3 max-h-64 overflow-y-auto">
@@ -28,18 +33,31 @@ const OrderSummary: React.FC<{
         </div>
       ))}
     </div>
-    <div className="border-t border-blue-100 pt-4 flex justify-between font-bold text-lg">
-      <span className="text-blue-950">Total</span>
-      <span className="text-brand-600 tabular-nums">
-        ${total.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
-      </span>
+    <div className="space-y-2 border-t border-blue-100 pt-4 text-sm">
+      <div className="flex justify-between text-blue-800">
+        <span>Subtotal</span>
+        <span className="tabular-nums">${subtotal.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</span>
+      </div>
+      <div className="flex justify-between text-blue-800">
+        <span>Envío</span>
+        <span className="tabular-nums">
+          {shippingCost <= 0 ? 'Gratis' : `$${shippingCost.toLocaleString('es-AR', { minimumFractionDigits: 2 })}`}
+        </span>
+      </div>
+      <div className="flex justify-between font-bold text-lg text-blue-950">
+        <span>Total</span>
+        <span className="text-brand-600 tabular-nums">
+          ${total.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
+        </span>
+      </div>
     </div>
     {hint && <p className="text-xs text-blue-700">{hint}</p>}
     <Link to="/products" className="text-xs text-blue-700 hover:text-brand-600 transition-colors block text-center">
       Seguir comprando
     </Link>
   </div>
-);
+  );
+};
 
 const PaymentMethodCard: React.FC<{
   selected: boolean;
@@ -118,9 +136,12 @@ export const StoreCheckout: React.FC = () => {
     notes: '',
   });
   const [error, setError] = useState('');
+  const [selectedShipping, setSelectedShipping] = useState<ShippingOption | null>(null);
 
   const isLoading = creatingOrder || creatingCheckout;
   const paywayEnabled = Boolean(paywayConfig?.enabled);
+  const shippingCost = selectedShipping?.customerCost || 0;
+  const orderTotal = total + shippingCost;
 
   useEffect(() => {
     trackEvent({ event: 'page_view', path: '/checkout' }).catch(() => {});
@@ -160,6 +181,10 @@ export const StoreCheckout: React.FC = () => {
   };
 
   const handlePaywayCheckout = async () => {
+    if (!selectedShipping) {
+      throw new Error('Calculá y elegí una opción de envío antes de pagar.');
+    }
+
     const order = await createOrder({
       items: items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
       customerName: paywayForm.customerName.trim(),
@@ -172,11 +197,15 @@ export const StoreCheckout: React.FC = () => {
         postalCode: paywayForm.postalCode.trim(),
         country: paywayForm.country.trim(),
       },
+      shippingOptionId: selectedShipping.id,
+      shippingModalidad: selectedShipping.modalidad,
+      shippingMethod: selectedShipping.label,
+      shippingCost,
       notes: paywayForm.notes.trim() || undefined,
       paymentMethod: 'payway',
     }).unwrap();
 
-    trackEvent({ event: 'purchase', metadata: { orderId: order._id, total } }).catch(() => {});
+    trackEvent({ event: 'purchase', metadata: { orderId: order._id, total: orderTotal } }).catch(() => {});
 
     const checkout = await createPaywayCheckout({
       saleId: order._id,
@@ -317,6 +346,10 @@ export const StoreCheckout: React.FC = () => {
                 ← Volver a elegir método
               </button>
 
+              <div className="rounded-xl bg-brand-50 border border-brand-200 p-4 text-sm text-blue-900">
+                Completá tus datos, calculá el envío y pagá de forma segura con Payway. El retiro en sucursal es gratis.
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="section-heading">Nombre completo</label>
@@ -336,29 +369,45 @@ export const StoreCheckout: React.FC = () => {
                   onChange={(e) => setPaywayForm({ ...paywayForm, customerPhone: e.target.value })} />
               </div>
 
-              <div>
-                <label className="section-heading">Dirección</label>
-                <input className="input" required value={paywayForm.street}
-                  onChange={(e) => setPaywayForm({ ...paywayForm, street: e.target.value })} />
-              </div>
+              <ShippingSelector
+                items={items}
+                subtotal={total}
+                province={paywayForm.province}
+                city={paywayForm.city}
+                postalCode={paywayForm.postalCode}
+                onProvinceChange={(value) => {
+                  setPaywayForm({ ...paywayForm, province: value });
+                  setSelectedShipping(null);
+                }}
+                onCityChange={(value) => {
+                  setPaywayForm({ ...paywayForm, city: value });
+                  setSelectedShipping(null);
+                }}
+                onPostalCodeChange={(value) => {
+                  setPaywayForm({ ...paywayForm, postalCode: value });
+                  setSelectedShipping(null);
+                }}
+                selectedOptionId={selectedShipping?.id || null}
+                onSelectOption={setSelectedShipping}
+              />
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {selectedShipping?.modalidad === 'D' ? (
                 <div>
-                  <label className="section-heading">Ciudad</label>
-                  <input className="input" required value={paywayForm.city}
-                    onChange={(e) => setPaywayForm({ ...paywayForm, city: e.target.value })} />
+                  <label className="section-heading">Dirección de entrega</label>
+                  <input className="input" required value={paywayForm.street}
+                    onChange={(e) => setPaywayForm({ ...paywayForm, street: e.target.value })}
+                    placeholder="Calle y número" />
                 </div>
-                <div>
-                  <label className="section-heading">Provincia</label>
-                  <input className="input" required value={paywayForm.province}
-                    onChange={(e) => setPaywayForm({ ...paywayForm, province: e.target.value })} />
+              ) : selectedShipping?.modalidad === 'S' ? (
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-blue-900">
+                  Retirás gratis en: <strong>{selectedShipping.sucursal?.nombre}</strong>
+                  {selectedShipping.sucursal ? (
+                    <>
+                      {' '}· {selectedShipping.sucursal.calle} {selectedShipping.sucursal.numero}, {selectedShipping.sucursal.localidad}
+                    </>
+                  ) : null}
                 </div>
-                <div>
-                  <label className="section-heading">Código postal</label>
-                  <input className="input" required value={paywayForm.postalCode}
-                    onChange={(e) => setPaywayForm({ ...paywayForm, postalCode: e.target.value })} />
-                </div>
-              </div>
+              ) : null}
 
               <div>
                 <label className="section-heading">Notas (opcional)</label>
@@ -366,8 +415,8 @@ export const StoreCheckout: React.FC = () => {
                   onChange={(e) => setPaywayForm({ ...paywayForm, notes: e.target.value })} />
               </div>
 
-              <button type="submit" className="btn-primary w-full py-3" disabled={isLoading}>
-                {isLoading ? 'Procesando...' : 'Ir a pagar con Payway'}
+              <button type="submit" className="btn-primary w-full py-3" disabled={isLoading || !selectedShipping}>
+                {isLoading ? 'Procesando...' : `Ir a pagar · $${orderTotal.toLocaleString('es-AR', { minimumFractionDigits: 2 })}`}
               </button>
             </form>
           )}
@@ -376,10 +425,13 @@ export const StoreCheckout: React.FC = () => {
         <div className="lg:col-span-2">
           <OrderSummary
             items={items}
-            total={total}
+            subtotal={total}
+            shippingCost={shippingCost}
             hint={
               step === 'details' && paymentChoice === 'payway'
-                ? 'Serás redirigido al formulario seguro de Payway para completar el pago.'
+                ? selectedShipping
+                  ? 'Serás redirigido al formulario seguro de Payway para completar el pago.'
+                  : 'Calculá el envío para ver el total final antes de pagar.'
                 : undefined
             }
           />

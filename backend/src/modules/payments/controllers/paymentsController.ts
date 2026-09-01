@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import * as paywayService from '../services/paywayService';
+import { markSalePaid } from '../services/paymentSaleSync';
 import Sale from '../../sales/models/Sale';
 
 export const getPaywayConfigController = async (_req: Request, res: Response) => {
@@ -48,9 +49,7 @@ export const paywayWebhookController = async (req: Request, res: Response) => {
     if (result.processed && result.paymentId) {
       const sale = await Sale.findOne({ paymentId: result.paymentId });
       if (sale) {
-        await Sale.findByIdAndUpdate(sale._id, {
-          paymentStatus: result.status,
-        });
+        await markSalePaid(String(sale._id), result.status);
       }
     }
 
@@ -79,7 +78,7 @@ export const syncPaywaySaleStatusController = async (req: Request, res: Response
 
     const payment = await paywayService.getPaymentById(String(sale.paymentId));
     const paymentStatus = paywayService.mapPaywayPaymentStatus(payment?.status);
-    await Sale.findByIdAndUpdate(sale._id, { paymentStatus });
+    await markSalePaid(String(sale._id), paymentStatus);
 
     res.json({
       saleId: sale._id,

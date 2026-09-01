@@ -7,7 +7,7 @@ import {
   LoginRedirectRoute,
   MaintenanceGuard,
 } from './components/ecommerce/RouteGuards';
-import { AdminUsers, AdminCatalog, AdminProfitReport, AdminSupplierLedger, AdminStoreSettings } from './pages/admin';
+import { AdminUsers, AdminCatalog, AdminProfitReport, AdminSupplierLedger, AdminStoreSettings, AdminDispatch } from './pages/admin';
 import { Dashboard } from './pages/Dashboard';
 import { Inventory } from './pages/Inventory';
 import { POS } from './pages/POS';
@@ -85,6 +85,10 @@ const router = createBrowserRouter([
     path: '/dashboard/admin/supplier-ledger',
     element: <DashboardLayout adminOnly><AdminSupplierLedger /></DashboardLayout>,
   },
+  {
+    path: '/dashboard/admin/dispatch',
+    element: <DashboardLayout adminOnly><AdminDispatch /></DashboardLayout>,
+  },
   // Legacy redirects
   { path: '/pos', element: <Navigate to="/dashboard/pos" replace /> },
   { path: '/inventory', element: <Navigate to="/dashboard/inventory" replace /> },
@@ -94,6 +98,7 @@ const router = createBrowserRouter([
   { path: '/admin/store-settings', element: <Navigate to="/dashboard/admin/store-settings" replace /> },
   { path: '/admin/profit-report', element: <Navigate to="/dashboard/admin/profit-report" replace /> },
   { path: '/admin/supplier-ledger', element: <Navigate to="/dashboard/admin/supplier-ledger" replace /> },
+  { path: '/admin/dispatch', element: <Navigate to="/dashboard/admin/dispatch" replace /> },
   {
     path: '/login',
     element: (

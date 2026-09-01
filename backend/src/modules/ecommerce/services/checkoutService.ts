@@ -6,6 +6,8 @@ import * as settingsService from '../../settings/services/settingsService';
 import Cart from '../models/Cart';
 import Product from '../../inventory/models/Product';
 import { getEffectiveProductPrice } from './catalogService';
+import { resolveShippingOption } from '../../shipping/services/envioPackService';
+import { provinceIdFromName } from '../../shipping/constants/argentinaProvinces';
 
 const round2 = (value: number) => Math.round((Number(value) || 0) * 100) / 100;
 
@@ -94,6 +96,9 @@ export const checkoutDirect = async (input: {
   };
   shippingMethod?: string;
   shippingCost?: number;
+  shippingOptionId?: string;
+  shippingModalidad?: 'D' | 'S';
+  shippingQuote?: Record<string, unknown>;
   notes?: string;
   paymentId?: string;
   paymentStatus?: string;
@@ -122,6 +127,53 @@ export const checkoutDirect = async (input: {
   );
 
   const shippingCost = round2(Number(input.shippingCost || 0));
+  const quoteItems = input.items.map((item) => ({
+    productId: item.productId,
+    quantity: item.quantity,
+  }));
+
+  let shippingQuoteSnapshot = input.shippingQuote as any;
+  let validatedShippingCost = shippingCost;
+  let shippingModalidad = input.shippingModalidad;
+  let shippingMethod = input.shippingMethod;
+
+  if (input.shippingOptionId) {
+    const province = input.shippingAddress?.province || '';
+    const postalCode = input.shippingAddress?.postalCode || '';
+    const city = input.shippingAddress?.city;
+    const selected = await resolveShippingOption(
+      {
+        items: quoteItems,
+        province,
+        postalCode,
+        city,
+        subtotal,
+      },
+      input.shippingOptionId
+    );
+
+    validatedShippingCost = selected.isFree ? 0 : round2(selected.customerCost);
+    shippingModalidad = selected.modalidad;
+    shippingMethod = selected.label;
+    shippingQuoteSnapshot = {
+      optionId: selected.id,
+      provinceId: province.trim().length <= 2 ? province.trim().toUpperCase() : provinceIdFromName(province) || province,
+      modalidad: selected.modalidad,
+      carrierId: selected.carrierId,
+      carrierName: selected.carrierName,
+      service: selected.service,
+      despacho: selected.despacho,
+      customerCost: validatedShippingCost,
+      sellerCost: selected.sellerCost,
+      estimatedHours: selected.estimatedHours,
+      sucursal: selected.sucursal,
+    };
+
+    if (Math.abs(validatedShippingCost - shippingCost) > 1) {
+      throw new Error('El costo de envío cambió. Volvé a calcular el envío antes de pagar.');
+    }
+  }
+
   const sale = await salesService.createSale(
     {
       items,
@@ -132,8 +184,13 @@ export const checkoutDirect = async (input: {
       source: 'ECOMMERCE',
       branchId,
       shippingAddress: shipping,
-      shippingMethod: input.shippingMethod,
-      shippingCost,
+      shippingMethod,
+      shippingCost: validatedShippingCost,
+      shippingModalidad,
+      shippingQuote: shippingQuoteSnapshot,
+      shippingStatus: 'pending_payment',
+      customerEmail: input.customerEmail,
+      customerPhone: input.customerPhone,
       paymentId: input.paymentId,
       paymentStatus: input.paymentStatus || 'pending',
       notes: input.notes,
@@ -146,8 +203,8 @@ export const checkoutDirect = async (input: {
     throw new Error('No se pudo crear la venta');
   }
 
-  if (shippingCost > 0) {
-    sale.total = round2(Number(sale.total) + shippingCost);
+  if (validatedShippingCost > 0) {
+    sale.total = round2(Number(sale.total) + validatedShippingCost);
     await sale.save();
   }
 
