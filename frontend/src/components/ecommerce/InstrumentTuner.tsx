@@ -53,11 +53,28 @@ const TunerGauge: React.FC<{ cents: number; inTune: boolean; active: boolean }> 
         </div>
 
         <div
-          className={`absolute top-0 h-5 w-5 -translate-x-1/2 rounded-full border-2 border-white shadow-lg shadow-brand-500/40 transition-all duration-75 ${
-            active ? (inTune ? 'bg-emerald-400 scale-110' : 'bg-white') : 'bg-blue-300/40'
+          className={`absolute top-0 h-6 w-6 -translate-x-1/2 transition-all duration-75 ${
+            active ? (inTune ? 'scale-110' : 'scale-100') : 'opacity-55 scale-95'
           }`}
           style={{ left: `${position}%` }}
-        />
+        >
+          <div
+            className={`flex h-full w-full items-center justify-center rounded-full border-2 shadow-lg transition-colors ${
+              active
+                ? inTune
+                  ? 'border-emerald-300 bg-white shadow-emerald-500/40'
+                  : 'border-white bg-white/95 shadow-brand-500/40'
+                : 'border-white/35 bg-blue-300/25 shadow-brand-500/20'
+            }`}
+          >
+            <img
+              src="/brand-logo.png"
+              alt=""
+              className="h-3.5 w-3.5 object-contain"
+              draggable={false}
+            />
+          </div>
+        </div>
 
         <div className="mt-3 flex justify-between text-[10px] font-semibold uppercase tracking-wider text-blue-200/50">
           <span>Grave</span>
