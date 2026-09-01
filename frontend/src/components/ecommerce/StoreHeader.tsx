@@ -11,11 +11,12 @@ export const StoreHeader: React.FC = () => {
   const dispatch = useDispatch();
   const cartCount = useSelector(selectCartCount);
   const { user } = useSelector((state: RootState) => state.auth);
+  const isStaff = user && isStaffRole(user.roles);
 
   return (
     <header className="sticky top-0 z-40 bg-blue-950/35 backdrop-blur-md border-b border-blue-200/25 shadow-lg shadow-blue-950/20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
-        <div className="flex items-center gap-3 sm:gap-6">
+        <div className="flex items-center gap-2 sm:gap-6">
           <Link to="/" className="flex-shrink-0 min-w-0">
             <BrandLogo size="lg" className="[&_span]:text-white" />
           </Link>
@@ -24,38 +25,38 @@ export const StoreHeader: React.FC = () => {
             <StoreSearchBar />
           </div>
 
-          <div className="flex items-center gap-2 flex-shrink-0 ml-auto sm:ml-0">
-            {user && isStaffRole(user.roles) && (
-              <Link to="/dashboard" className="btn-secondary !py-2 !px-3 text-xs hidden lg:inline-flex">
-                Panel
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0 ml-auto">
+            {isStaff ? (
+              <Link
+                to="/dashboard"
+                className="btn-secondary !py-2 !px-2.5 sm:!px-3 text-xs inline-flex items-center gap-1.5"
+                aria-label="Ir al panel de administración"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24" aria-hidden>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h8m-8 6h16" />
+                </svg>
+                <span>Panel</span>
               </Link>
-            )}
-
-            {!user ? (
+            ) : !user ? (
               <>
-                <Link to="/login" className="btn-secondary !py-2 !px-3 text-xs hidden md:inline-flex">
-                  Ingresar
+                <Link
+                  to="/login"
+                  className="btn-secondary !py-2 !px-2.5 sm:!px-3 text-xs inline-flex items-center gap-1.5"
+                  aria-label="Ingresar"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24" aria-hidden>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                  <span>Ingresar</span>
                 </Link>
-                <Link to="/store/register" className="btn-primary !py-2 !px-3 text-xs hidden lg:inline-flex">
+                <Link to="/store/register" className="btn-primary !py-2 !px-2.5 text-xs hidden sm:inline-flex">
                   Registrarse
                 </Link>
               </>
             ) : (
-              <span className="text-xs text-blue-100 hidden lg:inline truncate max-w-[120px]">
+              <span className="text-xs text-blue-100 hidden sm:inline truncate max-w-[120px]">
                 {user.email}
               </span>
-            )}
-
-            {!user && (
-              <Link
-                to="/login"
-                className="btn-icon hidden sm:inline-flex"
-                aria-label="Ingresar"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-              </Link>
             )}
 
             <button
