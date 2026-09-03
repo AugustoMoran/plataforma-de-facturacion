@@ -90,6 +90,10 @@ export const getLedgerEntriesController = async (req: Request, res: Response) =>
       .filter((e: any) => e.entryType === 'PAYMENT')
       .reduce((acc, e: any) => acc + Number(e.amount || 0), 0);
 
+    const totalAdjustments = entries
+      .filter((e: any) => e.entryType === 'ADJUSTMENT')
+      .reduce((acc, e: any) => acc + Number(e.signedAmount || 0), 0);
+
     const netBalance = entries.reduce((acc, e: any) => acc + Number(e.signedAmount || 0), 0);
 
     res.json({
@@ -98,6 +102,7 @@ export const getLedgerEntriesController = async (req: Request, res: Response) =>
         count: entries.length,
         totalInvoices: Number(totalInvoices.toFixed(2)),
         totalPayments: Number(totalPayments.toFixed(2)),
+        totalAdjustments: Number(totalAdjustments.toFixed(2)),
         netBalance: Number(netBalance.toFixed(2)),
       },
     });
@@ -125,6 +130,11 @@ export const getBalanceBySupplierController = async (_req: Request, res: Respons
           payments: {
             $sum: {
               $cond: [{ $eq: ['$entryType', 'PAYMENT'] }, '$amount', 0],
+            },
+          },
+          adjustments: {
+            $sum: {
+              $cond: [{ $eq: ['$entryType', 'ADJUSTMENT'] }, '$signedAmount', 0],
             },
           },
           lastMovementDate: { $max: '$date' },
@@ -158,6 +168,7 @@ export const getBalanceBySupplierController = async (_req: Request, res: Respons
           balance: { $round: ['$balance', 2] },
           invoices: { $round: ['$invoices', 2] },
           payments: { $round: ['$payments', 2] },
+          adjustments: { $round: ['$adjustments', 2] },
           lastMovementDate: 1,
           movementCount: 1,
         },
@@ -167,21 +178,24 @@ export const getBalanceBySupplierController = async (_req: Request, res: Respons
 
     const totals = balances.reduce(
       (acc: any, row: any) => {
-        acc.totalDebt += Number(row.balance || 0);
+        acc.totalNetBalance += Number(row.balance || 0);
         acc.totalInvoiced += Number(row.invoices || 0);
         acc.totalPaid += Number(row.payments || 0);
+        acc.totalAdjustments += Number(row.adjustments || 0);
         return acc;
       },
-      { totalDebt: 0, totalInvoiced: 0, totalPaid: 0 }
+      { totalNetBalance: 0, totalInvoiced: 0, totalPaid: 0, totalAdjustments: 0 }
     );
 
     res.json({
       items: balances,
       summary: {
         totalCounterparties: balances.length,
-        totalDebt: Number(totals.totalDebt.toFixed(2)),
+        totalNetBalance: Number(totals.totalNetBalance.toFixed(2)),
+        totalDebt: Number(totals.totalNetBalance.toFixed(2)),
         totalInvoiced: Number(totals.totalInvoiced.toFixed(2)),
         totalPaid: Number(totals.totalPaid.toFixed(2)),
+        totalAdjustments: Number(totals.totalAdjustments.toFixed(2)),
       },
     });
   } catch (error: any) {
