@@ -31,7 +31,11 @@ router.post(
   '/promo-triplet',
   authenticate,
   authorize(['admin']),
-  bannerUpload.array('promo', 3),
+  bannerUpload.fields([
+    { name: 'slot0', maxCount: 1 },
+    { name: 'slot1', maxCount: 1 },
+    { name: 'slot2', maxCount: 1 },
+  ]),
   uploadPromoTripletImagesController
 );
 router.delete('/promo-triplet', authenticate, authorize(['admin']), clearPromoTripletImagesController);

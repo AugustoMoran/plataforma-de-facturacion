@@ -100,15 +100,15 @@ export const clearBannerImages = async () => {
 export const MAX_PROMO_TRIPLET_IMAGES = 3;
 
 export const replacePromoTripletImages = async (urls: string[]) => {
-  if (!urls.length) {
-    throw new Error('Debe subir al menos una imagen');
+  if (urls.length !== MAX_PROMO_TRIPLET_IMAGES) {
+    throw new Error(`Debés completar las ${MAX_PROMO_TRIPLET_IMAGES} posiciones del banner triple`);
   }
-  if (urls.length > MAX_PROMO_TRIPLET_IMAGES) {
-    throw new Error(`Máximo ${MAX_PROMO_TRIPLET_IMAGES} imágenes en el banner triple`);
+  if (urls.some((url) => !String(url || '').trim())) {
+    throw new Error('Cada posición del banner triple debe tener una imagen');
   }
 
   const settings = await getSettingsDoc();
-  settings.promoTripletImages = urls;
+  settings.promoTripletImages = urls.map((url) => url.trim());
   await settings.save();
   return settings;
 };

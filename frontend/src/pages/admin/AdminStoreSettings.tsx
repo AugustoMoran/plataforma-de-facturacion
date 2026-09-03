@@ -13,9 +13,27 @@ import {
 const MAX_BANNERS = 10;
 const MAX_PROMO_TRIPLET = 3;
 
+const PROMO_TRIPLET_SLOTS = [
+  {
+    index: 0,
+    title: 'Columna izquierda',
+    hint: 'Primera imagen promocional del home',
+  },
+  {
+    index: 1,
+    title: 'Columna centro',
+    hint: 'Segunda imagen promocional del home',
+  },
+  {
+    index: 2,
+    title: 'Columna derecha — Afinador',
+    hint: 'Imagen de fondo del afinador (al tocarla se abre la herramienta)',
+  },
+] as const;
+
 export const AdminStoreSettings: React.FC = () => {
   const carouselInputRef = useRef<HTMLInputElement>(null);
-  const tripletInputRef = useRef<HTMLInputElement>(null);
+  const tripletInputRefs = useRef<Array<HTMLInputElement | null>>([]);
   const singleInputRef = useRef<HTMLInputElement>(null);
 
   const { data: settings, isLoading } = useGetAdminSettingsQuery();
@@ -33,8 +51,8 @@ export const AdminStoreSettings: React.FC = () => {
 
   const [carouselFiles, setCarouselFiles] = useState<File[]>([]);
   const [carouselPreviews, setCarouselPreviews] = useState<string[]>([]);
-  const [tripletFiles, setTripletFiles] = useState<File[]>([]);
-  const [tripletPreviews, setTripletPreviews] = useState<string[]>([]);
+  const [tripletSlotFiles, setTripletSlotFiles] = useState<Array<File | null>>([null, null, null]);
+  const [tripletSlotPreviews, setTripletSlotPreviews] = useState<Array<string | null>>([null, null, null]);
   const [singleFile, setSingleFile] = useState<File | null>(null);
   const [singlePreview, setSinglePreview] = useState<string | null>(null);
 
@@ -55,11 +73,36 @@ export const AdminStoreSettings: React.FC = () => {
     setCarouselPreviews(files.map((f) => URL.createObjectURL(f)));
   };
 
-  const handleTripletChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []).slice(0, MAX_PROMO_TRIPLET);
-    setTripletFiles(files);
-    revokePreviews(tripletPreviews);
-    setTripletPreviews(files.map((f) => URL.createObjectURL(f)));
+  const handleTripletSlotChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = (e.target.files || [])[0] || null;
+    setTripletSlotFiles((prev) => {
+      const next = [...prev];
+      next[index] = file;
+      return next;
+    });
+
+    setTripletSlotPreviews((prev) => {
+      const next = [...prev];
+      if (next[index]) URL.revokeObjectURL(next[index] as string);
+      next[index] = file ? URL.createObjectURL(file) : null;
+      return next;
+    });
+  };
+
+  const clearTripletSlotSelection = (index: number) => {
+    setTripletSlotFiles((prev) => {
+      const next = [...prev];
+      next[index] = null;
+      return next;
+    });
+    setTripletSlotPreviews((prev) => {
+      const next = [...prev];
+      if (next[index]) URL.revokeObjectURL(next[index] as string);
+      next[index] = null;
+      return next;
+    });
+    const input = tripletInputRefs.current[index];
+    if (input) input.value = '';
   };
 
   const handleSingleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -101,20 +144,32 @@ export const AdminStoreSettings: React.FC = () => {
   };
 
   const handleUploadTriplet = async () => {
-    if (!tripletFiles.length) {
-      alert('Seleccioná al menos una imagen');
+    const hasNewFile = tripletSlotFiles.some(Boolean);
+    if (!hasNewFile) {
+      alert('Elegí al menos una imagen en la posición que querés cambiar');
       return;
     }
 
     const formData = new FormData();
-    tripletFiles.forEach((file) => formData.append('promo', file));
+    for (let index = 0; index < MAX_PROMO_TRIPLET; index += 1) {
+      const file = tripletSlotFiles[index];
+      if (file) {
+        formData.append(`slot${index}`, file);
+      } else if (currentTriplet[index]) {
+        formData.append(`existing${index}`, currentTriplet[index]);
+      }
+    }
 
     try {
       await uploadTriplet(formData).unwrap();
-      setTripletFiles([]);
-      revokePreviews(tripletPreviews);
-      setTripletPreviews([]);
-      if (tripletInputRef.current) tripletInputRef.current.value = '';
+      tripletSlotPreviews.forEach((preview) => {
+        if (preview) URL.revokeObjectURL(preview);
+      });
+      setTripletSlotFiles([null, null, null]);
+      setTripletSlotPreviews([null, null, null]);
+      tripletInputRefs.current.forEach((input) => {
+        if (input) input.value = '';
+      });
       alert('Banner triple actualizado.');
     } catch (err: any) {
       alert(err?.data?.message || 'Error al subir imágenes');
@@ -283,7 +338,7 @@ export const AdminStoreSettings: React.FC = () => {
               <div>
                 <h2 className="text-lg font-semibold text-white">Banner triple (3 imágenes)</h2>
                 <p className="text-sm text-slate-500 mt-1">
-                  Tres imágenes en fila debajo del carrusel. Hasta {MAX_PROMO_TRIPLET} imágenes.
+                  Elegí qué imagen va en cada columna. La tercera es el afinador interactivo.
                 </p>
                 {settings?.usingDefaultPromoTriplet && (
                   <span className="inline-block mt-2 badge-blue text-[10px]">Usando imágenes por defecto</span>
@@ -300,40 +355,75 @@ export const AdminStoreSettings: React.FC = () => {
             </div>
 
             {currentTriplet.length > 0 && (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {currentTriplet.map((url, index) => (
-                  <div key={`${url}-${index}`} className="aspect-[4/3] rounded-lg overflow-hidden ring-1 ring-white/10">
-                    <img src={url} alt={`Promo ${index + 1}`} className="w-full h-full object-cover" />
-                  </div>
-                ))}
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+                {PROMO_TRIPLET_SLOTS.map((slot) => {
+                  const currentUrl = currentTriplet[slot.index];
+                  const previewUrl = tripletSlotPreviews[slot.index];
+                  const hasPendingFile = Boolean(tripletSlotFiles[slot.index]);
+
+                  return (
+                    <div
+                      key={slot.index}
+                      className="rounded-xl border border-white/10 bg-slate-900/40 p-4 space-y-3"
+                    >
+                      <div>
+                        <p className="text-sm font-semibold text-white">{slot.title}</p>
+                        <p className="text-xs text-slate-500 mt-1">{slot.hint}</p>
+                      </div>
+
+                      <div className="aspect-[4/3] rounded-lg overflow-hidden ring-1 ring-white/10 bg-slate-950/40">
+                        {previewUrl || currentUrl ? (
+                          <img
+                            src={previewUrl || currentUrl}
+                            alt={slot.title}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-full items-center justify-center text-xs text-slate-500">
+                            Sin imagen
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <input
+                          ref={(element) => {
+                            tripletInputRefs.current[slot.index] = element;
+                          }}
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          className="block w-full text-sm text-slate-400 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-brand-500/20 file:text-brand-300 hover:file:bg-brand-500/30"
+                          onChange={(event) => handleTripletSlotChange(slot.index, event)}
+                        />
+                        {hasPendingFile ? (
+                          <button
+                            type="button"
+                            className="text-xs text-slate-400 hover:text-white"
+                            onClick={() => clearTripletSlotSelection(slot.index)}
+                          >
+                            Quitar selección
+                          </button>
+                        ) : null}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
 
             <div className="border border-dashed border-white/10 rounded-xl p-5 space-y-4">
-              <input
-                ref={tripletInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                multiple
-                className="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-brand-500/20 file:text-brand-300 hover:file:bg-brand-500/30"
-                onChange={handleTripletChange}
-              />
-              {tripletPreviews.length > 0 && (
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {tripletPreviews.map((url, index) => (
-                    <div key={url} className="aspect-[4/3] rounded-lg overflow-hidden ring-1 ring-brand-500/30">
-                      <img src={url} alt={`Preview ${index + 1}`} className="w-full h-full object-cover" />
-                    </div>
-                  ))}
-                </div>
-              )}
+              <p className="text-sm text-slate-400">
+                Cambiá solo la posición que necesites. Las demás conservan la imagen actual al guardar.
+              </p>
               <button
                 type="button"
                 className="btn-primary"
                 onClick={handleUploadTriplet}
-                disabled={uploadingTriplet || !tripletFiles.length}
+                disabled={uploadingTriplet || !tripletSlotFiles.some(Boolean)}
               >
-                {uploadingTriplet ? 'Subiendo...' : `Subir banner triple (${tripletFiles.length || 0}/${MAX_PROMO_TRIPLET})`}
+                {uploadingTriplet
+                  ? 'Guardando...'
+                  : `Guardar banner triple (${tripletSlotFiles.filter(Boolean).length} cambio(s))`}
               </button>
             </div>
           </section>
