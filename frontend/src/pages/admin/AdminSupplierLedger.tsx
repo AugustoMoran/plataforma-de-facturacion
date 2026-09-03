@@ -92,11 +92,27 @@ export const AdminSupplierLedger: React.FC = () => {
     }
   };
 
-  const summary = balancesData?.summary || {
+  const historicalSummary = balancesData?.summary || {
     totalCounterparties: 0,
+    totalNetBalance: 0,
     totalDebt: 0,
     totalInvoiced: 0,
     totalPaid: 0,
+    totalAdjustments: 0,
+  };
+
+  const periodSummary = ledgerData?.summary || {
+    count: 0,
+    totalInvoices: 0,
+    totalPayments: 0,
+    totalAdjustments: 0,
+    netBalance: 0,
+  };
+
+  const formatSignedMoney = (value: number) => {
+    const numeric = Number(value || 0);
+    const prefix = numeric > 0 ? '+' : numeric < 0 ? '−' : '';
+    return `${prefix}${money(Math.abs(numeric))}`;
   };
 
   return (
@@ -116,8 +132,8 @@ export const AdminSupplierLedger: React.FC = () => {
             <label className="section-heading">Hasta</label>
             <input type="date" className="input" value={toDate} onChange={(e) => setToDate(e.target.value)} min={fromDate} />
           </div>
-          <button type="submit" className="btn-primary w-full justify-center" disabled={ledgerFetching || balancesFetching}>
-            {(ledgerFetching || balancesFetching) ? 'Filtrando...' : 'Aplicar filtro'}
+          <button type="submit" className="btn-primary w-full justify-center" disabled={ledgerFetching}>
+            {ledgerFetching ? 'Filtrando...' : 'Aplicar filtro'}
           </button>
           <div>
             <label className="section-heading">Buscar</label>
@@ -126,22 +142,97 @@ export const AdminSupplierLedger: React.FC = () => {
         </form>
       </div>
 
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-4">
-        <div className="card p-4 min-w-0">
-          <p className="text-xs text-slate-500 mb-1">Deuda total</p>
-          <p className="text-[clamp(1.1rem,2vw,1.85rem)] font-bold text-rose-300 leading-tight break-words">{money(summary.totalDebt)}</p>
+      <div className="space-y-4">
+        <div>
+          <h2 className="text-sm font-semibold text-white">Saldos actuales (histórico completo)</h2>
+          <p className="text-xs text-slate-500 mt-1">
+            Acumulado de todos los movimientos. No cambia con el filtro de fechas de abajo.
+          </p>
         </div>
-        <div className="card p-4 min-w-0">
-          <p className="text-xs text-slate-500 mb-1">Total facturado (compras)</p>
-          <p className="text-[clamp(1.1rem,2vw,1.85rem)] font-bold text-sky-300 leading-tight break-words">{money(summary.totalInvoiced)}</p>
+
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4">
+          <div className="card p-4 min-w-0">
+            <p className="text-xs text-slate-500 mb-1">Saldo neto total</p>
+            <p className="text-[clamp(1.1rem,2vw,1.85rem)] font-bold text-rose-300 leading-tight break-words">
+              {money(historicalSummary.totalNetBalance ?? historicalSummary.totalDebt)}
+            </p>
+            <p className="text-[11px] text-slate-500 mt-2 leading-relaxed">
+              Suma de saldos por proveedor. Incluye créditos a favor (saldos negativos).
+            </p>
+          </div>
+          <div className="card p-4 min-w-0">
+            <p className="text-xs text-slate-500 mb-1">Total facturado (compras)</p>
+            <p className="text-[clamp(1.1rem,2vw,1.85rem)] font-bold text-sky-300 leading-tight break-words">
+              {money(historicalSummary.totalInvoiced)}
+            </p>
+            <p className="text-[11px] text-slate-500 mt-2">Solo facturas de compra, sin pagos ni ajustes.</p>
+          </div>
+          <div className="card p-4 min-w-0">
+            <p className="text-xs text-slate-500 mb-1">Total pagado</p>
+            <p className="text-[clamp(1.1rem,2vw,1.85rem)] font-bold text-emerald-300 leading-tight break-words">
+              {money(historicalSummary.totalPaid)}
+            </p>
+            <p className="text-[11px] text-slate-500 mt-2">Solo pagos registrados.</p>
+          </div>
+          <div className="card p-4 min-w-0">
+            <p className="text-xs text-slate-500 mb-1">Ajustes netos</p>
+            <p className={`text-[clamp(1.1rem,2vw,1.85rem)] font-bold leading-tight break-words ${
+              Number(historicalSummary.totalAdjustments || 0) >= 0 ? 'text-amber-300' : 'text-emerald-300'
+            }`}>
+              {formatSignedMoney(historicalSummary.totalAdjustments || 0)}
+            </p>
+            <p className="text-[11px] text-slate-500 mt-2">Impacto de ajustes en la deuda (+ aumenta, − reduce).</p>
+          </div>
+          <div className="card p-4 min-w-0">
+            <p className="text-xs text-slate-500 mb-1">Contrapartes</p>
+            <p className="text-[clamp(1.1rem,2vw,1.85rem)] font-bold text-white leading-tight">
+              {historicalSummary.totalCounterparties}
+            </p>
+            <p className="text-[11px] text-slate-500 mt-2">Proveedores u otros con movimientos.</p>
+          </div>
         </div>
-        <div className="card p-4 min-w-0">
-          <p className="text-xs text-slate-500 mb-1">Total pagado</p>
-          <p className="text-[clamp(1.1rem,2vw,1.85rem)] font-bold text-emerald-300 leading-tight break-words">{money(summary.totalPaid)}</p>
+
+        <div className="rounded-xl border border-brand-500/20 bg-brand-500/5 px-4 py-3 text-xs text-slate-300 leading-relaxed">
+          <strong className="text-white">Cómo se calcula el saldo:</strong>{' '}
+          Saldo neto ≈ Facturado − Pagado + Ajustes netos. Si no hay ajustes, el saldo coincide con esa resta.
         </div>
-        <div className="card p-4 min-w-0">
-          <p className="text-xs text-slate-500 mb-1">Contrapartes</p>
-          <p className="text-[clamp(1.1rem,2vw,1.85rem)] font-bold text-white leading-tight">{summary.totalCounterparties}</p>
+      </div>
+
+      <div className="space-y-4">
+        <div>
+          <h2 className="text-sm font-semibold text-white">Movimientos del período filtrado</h2>
+          <p className="text-xs text-slate-500 mt-1">
+            Del {new Date(`${submittedRange.from}T00:00:00`).toLocaleDateString('es-AR')} al{' '}
+            {new Date(`${submittedRange.to}T00:00:00`).toLocaleDateString('es-AR')}. Coincide con el historial de abajo.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4">
+          <div className="card p-4 min-w-0">
+            <p className="text-xs text-slate-500 mb-1">Facturado en período</p>
+            <p className="text-lg font-bold text-sky-300">{money(periodSummary.totalInvoices)}</p>
+          </div>
+          <div className="card p-4 min-w-0">
+            <p className="text-xs text-slate-500 mb-1">Pagado en período</p>
+            <p className="text-lg font-bold text-emerald-300">{money(periodSummary.totalPayments)}</p>
+          </div>
+          <div className="card p-4 min-w-0">
+            <p className="text-xs text-slate-500 mb-1">Ajustes en período</p>
+            <p className={`text-lg font-bold ${
+              Number(periodSummary.totalAdjustments || 0) >= 0 ? 'text-amber-300' : 'text-emerald-300'
+            }`}>
+              {formatSignedMoney(periodSummary.totalAdjustments || 0)}
+            </p>
+          </div>
+          <div className="card p-4 min-w-0">
+            <p className="text-xs text-slate-500 mb-1">Impacto neto del período</p>
+            <p className={`text-lg font-bold ${
+              Number(periodSummary.netBalance || 0) >= 0 ? 'text-rose-300' : 'text-emerald-300'
+            }`}>
+              {formatSignedMoney(periodSummary.netBalance || 0)}
+            </p>
+            <p className="text-[11px] text-slate-500 mt-2">{periodSummary.count} movimiento(s)</p>
+          </div>
         </div>
       </div>
 
@@ -226,19 +317,23 @@ export const AdminSupplierLedger: React.FC = () => {
         </div>
 
         <div className="card overflow-hidden">
-          <div className="px-5 py-4 border-b border-white/[0.05]">
+          <div className="px-5 py-4 border-b border-white/[0.05] space-y-1">
             <h2 className="text-sm font-semibold text-white">Deuda por proveedor / contraparte</h2>
+            <p className="text-xs text-slate-500">
+              Saldo = Facturado − Pagado + Ajustes netos. Los ajustes pueden hacer que la resta simple no coincida.
+            </p>
           </div>
           {balancesError ? (
             <div className="p-4 text-sm text-red-300">No se pudieron cargar los saldos</div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="data-table min-w-[700px]">
+              <table className="data-table min-w-[820px]">
                 <thead>
                   <tr>
                     <th>Proveedor / Otro</th>
                     <th className="text-right">Facturado</th>
                     <th className="text-right">Pagado</th>
+                    <th className="text-right">Ajustes</th>
                     <th className="text-right">Saldo</th>
                     <th className="text-right">Movimientos</th>
                   </tr>
@@ -246,7 +341,7 @@ export const AdminSupplierLedger: React.FC = () => {
                 <tbody>
                   {(balancesData?.items || []).length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="text-center text-slate-600 py-10 text-sm">Sin datos de deuda</td>
+                      <td colSpan={6} className="text-center text-slate-600 py-10 text-sm">Sin datos de deuda</td>
                     </tr>
                   ) : (
                     balancesData.items.map((row: any) => (
@@ -254,6 +349,11 @@ export const AdminSupplierLedger: React.FC = () => {
                         <td className="text-white text-sm">{row.supplierName || 'Otro'}</td>
                         <td className="text-right text-sky-300 font-semibold">{money(row.invoices)}</td>
                         <td className="text-right text-emerald-300 font-semibold">{money(row.payments)}</td>
+                        <td className={`text-right font-semibold ${
+                          Number(row.adjustments || 0) >= 0 ? 'text-amber-300' : 'text-emerald-300'
+                        }`}>
+                          {Number(row.adjustments || 0) === 0 ? '—' : formatSignedMoney(row.adjustments || 0)}
+                        </td>
                         <td className={`text-right font-bold ${Number(row.balance || 0) > 0 ? 'text-rose-300' : 'text-emerald-300'}`}>{money(row.balance)}</td>
                         <td className="text-right text-slate-300">{row.movementCount}</td>
                       </tr>
@@ -267,8 +367,11 @@ export const AdminSupplierLedger: React.FC = () => {
       </div>
 
       <div className="card overflow-hidden">
-        <div className="px-5 py-4 border-b border-white/[0.05]">
+        <div className="px-5 py-4 border-b border-white/[0.05] space-y-1">
           <h2 className="text-sm font-semibold text-white">Historial de movimientos</h2>
+          <p className="text-xs text-slate-500">
+            Solo movimientos del período filtrado. El impacto en deuda usa signo: + aumenta, − reduce.
+          </p>
         </div>
         {ledgerError ? (
           <div className="p-4 text-sm text-red-300">No se pudo cargar el historial</div>
