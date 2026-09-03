@@ -15,3 +15,23 @@ export const extractUploadedBannerUrls = (req: Request): string[] => {
     })
     .filter(Boolean);
 };
+
+const fileToBannerUrl = (req: Request, file: Express.Multer.File) => {
+  const cloudUrl = (file as any).path;
+  if (isHttpUrl(cloudUrl)) return cloudUrl;
+  return getLocalBannerUrl(req, file.filename);
+};
+
+export const extractPromoTripletSlotUrls = (req: Request): (string | null)[] => {
+  const files = req.files as Record<string, Express.Multer.File[]> | undefined;
+
+  return [0, 1, 2].map((index) => {
+    const uploaded = files?.[`slot${index}`]?.[0];
+    if (uploaded) {
+      return fileToBannerUrl(req, uploaded);
+    }
+
+    const existing = String(req.body?.[`existing${index}`] || '').trim();
+    return existing || null;
+  });
+};

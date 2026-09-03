@@ -5,7 +5,7 @@ import {
   resolvePromoBannerImage,
   resolvePromoTripletImages,
 } from '../services/settingsService';
-import { extractUploadedBannerUrls } from '../utils/bannerUploadParser';
+import { extractPromoTripletSlotUrls, extractUploadedBannerUrls } from '../utils/bannerUploadParser';
 
 export const getPublicSettingsController = async (_req: Request, res: Response) => {
   try {
@@ -76,12 +76,19 @@ export const clearBannerImagesController = async (_req: Request, res: Response) 
 
 export const uploadPromoTripletImagesController = async (req: Request, res: Response) => {
   try {
-    const urls = extractUploadedBannerUrls(req);
-    if (!urls.length) {
-      return res.status(400).json({ message: 'No se recibieron imágenes válidas' });
+    const settingsDoc = await settingsService.getSettings();
+    const currentUrls = resolvePromoTripletImages(settingsDoc.promoTripletImages);
+    const slotUrls = extractPromoTripletSlotUrls(req);
+
+    const mergedUrls = [0, 1, 2].map((index) => slotUrls[index] || currentUrls[index] || '');
+    if (!mergedUrls.every(Boolean)) {
+      return res.status(400).json({
+        message:
+          'Completá las 3 posiciones del banner triple. Podés cambiar una sola y conservar las demás.',
+      });
     }
 
-    const settings = await settingsService.replacePromoTripletImages(urls);
+    const settings = await settingsService.replacePromoTripletImages(mergedUrls);
     res.json({
       promoTripletImages: settings.promoTripletImages,
       usingDefaultPromoTriplet: false,
