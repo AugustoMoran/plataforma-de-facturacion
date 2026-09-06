@@ -113,13 +113,13 @@ export const InstrumentTuner: React.FC<{ embedded?: boolean }> = ({ embedded = f
     if (!reading) return '—';
     if (manualMode && selectedStringId) {
       const target = strings.find((item) => item.id === selectedStringId);
-      return target ? `${target.note}${target.octave}` : reading.detectedLabel;
+      return target ? target.note : reading.detectedNote;
     }
-    return reading.detectedLabel;
+    return reading.detectedNote;
   }, [manualMode, reading, selectedStringId, strings]);
 
   const targetLabel = reading?.targetString
-    ? `${reading.targetString.label} · ${reading.targetString.note}${reading.targetString.octave}`
+    ? `${reading.targetString.label} · ${reading.targetString.note}`
     : 'Esperando señal';
 
   const handleMicToggle = () => {
