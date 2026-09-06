@@ -35,6 +35,7 @@ const mapCatalogProduct = (product: any) => {
 
   return {
     ...doc,
+    featured: isFeaturedValue(doc.featured),
     onSale,
     effectivePrice: getEffectiveProductPrice(doc),
     salePrice: onSale ? salePrice : undefined,
@@ -47,6 +48,11 @@ const getHiddenCategoryNames = async () => {
 };
 
 const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const isFeaturedValue = (value: unknown) =>
+  value === true || value === 'true' || value === 1 || value === '1';
+
+const featuredFilter = () => ({ $in: [true, 'true'] });
 
 const categoryRegex = (value: string) => new RegExp(`^${escapeRegex(String(value || '').trim())}$`, 'i');
 
@@ -96,7 +102,7 @@ export const getCatalogProducts = async (query: any = {}) => {
   }
 
   if (query.featured === 'true') {
-    filters.featured = true;
+    filters.featured = featuredFilter();
   }
 
   if (query.offers === 'true') {
@@ -136,11 +142,11 @@ export const getCatalogProducts = async (query: any = {}) => {
       case 'newest':
         return { createdAt: -1 };
       default:
-        return { displayOrder: 1, name: 1 };
+        return { _featuredRank: -1, displayOrder: 1, name: 1 };
     }
   };
 
-  const effectivePriceStage = {
+  const catalogProjectionStage = {
     $addFields: {
       effectivePrice: {
         $cond: {
@@ -154,8 +160,17 @@ export const getCatalogProducts = async (query: any = {}) => {
           else: '$price',
         },
       },
+      _featuredRank: {
+        $cond: {
+          if: { $in: ['$featured', [true, 'true']] },
+          then: 1,
+          else: 0,
+        },
+      },
     },
   };
+
+  const effectivePriceStage = catalogProjectionStage;
 
   const [items, total] = await Promise.all([
     Product.aggregate([
@@ -339,14 +354,14 @@ export const getCatalogCategories = async () => {
 
 export const getFeaturedProducts = async (limit = 8) => {
   const hiddenNames = await getHiddenCategoryNames();
-  const filters: any = { ...CATALOG_PUBLIC_FILTER, featured: true };
+  const filters: any = { ...CATALOG_PUBLIC_FILTER, featured: featuredFilter() };
   if (hiddenNames.length > 0) {
     filters.category = { $nin: hiddenNames };
   }
 
   const items = await Product.find(filters)
     .select(CATALOG_SELECT)
-    .sort({ displayOrder: 1, name: 1 })
+    .sort({ featured: -1, displayOrder: 1, name: 1 })
     .limit(limit);
 
   return items.map(mapCatalogProduct);

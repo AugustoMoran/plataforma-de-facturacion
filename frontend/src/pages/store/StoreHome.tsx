@@ -12,25 +12,18 @@ import { useTrackEventMutation } from '../../services/analyticsApi';
 
 export const StoreHome: React.FC = () => {
   const { data: settings } = useGetPublicSettingsQuery();
-  const { data: products = [], isLoading: loadingProducts } = useGetStoreProductsQuery();
+  const { data: featuredProducts = [], isLoading: loadingFeatured } = useGetStoreProductsQuery({ featured: true });
+  const { data: catalogProducts = [], isLoading: loadingCatalog } = useGetStoreProductsQuery();
   const [trackEvent] = useTrackEventMutation();
 
-  const homeProducts = useMemo(
-    () =>
-      [...products]
-        .sort((a, b) => {
-          const featuredDiff = Number(Boolean(b.featured)) - Number(Boolean(a.featured));
-          if (featuredDiff !== 0) return featuredDiff;
+  const loadingProducts = loadingFeatured || loadingCatalog;
 
-          const orderA = a.displayOrder ?? 999999;
-          const orderB = b.displayOrder ?? 999999;
-          if (orderA !== orderB) return orderA - orderB;
+  const homeProducts = useMemo(() => {
+    const featuredIds = new Set(featuredProducts.map((product) => product._id));
+    const rest = catalogProducts.filter((product) => !featuredIds.has(product._id));
 
-          return a.name.localeCompare(b.name, 'es');
-        })
-        .slice(0, 12),
-    [products]
-  );
+    return [...featuredProducts, ...rest].slice(0, 12);
+  }, [featuredProducts, catalogProducts]);
 
   useEffect(() => {
     trackEvent({ event: 'page_view', path: '/' }).catch(() => {});
