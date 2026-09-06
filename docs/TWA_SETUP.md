@@ -7,7 +7,7 @@ La tienda web (`https://www.ososoundmusic.com`) puede publicarse en Play Store c
 1. Cuenta **Google Play Console** (USD 25, pago único).
 2. Sitio en HTTPS con PWA activa (ya desplegada en Vercel).
 3. Íconos cuadrados generados (`public/icons/pwa-192.png` y `pwa-512.png`).
-4. Política de privacidad en URL pública (puede ser una página de tu sitio).
+4. Política de privacidad en URL pública: `https://www.ososoundmusic.com/privacidad`
 
 ---
 

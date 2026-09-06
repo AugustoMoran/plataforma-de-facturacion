@@ -2,7 +2,18 @@
 
 Esta carpeta contiene la configuración para generar la app Android que abre `https://www.ososoundmusic.com`.
 
-**No se sube a Render ni Vercel.** La compilás en **tu PC** y subís el archivo `.aab` a **Google Play Console**.
+**No se sube a Render ni Vercel.** La compilás en **tu PC** (o Linux/CI) y subís el archivo `.aab` a **Google Play Console**.
+
+### Build automático (Linux / macOS / Cloud Agent)
+
+```bash
+cd android-twa
+npm install
+npm run setup      # Android SDK (solo primera vez)
+npm run build      # → output/ososound-release.aab
+```
+
+Scripts en `scripts/`: `setup-android-sdk.sh`, `generate-keystore.sh`, `build-release.sh`, `print-sha256.sh`.
 
 ---
 
