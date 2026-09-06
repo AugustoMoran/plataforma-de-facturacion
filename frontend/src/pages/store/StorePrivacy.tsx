@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { SEO } from '../components/ecommerce/SEO';
+import { SEO } from '../../components/ecommerce/SEO';
 
 export const StorePrivacy: React.FC = () => (
   <div className="max-w-3xl mx-auto space-y-6 animate-slide-up">
