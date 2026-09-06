@@ -5,7 +5,7 @@ import { User } from '../../auth/models/User';
 import { adjustStock } from '../../stock/services/stockService';
 import { MovementType } from '../../stock/models/StockMovement';
 import Product from '../../inventory/models/Product';
-import Expense from '../../expenses/models/Expense';
+import SupplierLedgerEntry from '../../supplierLedger/models/SupplierLedgerEntry';
 import { buildSaleInvoiceData } from '../../afip/utils/afipInvoiceBuilder';
 
 const generateInternalInvoiceNumber = () => {
@@ -585,16 +585,28 @@ export const getProfitReport = async (from?: Date, to?: Date) => {
     }
   }
 
-  const expenses = await Expense.find({
+  const ledgerEntries = await SupplierLedgerEntry.find({
     isActive: true,
     date: { $gte: start, $lte: end },
-  }).sort({ date: -1, createdAt: -1 });
+  })
+    .populate('supplier', 'name')
+    .sort({ date: -1, createdAt: -1 });
 
-  const totalExpenses = expenses.reduce((acc, e: any) => acc + Number(e.amount || 0), 0);
-  const totalExpensesAffectingProfit = expenses
-    .filter((e: any) => Boolean(e.affectsProfit))
+  const totalSupplierInvoices = ledgerEntries
+    .filter((e: any) => e.entryType === 'INVOICE')
     .reduce((acc, e: any) => acc + Number(e.amount || 0), 0);
-  const totalExpensesInformative = totalExpenses - totalExpensesAffectingProfit;
+
+  const totalSupplierPayments = ledgerEntries
+    .filter((e: any) => e.entryType === 'PAYMENT')
+    .reduce((acc, e: any) => acc + Number(e.amount || 0), 0);
+
+  const totalSupplierAdjustments = ledgerEntries
+    .filter((e: any) => e.entryType === 'ADJUSTMENT')
+    .reduce((acc, e: any) => acc + Number(e.signedAmount || 0), 0);
+
+  const totalExpensesAffectingProfit = totalSupplierInvoices + totalSupplierAdjustments;
+  const totalExpensesInformative = totalSupplierPayments;
+  const totalExpenses = totalExpensesAffectingProfit;
 
   for (const note of creditNotes) {
     const revenue = Number(note.total || 0);
@@ -716,6 +728,9 @@ export const getProfitReport = async (from?: Date, to?: Date) => {
       totalExpenses: Number(totalExpenses.toFixed(2)),
       totalExpensesAffectingProfit: Number(totalExpensesAffectingProfit.toFixed(2)),
       totalExpensesInformative: Number(totalExpensesInformative.toFixed(2)),
+      supplierInvoices: Number(totalSupplierInvoices.toFixed(2)),
+      supplierAdjustments: Number(totalSupplierAdjustments.toFixed(2)),
+      supplierPayments: Number(totalSupplierPayments.toFixed(2)),
       totalGain: Number(totalGain.toFixed(2)),
       gainAfterExpenses: Number(gainAfterExpenses.toFixed(2)),
       totalCommission,
@@ -735,6 +750,16 @@ export const getProfitReport = async (from?: Date, to?: Date) => {
     byBranch,
     bySeller,
     bySellerBranch,
+    supplierLedgerEntries: ledgerEntries.map((entry: any) => ({
+      _id: entry._id,
+      date: entry.date,
+      entryType: entry.entryType,
+      amount: Number(entry.amount || 0),
+      signedAmount: Number(entry.signedAmount || 0),
+      reference: entry.reference || '',
+      description: entry.description || '',
+      counterpartyName: entry.counterpartyName || entry.supplier?.name || '',
+    })),
     byDay: byDay.map((d) => ({
       ...d,
       revenue: Number(d.revenue.toFixed(2)),

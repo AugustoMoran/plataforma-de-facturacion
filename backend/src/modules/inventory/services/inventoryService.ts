@@ -4,6 +4,7 @@ import BranchStock from '../../stock/models/BranchStock';
 import { adjustStock } from '../../stock/services/stockService';
 import { MovementType } from '../../stock/models/StockMovement';
 import Supplier from '../../suppliers/models/Supplier';
+import { applyProductShippingDefaults } from '../constants/shippingDefaults';
 
 interface BranchStockInput {
   branchId: string;
@@ -328,7 +329,7 @@ export const createProduct = async (productData: Partial<IProduct> & { branchSto
   (productData as any).stock = 0;
   delete (productData as any).branchStocks;
 
-  const product = new Product(productData);
+  const product = new Product(applyProductShippingDefaults(productData as Partial<IProduct>));
   const savedProduct = await product.save();
 
   const creatorId = String(user?._id || user?.id || '');
