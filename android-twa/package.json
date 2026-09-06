@@ -1,0 +1,16 @@
+{
+  "name": "ososound-android-twa",
+  "private": true,
+  "version": "1.0.0",
+  "description": "TWA Android shell para Oso Sound (Google Play)",
+  "scripts": {
+    "setup": "bash ./scripts/setup-android-sdk.sh",
+    "keystore": "bash ./scripts/generate-keystore.sh",
+    "update": "bubblewrap update --skipVersionUpgrade",
+    "build": "bash ./scripts/build-release.sh",
+    "sha256": "bash ./scripts/print-sha256.sh"
+  },
+  "devDependencies": {
+    "@bubblewrap/cli": "^1.22.0"
+  }
+}

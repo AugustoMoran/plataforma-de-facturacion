@@ -14,5 +14,18 @@ coverage
 docker-compose.override.yml
 tmp
 
+# Android TWA / Play Store
+/android-twa/node_modules
+/android-twa/.gradle
+/android-twa/.keystore.env
+/android-twa/android.keystore
+/android-twa/output/
+/android-twa/app/
+/android-twa/build/
+/android-twa/*.aab
+/android-twa/*.apk
+/android-twa/*.idsig
+/android-twa/local.properties
+
 # AFIP certificates and local env files
 /secure/afip/

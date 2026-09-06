@@ -23,6 +23,7 @@ import { StoreCheckoutFailure } from './pages/store/StoreCheckoutFailure';
 import { StoreWhatsAppSent } from './pages/store/StoreWhatsAppSent';
 import { StoreRegister } from './pages/store/StoreRegister';
 import { Maintenance } from './pages/store/Maintenance';
+import { StorePrivacy } from './pages/store/StorePrivacy';
 
 const DashboardLayout = ({ children, adminOnly = false }: { children: React.ReactNode; adminOnly?: boolean }) => (
   <DashboardProtectedRoute adminOnly={adminOnly}>
@@ -46,6 +47,7 @@ const router = createBrowserRouter([
       { path: '/checkout/failure', element: <StoreCheckoutFailure /> },
       { path: '/checkout/confirmation/:orderId', element: <StoreCheckoutConfirmation /> },
       { path: '/store/register', element: <StoreRegister /> },
+      { path: '/privacidad', element: <StorePrivacy /> },
     ],
   },
   { path: '/maintenance', element: <Maintenance /> },
