@@ -6,6 +6,8 @@ import {
   getProvincesController,
   getShippingStatusController,
   listDispatchController,
+  listPickupController,
+  notifyPickupReadyController,
   quoteShippingController,
   refreshDispatchController,
 } from '../controllers/shippingController';
@@ -23,5 +25,7 @@ router.get('/enviopack/webhook', envioPackWebhookController);
 router.get('/dispatch', authenticate, authorize(PERMISSIONS.SALES_VIEW), listDispatchController);
 router.post('/dispatch/:saleId', authenticate, authorize(PERMISSIONS.SALES_EDIT), createDispatchController);
 router.post('/dispatch/:saleId/refresh', authenticate, authorize(PERMISSIONS.SALES_EDIT), refreshDispatchController);
+router.get('/pickup', authenticate, authorize(PERMISSIONS.SALES_VIEW), listPickupController);
+router.post('/pickup/:saleId/notify-ready', authenticate, authorize(PERMISSIONS.SALES_EDIT), notifyPickupReadyController);
 
 export default router;

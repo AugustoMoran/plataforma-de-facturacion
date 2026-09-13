@@ -84,13 +84,15 @@ export interface ISale extends Document {
   envioPackPedidoId?: number;
   envioPackEnvioId?: number;
   envioPackSellerCost?: number;
-  shippingStatus?: 'pending_payment' | 'awaiting_dispatch' | 'awaiting_pickup' | 'label_ready' | 'shipped' | 'delivered';
+  shippingStatus?: 'pending_payment' | 'awaiting_dispatch' | 'awaiting_pickup' | 'ready_for_pickup' | 'label_ready' | 'shipped' | 'delivered';
   trackingNumber?: string;
   paymentId?: string;
   paywayFormHash?: string;
   paywayTransactionId?: string;
   paymentStatus?: string;
   paymentNotifiedAt?: Date;
+  paymentExpiresAt?: Date;
+  pickupReadyNotifiedAt?: Date;
   createdAt: Date;
 }
 
@@ -202,7 +204,7 @@ const SaleSchema: Schema = new Schema({
   envioPackSellerCost: { type: Number },
   shippingStatus: {
     type: String,
-    enum: ['pending_payment', 'awaiting_dispatch', 'awaiting_pickup', 'label_ready', 'shipped', 'delivered'],
+    enum: ['pending_payment', 'awaiting_dispatch', 'awaiting_pickup', 'ready_for_pickup', 'label_ready', 'shipped', 'delivered'],
     default: 'pending_payment',
   },
   trackingNumber: { type: String },
@@ -211,6 +213,8 @@ const SaleSchema: Schema = new Schema({
   paywayTransactionId: { type: String },
   paymentStatus: { type: String },
   paymentNotifiedAt: { type: Date },
+  paymentExpiresAt: { type: Date },
+  pickupReadyNotifiedAt: { type: Date },
 }, {
   timestamps: true,
   versionKey: false,

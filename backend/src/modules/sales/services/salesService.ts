@@ -906,6 +906,7 @@ export const createSale = async (saleData: any, sellerId: string, requesterRoles
       shippingStatus: saleData.shippingStatus,
       paymentId: saleData.paymentId,
       paymentStatus: saleData.paymentStatus,
+      paymentExpiresAt: saleData.paymentExpiresAt,
     });
 
     if (session) {

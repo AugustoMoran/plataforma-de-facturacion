@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import * as paywayService from '../services/paywayService';
 import { markSalePaid } from '../services/paymentSaleSync';
 import Sale from '../../sales/models/Sale';
+import { canRetryPaywayPayment, isPaymentRetryExpired } from '../utils/paymentRetry';
 
 const resolvePayerEmail = (sale: { customerEmail?: string; clientName?: string }, payerEmail?: string) => {
   const candidates = [payerEmail, sale.customerEmail, sale.clientName]
@@ -41,6 +42,23 @@ export const createPaywayCheckoutController = async (req: Request, res: Response
     const { saleId, payerEmail } = req.body;
     const sale = await Sale.findById(saleId);
     if (!sale) return res.status(404).json({ message: 'Venta no encontrada' });
+
+    if (sale.paymentStatus === 'approved') {
+      return res.status(400).json({ message: 'Este pedido ya fue pagado.' });
+    }
+
+    if (sale.paymentMethod === 'payway' && isPaymentRetryExpired(sale)) {
+      return res.status(400).json({
+        message: 'Este pedido expiró. Volvé a armar el carrito para comprar nuevamente.',
+        expired: true,
+      });
+    }
+
+    if (sale.paymentStatus && sale.paymentStatus !== 'pending' && sale.paymentStatus !== 'rejected') {
+      if (!canRetryPaywayPayment(sale)) {
+        return res.status(400).json({ message: 'Este pedido no admite reintento de pago.' });
+      }
+    }
 
     const email = resolvePayerEmail(sale, payerEmail);
     if (!email) {

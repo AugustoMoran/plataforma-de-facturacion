@@ -140,6 +140,49 @@ const sendViaSmtp = async (to: string, subject: string, text: string) => {
   return true;
 };
 
+export const notifyPickupReady = async (saleId: string) => {
+  const sale = await Sale.findById(saleId);
+  if (!sale || sale.paymentStatus !== 'approved') {
+    throw new Error('Solo se puede avisar retiro en pedidos pagos');
+  }
+
+  const isStorePickup = sale.shippingQuote?.carrierId === 'store' || Boolean(sale.shippingQuote?.pickupBranch);
+  if (!isStorePickup) {
+    throw new Error('Este pedido no es de retiro en sucursal');
+  }
+
+  if (!sale.customerEmail) {
+    throw new Error('El pedido no tiene email del cliente para avisar');
+  }
+
+  const orderRef = sale.invoiceNumber || String(sale._id).slice(-8).toUpperCase();
+  const branch = sale.shippingQuote?.pickupBranch;
+  const lines = [
+    `Hola ${sale.clientName || ''},`.trim(),
+    '',
+    `Tu pedido #${orderRef} ya está listo para retirar.`,
+    '',
+    branch?.name ? `Sucursal: ${branch.name}` : 'Sucursal: Oso Sound Music',
+    branch?.address ? `Dirección: ${branch.address}` : '',
+    branch?.phone ? `Teléfono: ${branch.phone}` : '',
+    '',
+    'Recordá traer tu DNI y el número de pedido.',
+    'Gracias por tu compra en Oso Sound Music.',
+  ].filter(Boolean);
+
+  const sent = await sendViaSmtp(
+    sale.customerEmail,
+    `Tu pedido #${orderRef} está listo para retirar`,
+    lines.join('\n')
+  );
+
+  sale.shippingStatus = 'ready_for_pickup';
+  sale.pickupReadyNotifiedAt = new Date();
+  await sale.save();
+
+  return { sent, customerEmail: sale.customerEmail };
+};
+
 export const notifyOrderPaymentApproved = async (saleId: string) => {
   const sale = await Sale.findById(saleId);
   if (!sale || sale.paymentStatus !== 'approved') return;
