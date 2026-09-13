@@ -87,7 +87,10 @@ export interface ISale extends Document {
   shippingStatus?: 'pending_payment' | 'awaiting_dispatch' | 'awaiting_pickup' | 'label_ready' | 'shipped' | 'delivered';
   trackingNumber?: string;
   paymentId?: string;
+  paywayFormHash?: string;
+  paywayTransactionId?: string;
   paymentStatus?: string;
+  paymentNotifiedAt?: Date;
   createdAt: Date;
 }
 
@@ -204,7 +207,10 @@ const SaleSchema: Schema = new Schema({
   },
   trackingNumber: { type: String },
   paymentId: { type: String },
+  paywayFormHash: { type: String },
+  paywayTransactionId: { type: String },
   paymentStatus: { type: String },
+  paymentNotifiedAt: { type: Date },
 }, {
   timestamps: true,
   versionKey: false,
@@ -212,5 +218,7 @@ const SaleSchema: Schema = new Schema({
 
 SaleSchema.index({ createdAt: -1 });
 SaleSchema.index({ source: 1, createdAt: -1 });
+SaleSchema.index({ paywayTransactionId: 1 });
+SaleSchema.index({ paymentId: 1 });
 
 export default mongoose.model<ISale>('Sale', SaleSchema);

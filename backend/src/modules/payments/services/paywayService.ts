@@ -2,6 +2,8 @@ import axios from 'axios';
 
 type PaywayEnvironment = 'sandbox' | 'production';
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 const getEnvironment = (): PaywayEnvironment => {
   const configured = (process.env.PAYWAY_ENVIRONMENT || '').toLowerCase();
   if (configured === 'production' || configured === 'prod') return 'production';
@@ -33,9 +35,46 @@ const getPaywayConfig = () => {
     paymentsApiBase: isProduction
       ? 'https://ventasonline.payway.com.ar/api/v2'
       : 'https://developers.decidir.com/api/v2',
-    enabled: Boolean(publicKey && privateKey && siteId && templateId),
+    enabled: Boolean(publicKey && privateKey && siteId && templateId > 0),
   };
 };
+
+const resolveNotificationsUrl = () => {
+  const configured = (process.env.PAYWAY_WEBHOOK_URL || '').trim();
+  if (configured.startsWith('http')) return configured;
+
+  const apiUrl = (process.env.API_URL || '').replace(/\/$/, '');
+  if (apiUrl.startsWith('http')) {
+    return `${apiUrl}/api/payments/payway/webhook`;
+  }
+
+  return '';
+};
+
+const extractPaywayError = (data: unknown, status: number) => {
+  if (!data || typeof data !== 'object') {
+    return `Payway respondió ${status}`;
+  }
+
+  const payload = data as Record<string, unknown>;
+  const validationErrors = Array.isArray(payload.validation_errors)
+    ? payload.validation_errors
+        .map((entry: any) => entry?.param || entry?.code || entry?.message)
+        .filter(Boolean)
+        .join(', ')
+    : '';
+
+  const candidates = [payload.description, payload.message, payload.error, validationErrors];
+  for (const value of candidates) {
+    if (typeof value === 'string' && value.trim().length > 0) {
+      return value;
+    }
+  }
+
+  return `Payway respondió ${status}`;
+};
+
+export const isValidPaywayEmail = (email: string) => EMAIL_REGEX.test(String(email || '').trim());
 
 export const getPaywayPublicConfig = () => {
   const config = getPaywayConfig();
@@ -43,6 +82,7 @@ export const getPaywayPublicConfig = () => {
     publicKey: config.publicKey,
     enabled: config.enabled,
     environment: config.environment,
+    webhookConfigured: Boolean(resolveNotificationsUrl()),
   };
 };
 
@@ -53,6 +93,12 @@ const mapPaywayStatus = (status?: string) => {
     return 'rejected';
   }
   return 'pending';
+};
+
+const buildTransactionId = (saleId: string) => {
+  const compactSaleId = String(saleId).replace(/\W/g, '').slice(-10);
+  const suffix = Date.now().toString().slice(-4);
+  return `OSO${compactSaleId}${suffix}`.slice(0, 39);
 };
 
 export const createCheckoutSession = async (input: {
@@ -68,21 +114,28 @@ export const createCheckoutSession = async (input: {
 }) => {
   const config = getPaywayConfig();
   if (!config.enabled) {
-    throw new Error('Payway no configurado. Revisá las variables PAYWAY_* en el servidor.');
+    throw new Error(
+      'Payway no configurado. Revisá PAYWAY_PUBLIC_KEY, PAYWAY_PRIVATE_KEY, PAYWAY_SITE_ID y PAYWAY_TEMPLATE_ID (> 0).'
+    );
   }
 
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  const payerEmail = String(input.payerEmail || '').trim().toLowerCase();
+  if (!isValidPaywayEmail(payerEmail)) {
+    throw new Error('Ingresá un email válido para continuar con el pago.');
+  }
+
+  const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
   const successUrl = input.backUrls?.success || `${frontendUrl}/checkout/confirmation/${input.saleId}`;
   const cancelUrl = input.backUrls?.cancel || `${frontendUrl}/checkout/failure?saleId=${input.saleId}`;
-  const notificationsUrl = process.env.PAYWAY_WEBHOOK_URL
-    || `${process.env.API_URL || ''}/api/payments/payway/webhook`;
+  const notificationsUrl = resolveNotificationsUrl();
 
   const amountInCents = Math.round(Number(input.total || 0) * 100);
   if (!amountInCents || amountInCents <= 0) {
     throw new Error('El monto del pedido debe ser mayor a cero');
   }
 
-  const transactionId = `OSO${String(input.saleId).replace(/\W/g, '').slice(-10)}${Date.now().toString().slice(-4)}`;
+  const transactionId = buildTransactionId(input.saleId);
+  const establishmentName = (process.env.STORE_NAME || 'Oso Sound Music').slice(0, 25);
 
   const payload: Record<string, unknown> = {
     form_site: config.publicKey,
@@ -93,8 +146,8 @@ export const createCheckoutSession = async (input: {
     },
     public_apikey: config.publicKey,
     customer: {
-      id: String(input.saleId).slice(-24) || 'guest',
-      email: input.payerEmail,
+      id: String(input.saleId).replace(/\W/g, '').slice(-24) || 'guest',
+      email: payerEmail,
       ip_address: input.payerIp || '127.0.0.1',
     },
     payment: {
@@ -104,6 +157,8 @@ export const createCheckoutSession = async (input: {
       installments: 1,
       payment_type: 'single',
       sub_payments: [],
+      description: input.title.slice(0, 120),
+      establishment_name: establishmentName,
     },
     fraud_detection: { send_to_cs: false },
     success_url: successUrl,
@@ -111,7 +166,7 @@ export const createCheckoutSession = async (input: {
     redirect_url: successUrl,
   };
 
-  if (notificationsUrl && notificationsUrl.includes('http')) {
+  if (notificationsUrl) {
     payload.notifications_url = notificationsUrl;
   }
 
@@ -124,11 +179,7 @@ export const createCheckoutSession = async (input: {
   });
 
   if (response.status >= 400) {
-    const message = response.data?.description
-      || response.data?.message
-      || response.data?.error
-      || `Payway respondió ${response.status}`;
-    throw new Error(message);
+    throw new Error(extractPaywayError(response.data, response.status));
   }
 
   const hash = response.data?.hash;
@@ -139,7 +190,7 @@ export const createCheckoutSession = async (input: {
   const checkoutUrl = `${config.formsWebBase}/web/forms/${hash}?apikey=${encodeURIComponent(config.publicKey)}`;
 
   return {
-    id: String(hash),
+    formHash: String(hash),
     checkoutUrl,
     transactionId,
   };
@@ -157,10 +208,74 @@ export const getPaymentById = async (paymentId: string) => {
   });
 
   if (response.status >= 400) {
-    throw new Error(response.data?.message || `No se pudo consultar el pago ${paymentId}`);
+    throw new Error(extractPaywayError(response.data, response.status));
   }
 
   return response.data;
+};
+
+export const getPaymentByTransactionId = async (transactionId: string) => {
+  const config = getPaywayConfig();
+  if (!config.privateKey || !transactionId) {
+    throw new Error('Payway no configurado o transacción inválida');
+  }
+
+  const params = new URLSearchParams({
+    siteOperationId: transactionId,
+    merchantId: config.siteId,
+    pageSize: '5',
+    offset: '0',
+  });
+
+  const response = await axios.get(`${config.paymentsApiBase}/payments?${params.toString()}`, {
+    headers: { apikey: config.privateKey },
+    validateStatus: () => true,
+  });
+
+  if (response.status >= 400) {
+    throw new Error(extractPaywayError(response.data, response.status));
+  }
+
+  const results = Array.isArray(response.data?.results)
+    ? response.data.results
+    : Array.isArray(response.data)
+      ? response.data
+      : [];
+
+  const payment = results.find(
+    (entry: any) => String(entry?.site_transaction_id || '') === String(transactionId)
+  ) || results[0];
+
+  if (!payment) {
+    throw new Error('Aún no hay un pago registrado para este pedido en Payway');
+  }
+
+  return payment;
+};
+
+export const resolvePaymentForSale = async (sale: {
+  paymentId?: string;
+  paywayFormHash?: string;
+  paywayTransactionId?: string;
+}) => {
+  const storedPaymentId = String(sale.paymentId || '').trim();
+  const looksLikePaywayPaymentId = storedPaymentId
+    && storedPaymentId !== sale.paywayFormHash
+    && !storedPaymentId.includes('/');
+
+  if (looksLikePaywayPaymentId) {
+    try {
+      return await getPaymentById(storedPaymentId);
+    } catch {
+      // fallback to transaction lookup
+    }
+  }
+
+  if (sale.paywayTransactionId) {
+    return getPaymentByTransactionId(sale.paywayTransactionId);
+  }
+
+  throw new Error('Este pedido no tiene una referencia de pago Payway para sincronizar');
 };
 
 export const processWebhookNotification = async (payload: any) => {
@@ -172,7 +287,11 @@ export const processWebhookNotification = async (payload: any) => {
     || payload?.payment?.id;
 
   if (!paymentId) {
-    return { processed: false, payload };
+    return {
+      processed: false,
+      payload,
+      transactionId: payload?.site_transaction_id || payload?.site?.transaction_id,
+    };
   }
 
   const payment = await getPaymentById(String(paymentId));
@@ -182,6 +301,7 @@ export const processWebhookNotification = async (payload: any) => {
     processed: true,
     paymentId: String(paymentId),
     status,
+    transactionId: payment?.site_transaction_id || payment?.site?.transaction_id,
     externalReference: payment?.site_transaction_id || payment?.external_reference,
     amount: payment?.amount ? Number(payment.amount) / 100 : undefined,
     rawStatus: payment?.status,
