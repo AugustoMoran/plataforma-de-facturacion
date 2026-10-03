@@ -2,8 +2,6 @@ import { Request, Response } from 'express';
 import * as paywayService from '../services/paywayService';
 import { markSalePaid } from '../services/paymentSaleSync';
 import Sale from '../../sales/models/Sale';
-import { User } from '../../auth/models/User';
-import { isCustomerRole } from '../../auth/services/customerProfileService';
 import { canRetryPaywayPayment, isPaymentRetryExpired } from '../utils/paymentRetry';
 
 const resolvePayerEmail = (sale: { customerEmail?: string; clientName?: string }, payerEmail?: string) => {
@@ -59,16 +57,6 @@ export const createPaywayCheckoutController = async (req: Request, res: Response
     if (sale.paymentStatus && sale.paymentStatus !== 'pending' && sale.paymentStatus !== 'rejected') {
       if (!canRetryPaywayPayment(sale)) {
         return res.status(400).json({ message: 'Este pedido no admite reintento de pago.' });
-      }
-    }
-
-    if (sale.buyerUserId) {
-      const buyer = await User.findById(sale.buyerUserId);
-      if (buyer && isCustomerRole(buyer.roles || []) && !buyer.emailVerified) {
-        return res.status(403).json({
-          message: 'Confirmá tu email antes de pagar con tarjeta. Revisá tu casilla o reenviá la verificación desde Mi cuenta.',
-          emailVerificationRequired: true,
-        });
       }
     }
 

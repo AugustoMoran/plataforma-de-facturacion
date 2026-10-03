@@ -94,13 +94,13 @@ export const StoreAccount: React.FC = () => {
 
         {params.get('welcome') === '1' && (
           <div className="rounded-xl border border-brand-300/40 bg-brand-500/10 p-4 text-sm text-blue-100">
-            Cuenta creada. Confirmá tu email para pagar con tarjeta (te enviamos un enlace).
+            Cuenta creada. Te enviamos un enlace para confirmar tu email y recibir novedades del pedido.
           </div>
         )}
 
         {user && isCustomerRole(user.roles) && !user.emailVerified && (
           <div className="rounded-xl border border-amber-300/40 bg-amber-500/10 p-4 text-sm text-amber-100 space-y-3">
-            <p>Tu email aún no está verificado. Necesitás confirmarlo para pagar con Payway.</p>
+            <p>Tu email aún no está verificado. Confirmarlo te ayuda a recibir confirmaciones y avisos de envío.</p>
             <button type="button" className="btn-secondary !py-2 !px-3 text-xs" disabled={resending} onClick={handleResend}>
               {resending ? 'Enviando...' : 'Reenviar email de verificación'}
             </button>

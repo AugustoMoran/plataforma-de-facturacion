@@ -399,8 +399,10 @@ export const StoreCheckout: React.FC = () => {
               ) : null}
 
               {user && isCustomerRole(user.roles) && !user.emailVerified && (
-                <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">
-                  Confirmá tu email desde <Link to="/account" className="underline">Mi cuenta</Link> para pagar con tarjeta.
+                <div className="rounded-xl border border-amber-300/60 bg-amber-50 p-3 text-xs text-amber-900">
+                  Te recomendamos confirmar tu email desde{' '}
+                  <Link to="/account" className="underline font-medium">Mi cuenta</Link>{' '}
+                  para recibir actualizaciones del pedido. Podés pagar igual.
                 </div>
               )}
 

@@ -25,7 +25,7 @@ export const issueEmailVerification = async (user: IUser) => {
       `Hola ${user.name || ''},`.trim(),
       '',
       'Gracias por registrarte en Oso Sound Music.',
-      'Para activar tu cuenta y poder pagar con tarjeta, confirmá tu email con este enlace:',
+      'Para confirmar tu cuenta y recibir novedades de tus pedidos, abrí este enlace:',
       verifyUrl,
       '',
       'El enlace vence en 24 horas.',

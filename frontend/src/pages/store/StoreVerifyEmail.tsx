@@ -20,7 +20,7 @@ export const StoreVerifyEmail: React.FC = () => {
       .unwrap()
       .then(() => {
         setStatus('ok');
-        setMessage('Email verificado correctamente. Ya podés pagar con tarjeta.');
+        setMessage('Email verificado correctamente. Vas a recibir las novedades de tus pedidos en esta casilla.');
       })
       .catch((err: any) => {
         setStatus('error');
