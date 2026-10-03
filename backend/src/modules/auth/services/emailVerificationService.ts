@@ -33,7 +33,7 @@ export const issueEmailVerification = async (user: IUser) => {
     ].join('\n'),
     html: `<p>Hola ${user.name || ''},</p>
 <p>Gracias por registrarte en <strong>Oso Sound Music</strong>.</p>
-<p><a href="${verifyUrl}">Confirmar mi email</a></p>
+<p><a href="${verifyUrl}">Confirmar mi email</a> para recibir novedades de tus pedidos.</p>
 <p>El enlace vence en 24 horas.</p>`,
   });
 
