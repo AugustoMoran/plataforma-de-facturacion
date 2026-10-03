@@ -52,7 +52,7 @@ export const Login = () => {
             <div className="w-14 h-14 rounded-xl bg-white/90 mx-auto mb-4 flex items-center justify-center shadow-glow-md ring-1 ring-white/30 overflow-hidden">
               <img src={brandLogo} alt="Logo" className="w-10 h-10 object-contain" />
             </div>
-            <h1 className="text-xl font-bold text-white">FacturaApp</h1>
+            <h1 className="text-xl font-bold text-white">Oso Sound</h1>
             <p className="text-sm text-slate-500 mt-1">Panel de gestión profesional</p>
           </div>
 
