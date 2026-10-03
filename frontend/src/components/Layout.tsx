@@ -146,7 +146,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
 	if (!user) return <>{children}</>;
 
-	const companyName = (import.meta as any).env?.VITE_COMPANY_NAME || "FacturaApp";
+	const companyName = (import.meta as any).env?.VITE_COMPANY_NAME || "Oso Sound";
 
 	return (
     <div className="flex h-screen overflow-hidden admin-shell text-blue-950">
