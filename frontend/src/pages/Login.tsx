@@ -3,6 +3,9 @@ import { useDispatch } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
 import { useLoginMutation } from '../services/authApi';
 import { setCredentials } from '../store/authSlice';
+import { useStore } from 'react-redux';
+import { RootState } from '../store';
+import { syncCustomerCartWithServer } from '../utils/syncCustomerCart';
 
 const brandLogo = '/brand-logo.png';
 
@@ -12,6 +15,7 @@ export const Login = () => {
   const [error, setError] = useState('');
   const [login, { isLoading }] = useLoginMutation();
   const dispatch = useDispatch();
+  const store = useStore<RootState>();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -26,6 +30,7 @@ export const Login = () => {
         password: normalizedPassword,
       }).unwrap();
       dispatch(setCredentials({ user: result.user }));
+      await syncCustomerCartWithServer(store).catch(() => {});
       const roles: string[] = result?.user?.roles || [];
       const isStaff = roles.some((r) => ['admin', 'vendedor'].includes(String(r).toLowerCase()));
       navigate(isStaff ? '/dashboard' : '/');

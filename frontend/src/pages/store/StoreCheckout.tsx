@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { SEO } from '../../components/ecommerce/SEO';
 import { selectCartItems, selectCartTotal, clearCart, CartItem } from '../../store/cartSlice';
+import { RootState } from '../../store';
+import { isCustomerRole } from '../../components/ecommerce/RouteGuards';
 import { useCreateStoreOrderMutation } from '../../services/ecommerceApi';
 import { useGetPaywayConfigQuery, useCreatePaywayCheckoutMutation } from '../../services/paymentsApi';
 import { useTrackEventMutation } from '../../services/analyticsApi';
@@ -110,6 +112,7 @@ const PaymentMethodCard: React.FC<{
 export const StoreCheckout: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { user } = useSelector((state: RootState) => state.auth);
   const items = useSelector(selectCartItems);
   const total = useSelector(selectCartTotal);
   const [createOrder, { isLoading: creatingOrder }] = useCreateStoreOrderMutation();
@@ -137,6 +140,8 @@ export const StoreCheckout: React.FC = () => {
   });
   const [error, setError] = useState('');
   const [selectedShipping, setSelectedShipping] = useState<ShippingOption | null>(null);
+  const [useSavedAddress, setUseSavedAddress] = useState(true);
+  const [saveShippingToProfile, setSaveShippingToProfile] = useState(true);
 
   const isLoading = creatingOrder || creatingCheckout;
   const paywayEnabled = Boolean(paywayConfig?.enabled);
@@ -158,6 +163,21 @@ export const StoreCheckout: React.FC = () => {
       setPaymentChoice('whatsapp');
     }
   }, [paywayEnabled]);
+
+  useEffect(() => {
+    if (!user || !isCustomerRole(user.roles)) return;
+    const addr = user.defaultShippingAddress;
+    setPaywayForm((prev) => ({
+      ...prev,
+      customerName: user.name || prev.customerName,
+      customerEmail: user.email || prev.customerEmail,
+      customerPhone: user.phone || prev.customerPhone,
+      street: addr?.street || prev.street,
+      city: addr?.city || prev.city,
+      province: addr?.province || prev.province,
+      postalCode: addr?.postalCode || prev.postalCode,
+    }));
+  }, [user]);
 
   const handleContinueFromMethod = () => {
     if (!paymentChoice) {
@@ -203,6 +223,7 @@ export const StoreCheckout: React.FC = () => {
       shippingCost,
       notes: paywayForm.notes.trim() || undefined,
       paymentMethod: 'payway',
+      saveShippingToProfile: Boolean(user && isCustomerRole(user.roles) && saveShippingToProfile),
     }).unwrap();
 
     trackEvent({ event: 'purchase', metadata: { orderId: order._id, total: orderTotal } }).catch(() => {});
@@ -369,6 +390,20 @@ export const StoreCheckout: React.FC = () => {
                   onChange={(e) => setPaywayForm({ ...paywayForm, customerPhone: e.target.value })} />
               </div>
 
+              {user && isCustomerRole(user.roles) && user.defaultShippingAddress?.postalCode ? (
+                <label className="flex items-center gap-2 text-sm text-blue-900">
+                  <input type="checkbox" checked={useSavedAddress}
+                    onChange={(e) => setUseSavedAddress(e.target.checked)} />
+                  Usar mi dirección guardada ({user.defaultShippingAddress?.city}, CP {user.defaultShippingAddress?.postalCode})
+                </label>
+              ) : null}
+
+              {user && isCustomerRole(user.roles) && !user.emailVerified && (
+                <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">
+                  Confirmá tu email desde <Link to="/account" className="underline">Mi cuenta</Link> para pagar con tarjeta.
+                </div>
+              )}
+
               <ShippingSelector
                 items={items}
                 subtotal={total}
@@ -389,14 +424,23 @@ export const StoreCheckout: React.FC = () => {
                 }}
                 selectedOptionId={selectedShipping?.id || null}
                 onSelectOption={setSelectedShipping}
+                autoQuoteDomicilio={useSavedAddress}
+                initialDeliveryMode={useSavedAddress && paywayForm.postalCode ? 'D' : undefined}
               />
 
               {selectedShipping?.modalidad === 'D' ? (
-                <div>
+                <div className="space-y-2">
                   <label className="section-heading">Dirección de entrega</label>
-                  <input className="input" required value={paywayForm.street}
+                  <input className="input" required value={paywayForm.street} disabled={useSavedAddress}
                     onChange={(e) => setPaywayForm({ ...paywayForm, street: e.target.value })}
                     placeholder="Calle y número" />
+                  {user && isCustomerRole(user.roles) && (
+                    <label className="flex items-center gap-2 text-xs text-blue-800">
+                      <input type="checkbox" checked={saveShippingToProfile}
+                        onChange={(e) => setSaveShippingToProfile(e.target.checked)} />
+                      Actualizar mi dirección guardada con estos datos
+                    </label>
+                  )}
                 </div>
               ) : selectedShipping?.modalidad === 'S' ? (
                 <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-blue-900">

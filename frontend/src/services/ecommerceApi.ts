@@ -80,6 +80,7 @@ export interface CreateOrderPayload {
   shippingModalidad?: 'D' | 'S';
   shippingMethod?: string;
   shippingCost?: number;
+  saveShippingToProfile?: boolean;
 }
 
 export const ecommerceApi = createApi({
@@ -148,9 +149,14 @@ export const ecommerceApi = createApi({
           shippingCost: body.shippingCost,
           notes: body.notes,
           paymentMethod: body.paymentMethod,
+          saveShippingToProfile: body.saveShippingToProfile,
         },
       }),
       invalidatesTags: ['StoreOrder', 'StoreProduct'],
+    }),
+    getMyStoreOrders: builder.query<any[], void>({
+      query: () => '/orders/me',
+      providesTags: ['StoreOrder'],
     }),
     getStoreOrder: builder.query<any, string>({
       query: (id) => `/orders/${id}`,
@@ -165,5 +171,6 @@ export const {
   useGetStoreProductQuery,
   useGetStoreCategoriesQuery,
   useCreateStoreOrderMutation,
+  useGetMyStoreOrdersQuery,
   useGetStoreOrderQuery,
 } = ecommerceApi;

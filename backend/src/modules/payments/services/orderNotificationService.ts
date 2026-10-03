@@ -1,5 +1,6 @@
 import Sale, { ISale } from '../../sales/models/Sale';
 import * as settingsService from '../../settings/services/settingsService';
+import { sendMail } from '../../notifications/services/mailerService';
 
 type NotificationScenario =
   | 'enviopack_dispatch'
@@ -112,34 +113,6 @@ const buildCustomerBody = (sale: ISale, scenario: NotificationScenario) => {
   return lines.join('\n');
 };
 
-const sendViaSmtp = async (to: string, subject: string, text: string) => {
-  const host = process.env.SMTP_HOST;
-  const port = Number(process.env.SMTP_PORT || '587');
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
-  const from = process.env.SMTP_FROM || process.env.STORE_EMAIL || user;
-
-  if (!host || !from) return false;
-
-  let nodemailer: typeof import('nodemailer');
-  try {
-    nodemailer = await import('nodemailer');
-  } catch {
-    console.warn('[OrderNotification] nodemailer no instalado; notificación solo en logs');
-    return false;
-  }
-
-  const transport = nodemailer.createTransport({
-    host,
-    port,
-    secure: port === 465,
-    auth: user && pass ? { user, pass } : undefined,
-  });
-
-  await transport.sendMail({ from, to, subject, text });
-  return true;
-};
-
 export const notifyPickupReady = async (saleId: string) => {
   const sale = await Sale.findById(saleId);
   if (!sale || sale.paymentStatus !== 'approved') {
@@ -170,11 +143,12 @@ export const notifyPickupReady = async (saleId: string) => {
     'Gracias por tu compra en Oso Sound Music.',
   ].filter(Boolean);
 
-  const sent = await sendViaSmtp(
-    sale.customerEmail,
-    `Tu pedido #${orderRef} está listo para retirar`,
-    lines.join('\n')
-  );
+  const mailResult = await sendMail({
+    to: sale.customerEmail,
+    subject: `Tu pedido #${orderRef} está listo para retirar`,
+    text: lines.join('\n'),
+  });
+  const sent = mailResult.sent;
 
   sale.shippingStatus = 'ready_for_pickup';
   sale.pickupReadyNotifiedAt = new Date();
@@ -197,7 +171,8 @@ export const notifyOrderPaymentApproved = async (saleId: string) => {
   let sellerSent = false;
   if (sellerEmail) {
     try {
-      sellerSent = await sendViaSmtp(sellerEmail, sellerSubject, sellerBody);
+      const sellerMail = await sendMail({ to: sellerEmail, subject: sellerSubject, text: sellerBody });
+      sellerSent = sellerMail.sent;
     } catch (error: any) {
       console.error('[OrderNotification] Error enviando mail al vendedor:', error?.message || error);
     }
@@ -206,11 +181,12 @@ export const notifyOrderPaymentApproved = async (saleId: string) => {
   let customerSent = false;
   if (sale.customerEmail) {
     try {
-      customerSent = await sendViaSmtp(
-        sale.customerEmail,
-        `Confirmación de pago — pedido ${sale.invoiceNumber || sale._id}`,
-        buildCustomerBody(sale, scenario)
-      );
+      const customerMail = await sendMail({
+        to: sale.customerEmail,
+        subject: `Confirmación de pago — pedido ${sale.invoiceNumber || sale._id}`,
+        text: buildCustomerBody(sale, scenario),
+      });
+      customerSent = customerMail.sent;
     } catch (error: any) {
       console.error('[OrderNotification] Error enviando mail al cliente:', error?.message || error);
     }

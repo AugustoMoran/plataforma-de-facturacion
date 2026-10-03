@@ -193,6 +193,7 @@ export const checkoutDirect = async (input: {
       shippingStatus: 'pending_payment',
       customerEmail: input.customerEmail,
       customerPhone: input.customerPhone,
+      buyerUserId: input.userId,
       paymentId: input.paymentId,
       paymentStatus: input.paymentStatus || 'pending',
       paymentExpiresAt: (input.paymentMethod || 'payway') === 'payway'

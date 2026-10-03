@@ -8,6 +8,16 @@ export interface AuthUser {
   permissions: Record<string, boolean>;
   branch?: string;
   name?: string;
+  phone?: string;
+  emailVerified?: boolean;
+  marketingOptIn?: boolean;
+  defaultShippingAddress?: {
+    street?: string;
+    city?: string;
+    province?: string;
+    postalCode?: string;
+    country?: string;
+  };
 }
 
 interface AuthState {

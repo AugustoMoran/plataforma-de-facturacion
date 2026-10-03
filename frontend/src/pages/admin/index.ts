@@ -4,3 +4,4 @@ export { AdminStoreSettings } from './AdminStoreSettings';
 export { AdminProfitReport } from './AdminProfitReport';
 export { AdminSupplierLedger } from './AdminSupplierLedger';
 export { AdminDispatch } from './AdminDispatch';
+export { AdminStoreCustomers } from './AdminStoreCustomers';

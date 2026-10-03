@@ -11,6 +11,10 @@ import {
   updatePermissionsController,
   updateCommissionController,
   updateBranchController,
+  updateProfileController,
+  verifyEmailController,
+  resendVerificationController,
+  getStoreCustomersController,
 } from '../controllers/authController';
 import { authenticate, authorize } from '../../../middleware/authMiddleware';
 import { User } from '../models/User';
@@ -30,6 +34,11 @@ const canRegister = async (req: any, res: any, next: any) => {
 router.post('/register/public', publicRegisterController);
 router.post('/register', canRegister, registerController);
 router.get('/users', authenticate, authorize('admin'), getUsersController);
+router.get('/customers', authenticate, authorize('admin'), getStoreCustomersController);
+router.patch('/profile', authenticate, updateProfileController);
+router.get('/verify-email', verifyEmailController);
+router.post('/verify-email', verifyEmailController);
+router.post('/resend-verification', authenticate, resendVerificationController);
 router.delete('/users/:id', authenticate, authorize('admin'), deleteUserController);
 router.patch('/users/permissions', authenticate, authorize('admin'), updatePermissionsController);
 router.patch('/users/commission', authenticate, authorize('admin'), updateCommissionController);

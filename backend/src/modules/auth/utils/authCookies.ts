@@ -29,6 +29,10 @@ export const serializeAuthUser = (user: IUser | any) => ({
   roles: user.roles,
   permissions: user.permissions,
   branch: user.branch,
+  phone: user.phone,
+  defaultShippingAddress: user.defaultShippingAddress,
+  emailVerified: Boolean(user.emailVerified),
+  marketingOptIn: Boolean(user.marketingOptIn),
 });
 
 export const setAuthCookies = (res: Response, accessToken: string, refreshToken: string) => {

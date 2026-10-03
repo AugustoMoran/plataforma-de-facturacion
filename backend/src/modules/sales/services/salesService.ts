@@ -901,6 +901,7 @@ export const createSale = async (saleData: any, sellerId: string, requesterRoles
       shippingCost: saleData.shippingCost,
       customerEmail: saleData.customerEmail,
       customerPhone: saleData.customerPhone,
+      buyerUserId: saleData.buyerUserId,
       shippingModalidad: saleData.shippingModalidad,
       shippingQuote: saleData.shippingQuote,
       shippingStatus: saleData.shippingStatus,

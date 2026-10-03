@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../store';
 import { selectCartCount, toggleCart } from '../../store/cartSlice';
-import { isStaffRole } from './RouteGuards';
+import { isCustomerRole, isStaffRole } from './RouteGuards';
 import { BrandLogo } from '../BrandLogo';
 import { StoreSearchBar } from './StoreSearchBar';
 
@@ -53,11 +53,18 @@ export const StoreHeader: React.FC = () => {
                   Registrarse
                 </Link>
               </>
-            ) : (
-              <span className="text-xs text-blue-100 hidden sm:inline truncate max-w-[120px]">
+          ) : (
+            <>
+              {isCustomerRole(user.roles) && (
+                <Link to="/account" className="btn-secondary !py-2 !px-3 text-xs hidden sm:inline-flex">
+                  Mi cuenta
+                </Link>
+              )}
+              <span className="text-xs text-blue-100 hidden md:inline truncate max-w-[120px]">
                 {user.email}
               </span>
-            )}
+            </>
+          )}
 
             <button
               onClick={() => dispatch(toggleCart())}

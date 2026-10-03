@@ -23,6 +23,57 @@ export const authApi = createApi({
         body: userData,
       }),
     }),
+    publicRegister: builder.mutation<
+      { user: AuthUser; verificationEmailSent?: boolean },
+      {
+        name: string;
+        email: string;
+        password: string;
+        phone?: string;
+        shippingAddress: {
+          street: string;
+          city: string;
+          province: string;
+          postalCode: string;
+          country?: string;
+        };
+        marketingOptIn?: boolean;
+      }
+    >({
+      query: (body) => ({
+        url: 'register/public',
+        method: 'POST',
+        body,
+      }),
+    }),
+    updateProfile: builder.mutation<AuthUser, Partial<{
+      name: string;
+      phone: string;
+      marketingOptIn: boolean;
+      defaultShippingAddress: AuthUser['defaultShippingAddress'];
+    }>>({
+      query: (body) => ({
+        url: 'profile',
+        method: 'PATCH',
+        body,
+      }),
+    }),
+    verifyEmail: builder.mutation<{ ok: boolean; user: AuthUser }, string>({
+      query: (token) => ({
+        url: `verify-email?token=${encodeURIComponent(token)}`,
+        method: 'GET',
+      }),
+    }),
+    resendVerification: builder.mutation<{ mailerConfigured: boolean; alreadyVerified?: boolean }, void>({
+      query: () => ({
+        url: 'resend-verification',
+        method: 'POST',
+      }),
+    }),
+    getStoreCustomers: builder.query<any[], void>({
+      query: () => 'customers',
+      providesTags: ['Users'],
+    }),
     logout: builder.mutation<{ ok: boolean }, void>({
       query: () => ({
         url: 'logout',
@@ -79,6 +130,11 @@ export const authApi = createApi({
 export const {
   useLoginMutation,
   useRegisterMutation,
+  usePublicRegisterMutation,
+  useUpdateProfileMutation,
+  useVerifyEmailMutation,
+  useResendVerificationMutation,
+  useGetStoreCustomersQuery,
   useLogoutMutation,
   useGetMeQuery,
   useRefreshMutation,

@@ -47,6 +47,7 @@ export interface ISale extends Document {
   shippingCost?: number;
   customerEmail?: string;
   customerPhone?: string;
+  buyerUserId?: mongoose.Types.ObjectId;
   shippingModalidad?: 'D' | 'S';
   shippingQuote?: {
     optionId?: string;
@@ -165,6 +166,7 @@ const SaleSchema: Schema = new Schema({
   shippingCost: { type: Number, default: 0 },
   customerEmail: { type: String },
   customerPhone: { type: String },
+  buyerUserId: { type: Schema.Types.ObjectId, ref: 'User' },
   shippingModalidad: { type: String, enum: ['D', 'S'] },
   shippingQuote: {
     optionId: { type: String },
