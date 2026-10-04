@@ -12,6 +12,7 @@ import {
 import { setUser } from '../../store/authSlice';
 import { useGetProvincesQuery } from '../../services/shippingApi';
 import { isInstitutionalEmail } from '../../utils/emailDeliverability';
+import { useStoreLogout } from '../../hooks/useStoreLogout';
 
 export const StoreAccount: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
@@ -21,6 +22,7 @@ export const StoreAccount: React.FC = () => {
   const [updateProfile, { isLoading }] = useUpdateProfileMutation();
   const [resendVerification, { isLoading: resending }] = useResendVerificationMutation();
   const [changeCustomerEmail, { isLoading: changingEmail }] = useChangeCustomerEmailMutation();
+  const { logout, isLoggingOut } = useStoreLogout();
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [newEmail, setNewEmail] = useState('');
@@ -228,9 +230,17 @@ export const StoreAccount: React.FC = () => {
           </button>
         </form>
 
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           <Link to="/account/orders" className="btn-secondary">Mis pedidos</Link>
           <Link to="/products" className="btn-secondary">Seguir comprando</Link>
+          <button
+            type="button"
+            className="btn-secondary text-red-200 border-red-300/30 hover:bg-red-500/10"
+            disabled={isLoggingOut}
+            onClick={() => logout()}
+          >
+            {isLoggingOut ? 'Saliendo...' : 'Cerrar sesión'}
+          </button>
         </div>
       </div>
     </StoreAuthRoute>
