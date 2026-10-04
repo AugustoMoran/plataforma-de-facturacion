@@ -51,6 +51,9 @@ export const StoreRegister: React.FC = () => {
 
       dispatch(setCredentials({ user: result.user }));
       await syncCustomerCartWithServer(store).catch(() => {});
+      if (result.verificationLink) {
+        sessionStorage.setItem('oso_pending_verify_url', result.verificationLink);
+      }
       navigate(
         `/account?welcome=1&mail=${result.verificationEmailSent ? '1' : '0'}`
       );

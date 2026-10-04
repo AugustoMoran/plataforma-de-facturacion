@@ -30,7 +30,7 @@ export const authApi = createApi({
       }),
     }),
     publicRegister: builder.mutation<
-      { user: AuthUser; verificationEmailSent?: boolean },
+      { user: AuthUser; verificationEmailSent?: boolean; verificationLink?: string },
       {
         name: string;
         email: string;
@@ -71,7 +71,13 @@ export const authApi = createApi({
       }),
     }),
     resendVerification: builder.mutation<
-      { mailerConfigured: boolean; mailSent?: boolean; alreadyVerified?: boolean },
+      {
+        mailerConfigured: boolean;
+        mailSent?: boolean;
+        alreadyVerified?: boolean;
+        verifyUrl?: string;
+        sentTo?: string;
+      },
       void
     >({
       query: () => ({
