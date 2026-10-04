@@ -15,7 +15,7 @@ export const DashboardProtectedRoute = ({ children, adminOnly = false }: { child
   const location = useLocation();
 
   if (!user) {
-    return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+    return <Navigate to={`/ingresar?from=${encodeURIComponent(location.pathname)}`} replace />;
   }
 
   if (!isStaffRole(user.roles)) {
@@ -33,7 +33,7 @@ export const StoreAuthRoute = ({ children }: { children: React.ReactNode }) => {
   const { user } = useSelector((state: RootState) => state.auth);
 
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/ingresar" replace />;
   }
 
   return <>{children}</>;
@@ -59,7 +59,7 @@ export const MaintenanceGuard = ({ children }: { children: React.ReactNode }) =>
 
   const isDashboard = location.pathname.startsWith('/dashboard');
   const isMaintenancePage = location.pathname === '/maintenance';
-  const isLogin = location.pathname === '/login';
+  const isLogin = location.pathname === '/login' || location.pathname === '/ingresar';
   const isRegister = location.pathname === '/register' || location.pathname === '/store/register';
   const isStaff = user && isStaffRole(user.roles);
 

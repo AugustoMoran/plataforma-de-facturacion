@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useLoginMutation } from '../services/authApi';
 import { setCredentials } from '../store/authSlice';
 import { useStore } from 'react-redux';
@@ -9,7 +9,17 @@ import { syncCustomerCartWithServer } from '../utils/syncCustomerCart';
 
 const brandLogo = '/brand-logo.png';
 
-export const Login = () => {
+type LoginVariant = 'store' | 'staff';
+
+const mapLoginError = (message?: string) => {
+  if (!message) return 'Error al iniciar sesión. Verificá email y contraseña.';
+  if (message === 'Invalid credentials') {
+    return 'Email o contraseña incorrectos. Si cambiaste tu email en Mi cuenta, usá el nuevo.';
+  }
+  return message;
+};
+
+export const Login: React.FC<{ variant?: LoginVariant }> = ({ variant = 'staff' }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -17,25 +27,37 @@ export const Login = () => {
   const dispatch = useDispatch();
   const store = useStore<RootState>();
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const isStore = variant === 'store';
+  const redirectAfter = params.get('from') || '';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     try {
       const normalizedEmail = email.trim().toLowerCase();
-      const normalizedPassword = password.trim();
 
       const result = await login({
         email: normalizedEmail,
-        password: normalizedPassword,
+        password,
       }).unwrap();
       dispatch(setCredentials({ user: result.user }));
       await syncCustomerCartWithServer(store).catch(() => {});
       const roles: string[] = result?.user?.roles || [];
       const isStaff = roles.some((r) => ['admin', 'vendedor'].includes(String(r).toLowerCase()));
-      navigate(isStaff ? '/dashboard' : '/');
+
+      if (isStaff) {
+        navigate('/dashboard');
+        return;
+      }
+
+      if (redirectAfter && redirectAfter.startsWith('/') && !redirectAfter.startsWith('/dashboard')) {
+        navigate(redirectAfter);
+        return;
+      }
+      navigate('/');
     } catch (err: any) {
-      setError(err.data?.message || 'Error al iniciar sesión. Verifica tus credenciales.');
+      setError(mapLoginError(err.data?.message));
     }
   };
 
@@ -53,8 +75,18 @@ export const Login = () => {
               <img src={brandLogo} alt="Logo" className="w-10 h-10 object-contain" />
             </div>
             <h1 className="text-xl font-bold text-white">Oso Sound</h1>
-            <p className="text-sm text-slate-500 mt-1">Panel de gestión profesional</p>
+            <p className="text-sm text-slate-500 mt-1">
+              {isStore ? 'Ingresá a tu cuenta de la tienda' : 'Panel de gestión profesional'}
+            </p>
           </div>
+
+          {isStore && (
+            <p className="text-xs text-slate-400 mb-4 text-center leading-relaxed">
+              Usá el mismo email y contraseña con los que te registraste en{' '}
+              <Link to="/register" className="text-brand-400 hover:text-brand-300">/register</Link>.
+              Si actualizaste el email en Mi cuenta, ingresá con el nuevo.
+            </p>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
@@ -68,14 +100,28 @@ export const Login = () => {
 
             <div>
               <label className="section-heading">Email</label>
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-                className="input" placeholder="nombre@empresa.com" required />
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="input"
+                placeholder={isStore ? 'tu@email.com' : 'admin@empresa.com'}
+                required
+                autoComplete="email"
+              />
             </div>
 
             <div>
               <label className="section-heading">Contraseña</label>
-              <input type="password" value={password} onChange={e => setPassword(e.target.value)}
-                className="input" placeholder="••••••••" required />
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="input"
+                placeholder="••••••••"
+                required
+                autoComplete="current-password"
+              />
             </div>
 
             <button type="submit" disabled={isLoading} className="btn-primary w-full mt-2">
@@ -91,12 +137,33 @@ export const Login = () => {
             </button>
           </form>
 
-          <p className="text-center text-sm text-slate-600 mt-6">
-            ¿No tenés cuenta?{' '}
-            <Link to="/register" className="text-brand-400 hover:text-brand-300 transition-colors">
-              Registrarse
-            </Link>
-          </p>
+          <div className="text-center text-sm text-slate-600 mt-6 space-y-2">
+            {isStore ? (
+              <>
+                <p>
+                  ¿No tenés cuenta?{' '}
+                  <Link to="/register" className="text-brand-400 hover:text-brand-300 transition-colors">
+                    Registrarse
+                  </Link>
+                </p>
+                <p>
+                  ¿Sos del equipo?{' '}
+                  <Link to="/login" className="text-brand-400 hover:text-brand-300 transition-colors">
+                    Acceso al panel
+                  </Link>
+                </p>
+              </>
+            ) : (
+              <>
+                <p>
+                  ¿Sos cliente de la tienda?{' '}
+                  <Link to="/ingresar" className="text-brand-400 hover:text-brand-300 transition-colors">
+                    Ingresá acá
+                  </Link>
+                </p>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>

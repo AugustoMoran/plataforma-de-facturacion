@@ -120,10 +120,18 @@ const router = createBrowserRouter([
   { path: '/admin/supplier-ledger', element: <Navigate to="/dashboard/admin/supplier-ledger" replace /> },
   { path: '/admin/dispatch', element: <Navigate to="/dashboard/admin/dispatch" replace /> },
   {
+    path: '/ingresar',
+    element: (
+      <LoginRedirectRoute>
+        <Login variant="store" />
+      </LoginRedirectRoute>
+    ),
+  },
+  {
     path: '/login',
     element: (
       <LoginRedirectRoute>
-        <Login />
+        <Login variant="staff" />
       </LoginRedirectRoute>
     ),
   },

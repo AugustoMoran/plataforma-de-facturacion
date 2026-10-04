@@ -344,7 +344,12 @@ export async function deleteUserController(req: Request, res: Response) {
 export async function loginController(req: Request, res: Response) {
   const { email, password } = req.body;
   const user = await validateUser(email, password);
-  if (!user) return res.status(401).json({ message: 'Invalid credentials' });
+  if (!user) {
+    return res.status(401).json({
+      message: 'Email o contraseña incorrectos',
+      code: 'INVALID_CREDENTIALS',
+    });
+  }
 
   const access = tokenService.signAccessToken(user as any);
   const refresh = tokenService.signRefreshToken(user as any);

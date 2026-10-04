@@ -139,7 +139,7 @@ export const StoreRegister: React.FC = () => {
           </form>
 
           <p className="text-center text-sm text-slate-500 mt-6">
-            ¿Ya tenés cuenta? <Link to="/login" className="text-brand-400 hover:text-brand-300">Ingresá</Link>
+            ¿Ya tenés cuenta? <Link to="/ingresar" className="text-brand-400 hover:text-brand-300">Ingresá</Link>
           </p>
         </div>
       </div>

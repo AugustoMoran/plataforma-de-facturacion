@@ -42,7 +42,7 @@ export const StoreHeader: React.FC = () => {
             ) : !user ? (
               <>
                 <Link
-                  to="/login"
+                  to="/ingresar"
                   className="btn-secondary !py-2 !px-2.5 sm:!px-3 text-xs inline-flex items-center gap-1.5"
                   aria-label="Ingresar"
                 >
