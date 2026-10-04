@@ -18,6 +18,7 @@ import {
 } from '../controllers/authController';
 import { authenticate, authorize } from '../../../middleware/authMiddleware';
 import { User } from '../models/User';
+import { getRegisterSetupController } from '../controllers/authController';
 
 const router = Router();
 
@@ -25,12 +26,23 @@ const router = Router();
 const canRegister = async (req: any, res: any, next: any) => {
   const count = await User.countDocuments();
   if (count === 0) return next();
-  
+
+  const hasAuthHeader = Boolean(req.headers.authorization);
+  const hasAccessCookie = Boolean(req.cookies?.accessToken);
+  if (!hasAuthHeader && !hasAccessCookie) {
+    return res.status(403).json({
+      message:
+        'El panel ya está configurado. Iniciá sesión si tenés cuenta de gestión, o registrate en la tienda para comprar.',
+      code: 'STAFF_REGISTRATION_CLOSED',
+    });
+  }
+
   return authenticate(req, res, () => {
     return authorize('admin')(req, res, next);
   });
 };
 
+router.get('/register/setup', getRegisterSetupController);
 router.post('/register/public', publicRegisterController);
 router.post('/register', canRegister, registerController);
 router.get('/users', authenticate, authorize('admin'), getUsersController);

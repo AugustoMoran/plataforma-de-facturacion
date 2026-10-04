@@ -92,8 +92,10 @@ export const Login = () => {
           </form>
 
           <p className="text-center text-sm text-slate-600 mt-6">
-            ¿No tienes cuenta?{' '}
-            <Link to="/register" className="text-brand-400 hover:text-brand-300 transition-colors">Registrarse</Link>
+            ¿No tenés cuenta?{' '}
+            <Link to="/register" className="text-brand-400 hover:text-brand-300 transition-colors">
+              Registrarse
+            </Link>
           </p>
         </div>
       </div>

@@ -49,8 +49,13 @@ export const StoreHeader: React.FC = () => {
                   </svg>
                   <span>Ingresar</span>
                 </Link>
-                <Link to="/store/register" className="btn-primary !py-2 !px-2.5 text-xs hidden sm:inline-flex">
-                  Registrarse
+                <Link
+                  to="/register"
+                  className="btn-primary !py-2 !px-2.5 text-xs inline-flex items-center gap-1.5"
+                  aria-label="Registrarse"
+                >
+                  <span className="hidden sm:inline">Registrarse</span>
+                  <span className="sm:hidden">Registro</span>
                 </Link>
               </>
           ) : (

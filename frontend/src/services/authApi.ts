@@ -16,6 +16,12 @@ export const authApi = createApi({
         body: credentials,
       }),
     }),
+    getRegisterSetup: builder.query<
+      { staffBootstrapOpen: boolean; storeRegistrationAvailable: boolean },
+      void
+    >({
+      query: () => 'register/setup',
+    }),
     register: builder.mutation({
       query: (userData) => ({
         url: 'register',
@@ -129,6 +135,7 @@ export const authApi = createApi({
 
 export const {
   useLoginMutation,
+  useGetRegisterSetupQuery,
   useRegisterMutation,
   usePublicRegisterMutation,
   useUpdateProfileMutation,

@@ -13,6 +13,14 @@ import { normalizeCustomerAddress, isCustomerRole } from '../services/customerPr
 import { issueEmailVerification, resendEmailVerification, verifyEmailByToken } from '../services/emailVerificationService';
 import { getMailerConfigStatus } from '../../notifications/services/mailerService';
 
+export async function getRegisterSetupController(_req: Request, res: Response) {
+  const userCount = await User.countDocuments();
+  res.json({
+    staffBootstrapOpen: userCount === 0,
+    storeRegistrationAvailable: true,
+  });
+}
+
 export async function registerController(req: Request, res: Response) {
   const { email, password, roles, permissions, name, branch, commissionRate } = req.body;
   

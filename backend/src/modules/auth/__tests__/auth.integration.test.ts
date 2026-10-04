@@ -148,4 +148,22 @@ describe('Auth Integration Tests', () => {
     expect(meRes.status).toBe(200);
     expect(meRes.body).toHaveProperty('email', testUser.email);
   });
+
+  it('reports whether staff bootstrap registration is open', async () => {
+    const res = await request(app).get('/api/auth/register/setup');
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty('staffBootstrapOpen');
+    expect(res.body).toHaveProperty('storeRegistrationAvailable', true);
+  });
+
+  it('blocks public staff registration after the first user exists', async () => {
+    await request(app).post('/api/auth/register').send(testUser);
+
+    const res = await request(app)
+      .post('/api/auth/register')
+      .send({ email: 'other@example.com', password: 'Password123!' });
+
+    expect(res.status).toBe(403);
+    expect(res.body.code).toBe('STAFF_REGISTRATION_CLOSED');
+  });
 });
