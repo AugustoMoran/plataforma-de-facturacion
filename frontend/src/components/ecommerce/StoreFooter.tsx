@@ -186,6 +186,8 @@ export const StoreFooter: React.FC = () => {
               <h3 className="text-xs font-bold uppercase tracking-[0.18em] text-blue-200/90">Tienda</h3>
               <nav className="mt-3 flex flex-col gap-2 text-sm text-blue-100/85">
                 <Link to="/products" className="hover:text-white transition-colors">Productos</Link>
+                <Link to="/account" className="hover:text-white transition-colors">Mi cuenta</Link>
+                <Link to="/account/orders" className="hover:text-white transition-colors">Mis pedidos</Link>
                 <Link to="/checkout" className="hover:text-white transition-colors">Finalizar compra</Link>
               </nav>
             </div>
