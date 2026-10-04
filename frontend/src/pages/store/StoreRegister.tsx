@@ -51,7 +51,9 @@ export const StoreRegister: React.FC = () => {
 
       dispatch(setCredentials({ user: result.user }));
       await syncCustomerCartWithServer(store).catch(() => {});
-      navigate('/account?welcome=1');
+      navigate(
+        `/account?welcome=1&mail=${result.verificationEmailSent ? '1' : '0'}`
+      );
     } catch (err: any) {
       setError(err?.data?.message || 'Error al crear la cuenta');
     }

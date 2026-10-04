@@ -128,10 +128,20 @@ export async function resendVerificationController(req: Request, res: Response) 
     const user = (req as any).user;
     if (!user) return res.status(401).json({ message: 'Not authenticated' });
     const result = await resendEmailVerification(user);
-    res.json({
+    const payload = {
       ...result,
       mailerConfigured: getMailerConfigStatus().configured,
-    });
+    };
+
+    if (!result.alreadyVerified && !result.mailSent) {
+      return res.status(502).json({
+        message:
+          'No pudimos enviar el email de verificación. Revisá spam o probá con otra casilla de correo.',
+        ...payload,
+      });
+    }
+
+    res.json(payload);
   } catch (error: any) {
     res.status(400).json({ message: error.message });
   }
