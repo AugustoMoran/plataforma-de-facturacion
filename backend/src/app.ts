@@ -66,6 +66,7 @@ import ecommerceRoutes from './modules/ecommerce/routes/ecommerceRoutes';
 import analyticsRoutes from './modules/analytics/routes/analyticsRoutes';
 import paymentsRoutes from './modules/payments/routes/paymentsRoutes';
 import shippingRoutes from './modules/shipping/routes/shippingRoutes';
+import notificationsRoutes from './modules/notifications/routes/notificationsRoutes';
 
 app.use('/api/auth', authRoutes);
 app.use('/api/inventory', inventoryRoutes);
@@ -82,6 +83,7 @@ app.use('/api/ecommerce', ecommerceRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/payments', paymentsRoutes);
 app.use('/api/shipping', shippingRoutes);
+app.use('/api/notifications', notificationsRoutes);
 
 // Error handler
 app.use((err: any, req: any, res: any, next: any) => {
