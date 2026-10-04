@@ -97,9 +97,6 @@ export const resendEmailVerification = async (user: IUser) => {
   return {
     alreadyVerified: false,
     mailSent: result.mailSent,
-    verifyUrl: result.verifyUrl,
-    messageId: result.messageId,
-    sendError: result.sendError,
     sentTo: String(user.email || '').trim().toLowerCase(),
   };
 };

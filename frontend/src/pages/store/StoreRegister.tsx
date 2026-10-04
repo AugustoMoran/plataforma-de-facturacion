@@ -7,6 +7,7 @@ import { setCredentials } from '../../store/authSlice';
 import { RootState } from '../../store';
 import { syncCustomerCartWithServer } from '../../utils/syncCustomerCart';
 import { useGetProvincesQuery } from '../../services/shippingApi';
+import { isInstitutionalEmail } from '../../utils/emailDeliverability';
 
 const brandLogo = '/brand-logo.png';
 
@@ -23,6 +24,7 @@ export const StoreRegister: React.FC = () => {
     marketingOptIn: false,
   });
   const [error, setError] = useState('');
+  const institutionalWarning = form.email.trim() ? isInstitutionalEmail(form.email) : false;
   const [publicRegister, { isLoading }] = usePublicRegisterMutation();
   const { data: provinces = [] } = useGetProvincesQuery();
   const dispatch = useDispatch();
@@ -51,12 +53,8 @@ export const StoreRegister: React.FC = () => {
 
       dispatch(setCredentials({ user: result.user }));
       await syncCustomerCartWithServer(store).catch(() => {});
-      if (result.verificationLink) {
-        sessionStorage.setItem('oso_pending_verify_url', result.verificationLink);
-      }
-      navigate(
-        `/account?welcome=1&mail=${result.verificationEmailSent ? '1' : '0'}`
-      );
+      const mailOk = result.verificationEmailSent && result.emailDeliverability !== 'institutional';
+      navigate(`/account?welcome=1&mail=${mailOk ? '1' : '0'}`);
     } catch (err: any) {
       setError(err?.data?.message || 'Error al crear la cuenta');
     }
@@ -91,6 +89,11 @@ export const StoreRegister: React.FC = () => {
                 <label className="section-heading">Email</label>
                 <input type="email" className="input" required value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })} />
+                {institutionalWarning ? (
+                  <p className="text-xs text-amber-200/90 mt-2">
+                    Los correos @edu.ar y similares suelen bloquear la verificación. Recomendamos Gmail u otro email personal.
+                  </p>
+                ) : null}
               </div>
               <div>
                 <label className="section-heading">Teléfono</label>
