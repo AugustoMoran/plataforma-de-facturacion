@@ -74,9 +74,18 @@ export const StoreAccount: React.FC = () => {
         setMessage('Tu email ya está verificado.');
         return;
       }
-      setMessage(result.mailerConfigured
-        ? 'Te reenviamos el email de verificación.'
-        : 'El servidor de correo no está configurado. Contactá a la tienda.');
+      if (result.mailSent) {
+        setMessage(
+          'Te reenviamos el email de verificación. Revisá bandeja, spam y correo no deseado (en mails institucionales a veces tarda o va a cuarentena).'
+        );
+        return;
+      }
+      setMessage('');
+      setError(
+        result.mailerConfigured
+          ? 'No pudimos entregar el correo a esa casilla. Probá con Gmail u otro email, o pedí a tu institución que permita mensajes de ososoundinstrumentosmusicales@gmail.com.'
+          : 'El servidor de correo no está configurado. Contactá a la tienda.'
+      );
     } catch (err: any) {
       setError(err?.data?.message || 'No se pudo reenviar la verificación');
     }
@@ -94,7 +103,9 @@ export const StoreAccount: React.FC = () => {
 
         {params.get('welcome') === '1' && (
           <div className="rounded-xl border border-brand-300/40 bg-brand-500/10 p-4 text-sm text-blue-100">
-            Cuenta creada. Te enviamos un enlace para confirmar tu email y recibir novedades del pedido.
+            {params.get('mail') === '1'
+              ? 'Cuenta creada. Te enviamos un enlace para confirmar tu email (revisá spam si no lo ves).'
+              : 'Cuenta creada. Si no recibís el email de confirmación, usá «Reenviar» abajo o registrate con Gmail.'}
           </div>
         )}
 

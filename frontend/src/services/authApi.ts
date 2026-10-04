@@ -70,7 +70,10 @@ export const authApi = createApi({
         method: 'GET',
       }),
     }),
-    resendVerification: builder.mutation<{ mailerConfigured: boolean; alreadyVerified?: boolean }, void>({
+    resendVerification: builder.mutation<
+      { mailerConfigured: boolean; mailSent?: boolean; alreadyVerified?: boolean },
+      void
+    >({
       query: () => ({
         url: 'resend-verification',
         method: 'POST',
