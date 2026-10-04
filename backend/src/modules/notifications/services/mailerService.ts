@@ -34,13 +34,20 @@ const getTransport = () => {
 
   const port = Number(process.env.SMTP_PORT || '587');
   const user = process.env.SMTP_USER?.trim();
-  const pass = process.env.SMTP_PASS;
+  const pass = process.env.SMTP_PASS?.trim();
+  const isGmail = status.host?.toLowerCase().includes('gmail');
 
   cachedTransport = nodemailer.createTransport({
     host: status.host,
     port,
     secure: port === 465,
+    requireTLS: port === 587,
     auth: user && pass ? { user, pass } : undefined,
+    ...(isGmail
+      ? {
+          tls: { minVersion: 'TLSv1.2' },
+        }
+      : {}),
   });
 
   return cachedTransport;
@@ -84,8 +91,12 @@ export const sendMail = async (input: {
   }
 
   try {
+    const fromAddress = status.from.includes('<')
+      ? status.from
+      : `Oso Sound Music <${status.from}>`;
+
     const info = await transport.sendMail({
-      from: status.from,
+      from: fromAddress,
       to: input.to,
       subject: input.subject,
       text: input.text,
