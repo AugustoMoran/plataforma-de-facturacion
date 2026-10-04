@@ -5,6 +5,7 @@ import { StoreCategoryNav } from './StoreCategoryNav';
 import { CartDrawer } from './CartDrawer';
 import { FloatingSocialButtons } from './FloatingSocialButtons';
 import { StoreFooter } from './StoreFooter';
+import { StoreMobileBottomNav } from './StoreMobileBottomNav';
 
 export const EcommerceLayout: React.FC = () => {
   const location = useLocation();
@@ -14,7 +15,7 @@ export const EcommerceLayout: React.FC = () => {
     <div className="store-shell flex flex-col">
       <StoreHeader />
       <StoreCategoryNav />
-      <main className="flex-1">
+      <main className="flex-1 pb-[calc(4.25rem+env(safe-area-inset-bottom,0px))] sm:pb-0">
         {isHome ? (
           <Outlet />
         ) : (
@@ -24,6 +25,7 @@ export const EcommerceLayout: React.FC = () => {
         )}
       </main>
       <StoreFooter />
+      <StoreMobileBottomNav />
       <CartDrawer />
       <FloatingSocialButtons />
     </div>
