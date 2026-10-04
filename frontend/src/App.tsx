@@ -13,7 +13,7 @@ import { Inventory } from './pages/Inventory';
 import { POS } from './pages/POS';
 import { SalesHistory } from './pages/SalesHistory';
 import { Login } from './pages/Login';
-import { Register } from './pages/Register';
+import { AdminSetup } from './pages/AdminSetup';
 import { StoreHome } from './pages/store/StoreHome';
 import { StoreProducts } from './pages/store/StoreProducts';
 import { StoreProductDetail } from './pages/store/StoreProductDetail';
@@ -49,7 +49,15 @@ const router = createBrowserRouter([
       { path: '/checkout/consulta-enviada', element: <StoreWhatsAppSent /> },
       { path: '/checkout/failure', element: <StoreCheckoutFailure /> },
       { path: '/checkout/confirmation/:orderId', element: <StoreCheckoutConfirmation /> },
-      { path: '/store/register', element: <StoreRegister /> },
+      {
+        path: '/register',
+        element: (
+          <LoginRedirectRoute>
+            <StoreRegister />
+          </LoginRedirectRoute>
+        ),
+      },
+      { path: '/store/register', element: <Navigate to="/register" replace /> },
       { path: '/verify-email', element: <StoreVerifyEmail /> },
       { path: '/account', element: <StoreAccount /> },
       { path: '/account/orders', element: <StoreOrders /> },
@@ -120,10 +128,10 @@ const router = createBrowserRouter([
     ),
   },
   {
-    path: '/register',
+    path: '/setup',
     element: (
       <LoginRedirectRoute>
-        <Register />
+        <AdminSetup />
       </LoginRedirectRoute>
     ),
   },

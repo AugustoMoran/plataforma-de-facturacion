@@ -60,9 +60,10 @@ export const MaintenanceGuard = ({ children }: { children: React.ReactNode }) =>
   const isDashboard = location.pathname.startsWith('/dashboard');
   const isMaintenancePage = location.pathname === '/maintenance';
   const isLogin = location.pathname === '/login';
+  const isRegister = location.pathname === '/register' || location.pathname === '/store/register';
   const isStaff = user && isStaffRole(user.roles);
 
-  if (settings?.maintenanceMode && !isDashboard && !isMaintenancePage && !isLogin && !isStaff) {
+  if (settings?.maintenanceMode && !isDashboard && !isMaintenancePage && !isLogin && !isRegister && !isStaff) {
     return <Navigate to="/maintenance" replace />;
   }
 
