@@ -91,10 +91,17 @@ export const Login = () => {
             </button>
           </form>
 
-          <p className="text-center text-sm text-slate-600 mt-6">
-            ¿No tienes cuenta?{' '}
-            <Link to="/register" className="text-brand-400 hover:text-brand-300 transition-colors">Registrarse</Link>
-          </p>
+          <div className="text-center text-sm text-slate-600 mt-6 space-y-2">
+            <p>
+              ¿Querés comprar en la tienda?{' '}
+              <Link to="/store/register" className="text-brand-400 hover:text-brand-300 transition-colors">
+                Crear cuenta de cliente
+              </Link>
+            </p>
+            <p className="text-xs text-slate-500">
+              El acceso al panel de gestión lo asigna un administrador.
+            </p>
+          </div>
         </div>
       </div>
     </div>

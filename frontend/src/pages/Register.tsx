@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useRegisterMutation } from '../services/authApi';
+import { useGetRegisterSetupQuery, useRegisterMutation } from '../services/authApi';
 
 const brandLogo = '/brand-logo.png';
 
@@ -9,8 +9,11 @@ export const Register = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const { data: setup, isLoading: setupLoading } = useGetRegisterSetupQuery();
   const [register, { isLoading }] = useRegisterMutation();
   const navigate = useNavigate();
+
+  const staffBootstrapOpen = setup?.staffBootstrapOpen ?? false;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,15 +32,21 @@ export const Register = () => {
     } catch (err: any) {
       const status = err?.status;
       const message = err?.data?.message as string | undefined;
+      const code = err?.data?.code as string | undefined;
 
-      if (status === 401 || message === 'Missing auth') {
-        setError('Ya existe un administrador. Iniciá sesión con tu cuenta.');
+      if (status === 403 || code === 'STAFF_REGISTRATION_CLOSED') {
+        setError(
+          message ||
+            'El panel ya está configurado. Iniciá sesión o creá una cuenta en la tienda para comprar.'
+        );
         return;
       }
 
       setError(message || 'Error al registrar usuario.');
     }
   };
+
+  const closedPanel = !setupLoading && !staffBootstrapOpen;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#030712] relative overflow-hidden px-4">
@@ -52,11 +61,39 @@ export const Register = () => {
             <div className="w-14 h-14 rounded-xl bg-white/90 mx-auto mb-4 flex items-center justify-center shadow-glow-md ring-1 ring-white/30 overflow-hidden">
               <img src={brandLogo} alt="Logo" className="w-10 h-10 object-contain" />
             </div>
-            <h1 className="text-xl font-bold text-white">Crear cuenta</h1>
-            <p className="text-sm text-slate-500 mt-1">Configuración inicial de administrador</p>
+            <h1 className="text-xl font-bold text-white">
+              {closedPanel ? 'Panel ya configurado' : 'Crear cuenta'}
+            </h1>
+            <p className="text-sm text-slate-500 mt-1">
+              {closedPanel
+                ? 'Esta pantalla solo sirve para el primer administrador del sistema'
+                : 'Configuración inicial de administrador'}
+            </p>
           </div>
 
-          {success ? (
+          {setupLoading ? (
+            <p className="text-center text-sm text-slate-500 py-6">Cargando...</p>
+          ) : closedPanel ? (
+            <div className="space-y-4 text-sm text-slate-400">
+              <p>
+                Ya hay un administrador en Oso Sound. Si trabajás en la tienda, pedile a quien administra
+                el panel que te cree un usuario de gestión.
+              </p>
+              <p>
+                Si solo querés comprar instrumentos online, usá el registro de la tienda (no requiere acceso
+                al panel).
+              </p>
+              <Link to="/login" className="btn-primary w-full block text-center">
+                Iniciar sesión en el panel
+              </Link>
+              <Link
+                to="/store/register"
+                className="btn-secondary w-full block text-center border border-white/10"
+              >
+                Crear cuenta para comprar
+              </Link>
+            </div>
+          ) : success ? (
             <div className="flex flex-col items-center gap-3 py-6">
               <div className="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center">
                 <svg className="w-6 h-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -95,13 +132,13 @@ export const Register = () => {
                     </svg>
                     Creando...
                   </span>
-                ) : 'Crear cuenta'}
+                ) : 'Crear cuenta de administrador'}
               </button>
             </form>
           )}
 
           <p className="text-center text-sm text-slate-600 mt-6">
-            ¿Ya tienes cuenta?{' '}
+            ¿Ya tenés cuenta?{' '}
             <Link to="/login" className="text-brand-400 hover:text-brand-300 transition-colors">Iniciar sesión</Link>
           </p>
         </div>
