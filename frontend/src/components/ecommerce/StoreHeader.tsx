@@ -6,12 +6,14 @@ import { selectCartCount, toggleCart } from '../../store/cartSlice';
 import { isCustomerRole, isStaffRole } from './RouteGuards';
 import { BrandLogo } from '../BrandLogo';
 import { StoreSearchBar } from './StoreSearchBar';
+import { useStoreLogout } from '../../hooks/useStoreLogout';
 
 export const StoreHeader: React.FC = () => {
   const dispatch = useDispatch();
   const cartCount = useSelector(selectCartCount);
   const { user } = useSelector((state: RootState) => state.auth);
   const isStaff = user && isStaffRole(user.roles);
+  const { logout, isLoggingOut } = useStoreLogout();
 
   return (
     <header className="sticky top-0 z-40 bg-blue-950/35 backdrop-blur-md border-b border-blue-200/25 shadow-lg shadow-blue-950/20">
@@ -93,6 +95,18 @@ export const StoreHeader: React.FC = () => {
               <span className="text-xs text-blue-100 hidden lg:inline truncate max-w-[120px]">
                 {user.email}
               </span>
+              <button
+                type="button"
+                onClick={() => logout()}
+                disabled={isLoggingOut}
+                className="btn-icon"
+                aria-label="Cerrar sesión"
+                title="Cerrar sesión"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24" aria-hidden>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+              </button>
             </>
           )}
 
