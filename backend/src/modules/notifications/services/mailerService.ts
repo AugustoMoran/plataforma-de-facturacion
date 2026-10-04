@@ -46,7 +46,35 @@ const getTransport = () => {
   return cachedTransport;
 };
 
-export const sendMail = async (input: { to: string; subject: string; text: string; html?: string }) => {
+export type SendMailResult = {
+  sent: boolean;
+  messageId?: string;
+  reason?: string;
+  error?: string;
+};
+
+export const verifyMailerTransport = async (): Promise<{ ok: boolean; error?: string }> => {
+  const transport = getTransport();
+  if (!transport) {
+    return { ok: false, error: getMailerConfigStatus().reason || 'SMTP no configurado' };
+  }
+
+  try {
+    await transport.verify();
+    return { ok: true };
+  } catch (err: any) {
+    const message = err?.message || String(err);
+    console.error('[Mailer] verify() falló:', message);
+    return { ok: false, error: message };
+  }
+};
+
+export const sendMail = async (input: {
+  to: string;
+  subject: string;
+  text: string;
+  html?: string;
+}): Promise<SendMailResult> => {
   const status = getMailerConfigStatus();
   const transport = getTransport();
 
@@ -55,15 +83,21 @@ export const sendMail = async (input: { to: string; subject: string; text: strin
     return { sent: false, reason: status.reason || 'SMTP no configurado' };
   }
 
-  await transport.sendMail({
-    from: status.from,
-    to: input.to,
-    subject: input.subject,
-    text: input.text,
-    html: input.html,
-  });
-
-  return { sent: true };
+  try {
+    const info = await transport.sendMail({
+      from: status.from,
+      to: input.to,
+      subject: input.subject,
+      text: input.text,
+      html: input.html,
+    });
+    console.info('[Mailer] Enviado:', input.subject, '→', input.to, info.messageId || '');
+    return { sent: true, messageId: info.messageId };
+  } catch (err: any) {
+    const message = err?.message || String(err);
+    console.error('[Mailer] Error al enviar:', input.subject, '→', input.to, message);
+    return { sent: false, error: message, reason: 'send_failed' };
+  }
 };
 
 export const resetMailerCacheForTests = () => {

@@ -70,7 +70,7 @@ export async function publicRegisterController(req: Request, res: Response) {
       { enforceRoles: true }
     );
 
-    await issueEmailVerification(user);
+    const verification = await issueEmailVerification(user);
 
     const access = tokenService.signAccessToken(user as any);
     const refresh = tokenService.signRefreshToken(user as any);
@@ -81,7 +81,8 @@ export async function publicRegisterController(req: Request, res: Response) {
 
     res.status(201).json({
       user: serializeAuthUser(user),
-      verificationEmailSent: getMailerConfigStatus().configured,
+      verificationEmailSent: verification.mailSent,
+      mailerConfigured: getMailerConfigStatus().configured,
     });
   } catch (error: any) {
     res.status(400).json({ message: error.message });
