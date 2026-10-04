@@ -18,6 +18,7 @@ export const StoreMobileBottomNav: React.FC = () => {
   const isActive = (path: string) => {
     if (path === '/') return location.pathname === '/';
     if (path === '/account') return location.pathname === '/account';
+    if (path === '/ingresar') return location.pathname === '/ingresar';
     return location.pathname === path || location.pathname.startsWith(`${path}/`);
   };
 
@@ -65,7 +66,7 @@ export const StoreMobileBottomNav: React.FC = () => {
           </Link>
         ) : (
           <>
-            <Link to="/login" className={navItemClass(isActive('/login'))} aria-label="Ingresar">
+            <Link to="/ingresar" className={navItemClass(isActive('/ingresar'))} aria-label="Ingresar">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24" aria-hidden>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
               </svg>
