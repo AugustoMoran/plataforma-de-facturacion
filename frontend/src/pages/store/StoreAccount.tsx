@@ -1,12 +1,17 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { SEO } from '../../components/ecommerce/SEO';
 import { RootState } from '../../store';
 import { StoreAuthRoute, isCustomerRole } from '../../components/ecommerce/RouteGuards';
-import { useResendVerificationMutation, useUpdateProfileMutation } from '../../services/authApi';
+import {
+  useChangeCustomerEmailMutation,
+  useResendVerificationMutation,
+  useUpdateProfileMutation,
+} from '../../services/authApi';
 import { setUser } from '../../store/authSlice';
 import { useGetProvincesQuery } from '../../services/shippingApi';
+import { isInstitutionalEmail } from '../../utils/emailDeliverability';
 
 export const StoreAccount: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
@@ -15,11 +20,15 @@ export const StoreAccount: React.FC = () => {
   const { data: provinces = [] } = useGetProvincesQuery();
   const [updateProfile, { isLoading }] = useUpdateProfileMutation();
   const [resendVerification, { isLoading: resending }] = useResendVerificationMutation();
+  const [changeCustomerEmail, { isLoading: changingEmail }] = useChangeCustomerEmailMutation();
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
-  const [pendingVerifyUrl, setPendingVerifyUrl] = useState('');
+  const [newEmail, setNewEmail] = useState('');
 
-  const PENDING_VERIFY_KEY = 'oso_pending_verify_url';
+  const institutionalEmail = useMemo(
+    () => (user?.email ? isInstitutionalEmail(user.email) : false),
+    [user?.email]
+  );
 
   const [form, setForm] = useState({
     name: user?.name || '',
@@ -30,18 +39,6 @@ export const StoreAccount: React.FC = () => {
     postalCode: user?.defaultShippingAddress?.postalCode || '',
     marketingOptIn: Boolean(user?.marketingOptIn),
   });
-
-  useEffect(() => {
-    const stored = sessionStorage.getItem(PENDING_VERIFY_KEY);
-    if (stored) setPendingVerifyUrl(stored);
-  }, []);
-
-  useEffect(() => {
-    if (user?.emailVerified) {
-      sessionStorage.removeItem(PENDING_VERIFY_KEY);
-      setPendingVerifyUrl('');
-    }
-  }, [user?.emailVerified]);
 
   useEffect(() => {
     if (!user) return;
@@ -80,6 +77,33 @@ export const StoreAccount: React.FC = () => {
     }
   };
 
+  const handleChangeEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setMessage('');
+    setError('');
+    const trimmed = newEmail.trim().toLowerCase();
+    if (!trimmed) {
+      setError('Ingresá un email nuevo.');
+      return;
+    }
+    if (isInstitutionalEmail(trimmed)) {
+      setError('Ese dominio también suele bloquear correos. Usá Gmail, Outlook u otro email personal.');
+      return;
+    }
+    try {
+      const result = await changeCustomerEmail({ newEmail: trimmed }).unwrap();
+      dispatch(setUser(result.user));
+      setNewEmail('');
+      setMessage(
+        result.verificationEmailSent
+          ? `Actualizamos tu email a ${result.user.email}. Revisá la bandeja (y spam) para confirmar.`
+          : `Email actualizado a ${result.user.email}, pero no pudimos enviar el correo. Probá reenviar en unos minutos.`
+      );
+    } catch (err: any) {
+      setError(err?.data?.message || 'No se pudo cambiar el email');
+    }
+  };
+
   const handleResend = async () => {
     setMessage('');
     setError('');
@@ -89,33 +113,23 @@ export const StoreAccount: React.FC = () => {
         setMessage('Tu email ya está verificado.');
         return;
       }
-      if (result.verifyUrl) {
-        setPendingVerifyUrl(result.verifyUrl);
-        sessionStorage.setItem(PENDING_VERIFY_KEY, result.verifyUrl);
-      }
       if (result.mailSent) {
         setMessage(
-          `Enviamos el correo a ${result.sentTo || user?.email || 'tu casilla'}. Si no llega (común en mails @edu.ar), confirmá con el botón de abajo sin esperar el email.`
+          `Enviamos el correo de verificación a ${result.sentTo || user?.email}. Revisá bandeja y spam.`
         );
-        return;
       }
-      setMessage('');
-      setError(
-        result.mailerConfigured
-          ? 'No pudimos entregar el correo a esa casilla. Probá con Gmail u otro email, o pedí a tu institución que permita mensajes de ososoundinstrumentosmusicales@gmail.com.'
-          : 'El servidor de correo no está configurado. Contactá a la tienda.'
-      );
     } catch (err: any) {
       const data = err?.data;
-      if (data?.verifyUrl) {
-        setPendingVerifyUrl(data.verifyUrl);
-        sessionStorage.setItem(PENDING_VERIFY_KEY, data.verifyUrl);
-        setMessage('No pudimos enviar el correo, pero podés confirmar tu email con el botón de abajo.');
+      if (data?.code === 'EMAIL_INSTITUTIONAL') {
+        setError(data.message);
         return;
       }
       setError(data?.message || 'No se pudo reenviar la verificación');
     }
   };
+
+  const showInstitutionalBlock =
+    user && isCustomerRole(user.roles) && !user.emailVerified && institutionalEmail;
 
   return (
     <StoreAuthRoute>
@@ -131,28 +145,44 @@ export const StoreAccount: React.FC = () => {
           <div className="rounded-xl border border-brand-300/40 bg-brand-500/10 p-4 text-sm text-blue-100">
             {params.get('mail') === '1'
               ? 'Cuenta creada. Te enviamos un enlace para confirmar tu email (revisá spam si no lo ves).'
-              : 'Cuenta creada. Si no recibís el email de confirmación, usá «Reenviar» abajo o registrate con Gmail.'}
+              : 'Cuenta creada. Si usaste un correo institucional (@edu.ar), cambiá a un email personal abajo para poder verificar.'}
           </div>
         )}
 
-        {user && isCustomerRole(user.roles) && !user.emailVerified && (
-          <div className="rounded-xl border border-amber-300/40 bg-amber-500/10 p-4 text-sm text-amber-100 space-y-3">
-            <p>Tu email aún no está verificado. Confirmarlo te ayuda a recibir confirmaciones y avisos de envío.</p>
-            <div className="flex flex-wrap gap-2">
-              <button type="button" className="btn-secondary !py-2 !px-3 text-xs" disabled={resending} onClick={handleResend}>
-                {resending ? 'Generando...' : 'Reenviar email de verificación'}
+        {showInstitutionalBlock && (
+          <div className="rounded-xl border border-red-300/40 bg-red-500/10 p-4 text-sm text-red-50 space-y-3">
+            <p>
+              Tu email <strong>{user?.email}</strong> es institucional y suele <strong>bloquear</strong> nuestros
+              correos de verificación. No podemos confirmarlo ahí.
+            </p>
+            <p>Ingresá un email personal (Gmail, Outlook, etc.). Te enviaremos el enlace de verificación a esa casilla.</p>
+            <form onSubmit={handleChangeEmail} className="flex flex-col sm:flex-row gap-2">
+              <input
+                type="email"
+                className="input flex-1"
+                placeholder="tu@gmail.com"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                required
+              />
+              <button type="submit" className="btn-primary !py-2 !px-4 text-xs shrink-0" disabled={changingEmail}>
+                {changingEmail ? 'Guardando...' : 'Cambiar y enviar verificación'}
               </button>
-              {pendingVerifyUrl ? (
-                <a href={pendingVerifyUrl} className="btn-primary !py-2 !px-3 text-xs inline-flex">
-                  Confirmar email ahora (sin esperar correo)
-                </a>
-              ) : null}
-            </div>
-            {pendingVerifyUrl ? (
-              <p className="text-xs text-amber-200/90">
-                Si tu casilla es institucional (@edu.ar), el correo externo suele bloquearse aunque el servidor lo envíe. Usá el botón azul para verificar desde acá.
-              </p>
-            ) : null}
+            </form>
+          </div>
+        )}
+
+        {user && isCustomerRole(user.roles) && !user.emailVerified && !institutionalEmail && (
+          <div className="rounded-xl border border-amber-300/40 bg-amber-500/10 p-4 text-sm text-amber-100 space-y-3">
+            <p>Tu email aún no está verificado. Confirmalo desde el enlace que te enviamos por correo.</p>
+            <button
+              type="button"
+              className="btn-secondary !py-2 !px-3 text-xs"
+              disabled={resending}
+              onClick={handleResend}
+            >
+              {resending ? 'Enviando...' : 'Reenviar email de verificación'}
+            </button>
           </div>
         )}
 

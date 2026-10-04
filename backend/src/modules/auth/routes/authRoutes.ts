@@ -14,6 +14,7 @@ import {
   updateProfileController,
   verifyEmailController,
   resendVerificationController,
+  changeCustomerEmailController,
   getStoreCustomersController,
 } from '../controllers/authController';
 import { authenticate, authorize } from '../../../middleware/authMiddleware';
@@ -48,6 +49,7 @@ router.post('/register', canRegister, registerController);
 router.get('/users', authenticate, authorize('admin'), getUsersController);
 router.get('/customers', authenticate, authorize('admin'), getStoreCustomersController);
 router.patch('/profile', authenticate, updateProfileController);
+router.patch('/customer-email', authenticate, changeCustomerEmailController);
 router.get('/verify-email', verifyEmailController);
 router.post('/verify-email', verifyEmailController);
 router.post('/resend-verification', authenticate, resendVerificationController);

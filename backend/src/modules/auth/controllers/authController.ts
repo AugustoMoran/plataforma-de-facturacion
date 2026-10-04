@@ -11,7 +11,11 @@ import {
 } from '../utils/authCookies';
 import { normalizeCustomerAddress, isCustomerRole } from '../services/customerProfileService';
 import { issueEmailVerification, resendEmailVerification, verifyEmailByToken } from '../services/emailVerificationService';
+import { getEmailDeliverability, isInstitutionalEmail } from '../services/emailDeliverability';
 import { getMailerConfigStatus } from '../../notifications/services/mailerService';
+
+const INSTITUTIONAL_EMAIL_MESSAGE =
+  'Las casillas institucionales (@edu.ar, @ac.ar, etc.) suelen bloquear correos externos. Usá un email personal (Gmail, Outlook, etc.) para recibir el enlace de verificación.';
 
 export async function getRegisterSetupController(_req: Request, res: Response) {
   const userCount = await User.countDocuments();
@@ -49,13 +53,15 @@ export async function publicRegisterController(req: Request, res: Response) {
       return res.status(400).json({ message: 'Completá calle y ciudad de tu dirección' });
     }
 
-    const existing = await User.findOne({ email: String(email).trim().toLowerCase() });
+    const normalizedEmail = String(email).trim().toLowerCase();
+    const existing = await User.findOne({ email: normalizedEmail });
     if (existing) {
       return res.status(409).json({ message: 'El email ya está registrado' });
     }
+    const emailDeliverability = getEmailDeliverability(normalizedEmail);
 
     const user = await register(
-      String(email),
+      normalizedEmail,
       String(password),
       ['user'],
       {},
@@ -70,7 +76,10 @@ export async function publicRegisterController(req: Request, res: Response) {
       { enforceRoles: true }
     );
 
-    const verification = await issueEmailVerification(user);
+    let verification = { mailSent: false as boolean };
+    if (emailDeliverability === 'ok') {
+      verification = await issueEmailVerification(user);
+    }
 
     const access = tokenService.signAccessToken(user as any);
     const refresh = tokenService.signRefreshToken(user as any);
@@ -82,7 +91,7 @@ export async function publicRegisterController(req: Request, res: Response) {
     res.status(201).json({
       user: serializeAuthUser(user),
       verificationEmailSent: verification.mailSent,
-      verificationLink: verification.verifyUrl,
+      emailDeliverability,
       mailerConfigured: getMailerConfigStatus().configured,
     });
   } catch (error: any) {
@@ -124,20 +133,74 @@ export async function verifyEmailController(req: Request, res: Response) {
   }
 }
 
+export async function changeCustomerEmailController(req: Request, res: Response) {
+  try {
+    const user = (req as any).user;
+    if (!user) return res.status(401).json({ message: 'Not authenticated' });
+    if (!isCustomerRole(user.roles || [])) {
+      return res.status(403).json({ message: 'Solo clientes de la tienda pueden cambiar este email' });
+    }
+    if (user.emailVerified) {
+      return res.status(400).json({ message: 'El email ya está verificado y no se puede cambiar desde acá' });
+    }
+
+    const newEmail = String(req.body?.newEmail || '').trim().toLowerCase();
+    if (!newEmail || !newEmail.includes('@')) {
+      return res.status(400).json({ message: 'Ingresá un email válido' });
+    }
+    if (isInstitutionalEmail(newEmail)) {
+      return res.status(400).json({
+        code: 'EMAIL_INSTITUTIONAL',
+        message: INSTITUTIONAL_EMAIL_MESSAGE,
+        emailDeliverability: 'institutional',
+      });
+    }
+
+    const existing = await User.findOne({ email: newEmail });
+    if (existing && String(existing._id) !== String(user._id)) {
+      return res.status(409).json({ message: 'Ese email ya está registrado en otra cuenta' });
+    }
+
+    user.email = newEmail;
+    await user.save();
+
+    const verification = await issueEmailVerification(user);
+
+    res.json({
+      user: serializeAuthUser(user),
+      verificationEmailSent: verification.mailSent,
+      emailDeliverability: getEmailDeliverability(newEmail),
+      mailerConfigured: getMailerConfigStatus().configured,
+    });
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+}
+
 export async function resendVerificationController(req: Request, res: Response) {
   try {
     const user = (req as any).user;
     if (!user) return res.status(401).json({ message: 'Not authenticated' });
+
+    if (!user.emailVerified && isInstitutionalEmail(user.email)) {
+      return res.status(400).json({
+        code: 'EMAIL_INSTITUTIONAL',
+        message: INSTITUTIONAL_EMAIL_MESSAGE,
+        emailDeliverability: 'institutional',
+      });
+    }
+
     const result = await resendEmailVerification(user);
     const payload = {
-      ...result,
+      alreadyVerified: result.alreadyVerified,
+      mailSent: result.mailSent,
+      sentTo: result.sentTo,
       mailerConfigured: getMailerConfigStatus().configured,
     };
 
     if (!result.alreadyVerified && !result.mailSent) {
       return res.status(502).json({
-        message:
-          'No pudimos enviar el email de verificación. Usá el enlace de confirmación en esta pantalla o probá con otra casilla.',
+        message: 'No pudimos enviar el email de verificación. Probá con otro email personal.',
         ...payload,
       });
     }

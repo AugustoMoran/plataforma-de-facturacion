@@ -30,7 +30,11 @@ export const authApi = createApi({
       }),
     }),
     publicRegister: builder.mutation<
-      { user: AuthUser; verificationEmailSent?: boolean; verificationLink?: string },
+      {
+        user: AuthUser;
+        verificationEmailSent?: boolean;
+        emailDeliverability?: 'ok' | 'institutional';
+      },
       {
         name: string;
         email: string;
@@ -75,7 +79,6 @@ export const authApi = createApi({
         mailerConfigured: boolean;
         mailSent?: boolean;
         alreadyVerified?: boolean;
-        verifyUrl?: string;
         sentTo?: string;
       },
       void
@@ -83,6 +86,20 @@ export const authApi = createApi({
       query: () => ({
         url: 'resend-verification',
         method: 'POST',
+      }),
+    }),
+    changeCustomerEmail: builder.mutation<
+      {
+        user: AuthUser;
+        verificationEmailSent?: boolean;
+        emailDeliverability?: 'ok' | 'institutional';
+      },
+      { newEmail: string }
+    >({
+      query: (body) => ({
+        url: 'customer-email',
+        method: 'PATCH',
+        body,
       }),
     }),
     getStoreCustomers: builder.query<any[], void>({
@@ -150,6 +167,7 @@ export const {
   useUpdateProfileMutation,
   useVerifyEmailMutation,
   useResendVerificationMutation,
+  useChangeCustomerEmailMutation,
   useGetStoreCustomersQuery,
   useLogoutMutation,
   useGetMeQuery,
