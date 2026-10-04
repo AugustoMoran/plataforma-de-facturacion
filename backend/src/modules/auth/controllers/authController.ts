@@ -82,6 +82,7 @@ export async function publicRegisterController(req: Request, res: Response) {
     res.status(201).json({
       user: serializeAuthUser(user),
       verificationEmailSent: verification.mailSent,
+      verificationLink: verification.verifyUrl,
       mailerConfigured: getMailerConfigStatus().configured,
     });
   } catch (error: any) {
@@ -136,7 +137,7 @@ export async function resendVerificationController(req: Request, res: Response) 
     if (!result.alreadyVerified && !result.mailSent) {
       return res.status(502).json({
         message:
-          'No pudimos enviar el email de verificación. Revisá spam o probá con otra casilla de correo.',
+          'No pudimos enviar el email de verificación. Usá el enlace de confirmación en esta pantalla o probá con otra casilla.',
         ...payload,
       });
     }

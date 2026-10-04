@@ -17,6 +17,9 @@ export const StoreAccount: React.FC = () => {
   const [resendVerification, { isLoading: resending }] = useResendVerificationMutation();
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [pendingVerifyUrl, setPendingVerifyUrl] = useState('');
+
+  const PENDING_VERIFY_KEY = 'oso_pending_verify_url';
 
   const [form, setForm] = useState({
     name: user?.name || '',
@@ -27,6 +30,18 @@ export const StoreAccount: React.FC = () => {
     postalCode: user?.defaultShippingAddress?.postalCode || '',
     marketingOptIn: Boolean(user?.marketingOptIn),
   });
+
+  useEffect(() => {
+    const stored = sessionStorage.getItem(PENDING_VERIFY_KEY);
+    if (stored) setPendingVerifyUrl(stored);
+  }, []);
+
+  useEffect(() => {
+    if (user?.emailVerified) {
+      sessionStorage.removeItem(PENDING_VERIFY_KEY);
+      setPendingVerifyUrl('');
+    }
+  }, [user?.emailVerified]);
 
   useEffect(() => {
     if (!user) return;
@@ -74,9 +89,13 @@ export const StoreAccount: React.FC = () => {
         setMessage('Tu email ya está verificado.');
         return;
       }
+      if (result.verifyUrl) {
+        setPendingVerifyUrl(result.verifyUrl);
+        sessionStorage.setItem(PENDING_VERIFY_KEY, result.verifyUrl);
+      }
       if (result.mailSent) {
         setMessage(
-          'Te reenviamos el email de verificación. Revisá bandeja, spam y correo no deseado (en mails institucionales a veces tarda o va a cuarentena).'
+          `Enviamos el correo a ${result.sentTo || user?.email || 'tu casilla'}. Si no llega (común en mails @edu.ar), confirmá con el botón de abajo sin esperar el email.`
         );
         return;
       }
@@ -87,7 +106,14 @@ export const StoreAccount: React.FC = () => {
           : 'El servidor de correo no está configurado. Contactá a la tienda.'
       );
     } catch (err: any) {
-      setError(err?.data?.message || 'No se pudo reenviar la verificación');
+      const data = err?.data;
+      if (data?.verifyUrl) {
+        setPendingVerifyUrl(data.verifyUrl);
+        sessionStorage.setItem(PENDING_VERIFY_KEY, data.verifyUrl);
+        setMessage('No pudimos enviar el correo, pero podés confirmar tu email con el botón de abajo.');
+        return;
+      }
+      setError(data?.message || 'No se pudo reenviar la verificación');
     }
   };
 
@@ -112,9 +138,21 @@ export const StoreAccount: React.FC = () => {
         {user && isCustomerRole(user.roles) && !user.emailVerified && (
           <div className="rounded-xl border border-amber-300/40 bg-amber-500/10 p-4 text-sm text-amber-100 space-y-3">
             <p>Tu email aún no está verificado. Confirmarlo te ayuda a recibir confirmaciones y avisos de envío.</p>
-            <button type="button" className="btn-secondary !py-2 !px-3 text-xs" disabled={resending} onClick={handleResend}>
-              {resending ? 'Enviando...' : 'Reenviar email de verificación'}
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <button type="button" className="btn-secondary !py-2 !px-3 text-xs" disabled={resending} onClick={handleResend}>
+                {resending ? 'Generando...' : 'Reenviar email de verificación'}
+              </button>
+              {pendingVerifyUrl ? (
+                <a href={pendingVerifyUrl} className="btn-primary !py-2 !px-3 text-xs inline-flex">
+                  Confirmar email ahora (sin esperar correo)
+                </a>
+              ) : null}
+            </div>
+            {pendingVerifyUrl ? (
+              <p className="text-xs text-amber-200/90">
+                Si tu casilla es institucional (@edu.ar), el correo externo suele bloquearse aunque el servidor lo envíe. Usá el botón azul para verificar desde acá.
+              </p>
+            ) : null}
           </div>
         )}
 

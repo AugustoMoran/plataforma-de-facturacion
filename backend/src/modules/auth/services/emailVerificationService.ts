@@ -18,8 +18,13 @@ export const issueEmailVerification = async (user: IUser) => {
   await user.save({ validateBeforeSave: false });
 
   const verifyUrl = buildVerificationUrl(token);
-  const result = await sendMail({
-    to: user.email,
+  const recipient = String(user.email || '').trim().toLowerCase();
+  if (!recipient) {
+    return { verifyUrl, mailSent: false, messageId: undefined, error: 'missing_email' };
+  }
+
+  let result = await sendMail({
+    to: recipient,
     subject: 'Confirmá tu email — Oso Sound Music',
     text: [
       `Hola ${user.name || ''},`.trim(),
@@ -37,7 +42,33 @@ export const issueEmailVerification = async (user: IUser) => {
 <p>El enlace vence en 24 horas.</p>`,
   });
 
-  return { verifyUrl, mailSent: result.sent };
+  if (!result.sent) {
+    result = await sendMail({
+      to: recipient,
+      subject: 'Confirmá tu email — Oso Sound Music',
+      text: [
+        `Hola ${user.name || ''},`.trim(),
+        '',
+        'Gracias por registrarte en Oso Sound Music.',
+        'Para confirmar tu cuenta y recibir novedades de tus pedidos, abrí este enlace:',
+        verifyUrl,
+        '',
+        'El enlace vence en 24 horas.',
+        'Si no creaste esta cuenta, ignorá este mensaje.',
+      ].join('\n'),
+      html: `<p>Hola ${user.name || ''},</p>
+<p>Gracias por registrarte en <strong>Oso Sound Music</strong>.</p>
+<p><a href="${verifyUrl}">Confirmar mi email</a> para recibir novedades de tus pedidos.</p>
+<p>El enlace vence en 24 horas.</p>`,
+    });
+  }
+
+  return {
+    verifyUrl,
+    mailSent: result.sent,
+    messageId: result.messageId,
+    sendError: result.error || result.reason,
+  };
 };
 
 export const verifyEmailByToken = async (token: string) => {
@@ -63,5 +94,12 @@ export const resendEmailVerification = async (user: IUser) => {
     return { alreadyVerified: true, mailSent: false };
   }
   const result = await issueEmailVerification(user);
-  return { alreadyVerified: false, mailSent: result.mailSent };
+  return {
+    alreadyVerified: false,
+    mailSent: result.mailSent,
+    verifyUrl: result.verifyUrl,
+    messageId: result.messageId,
+    sendError: result.sendError,
+    sentTo: String(user.email || '').trim().toLowerCase(),
+  };
 };
