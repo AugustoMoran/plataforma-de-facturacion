@@ -22,6 +22,14 @@ export const authApi = createApi({
         method: 'POST',
         body: userData,
       }),
+      invalidatesTags: ['Users'],
+    }),
+    registerPublic: builder.mutation({
+      query: (userData) => ({
+        url: 'register/public',
+        method: 'POST',
+        body: userData,
+      }),
     }),
     logout: builder.mutation<{ ok: boolean }, void>({
       query: () => ({
@@ -46,6 +54,14 @@ export const authApi = createApi({
       query: (userId) => ({
         url: `users/${userId}`,
         method: 'DELETE',
+      }),
+      invalidatesTags: ['Users'],
+    }),
+    updateProfile: builder.mutation({
+      query: (data) => ({
+        url: 'users/profile',
+        method: 'PATCH',
+        body: data,
       }),
       invalidatesTags: ['Users'],
     }),
@@ -79,11 +95,13 @@ export const authApi = createApi({
 export const {
   useLoginMutation,
   useRegisterMutation,
+  useRegisterPublicMutation,
   useLogoutMutation,
   useGetMeQuery,
   useRefreshMutation,
   useGetUsersQuery,
   useDeleteUserMutation,
+  useUpdateProfileMutation,
   useUpdatePermissionsMutation,
   useUpdateCommissionMutation,
   useUpdateBranchMutation,

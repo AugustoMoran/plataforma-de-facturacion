@@ -1,6 +1,7 @@
 import bcrypt from 'bcrypt';
 import { User, IUser } from '../models/User';
 import * as tokenService from './tokenService';
+import { getNextMemberCode } from './memberCodeService';
 
 function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
@@ -17,7 +18,8 @@ export async function register(
   permissions: Record<string, boolean> = {},
   name?: string,
   branch?: string,
-  commissionRate?: number
+  commissionRate?: number,
+  extra: { phone?: string; address?: string } = {}
 ) {
   const normalizedEmail = normalizeEmail(email);
   const hash = await bcrypt.hash(password, 10);
@@ -25,11 +27,17 @@ export async function register(
   // Check if this is the first user
   const userCount = await User.countDocuments();
   const finalRoles = userCount === 0 ? ['admin'] : roles;
-  
+
+  // Código de socio único y autoincremental (arranca en 100)
+  const memberCode = await getNextMemberCode();
+
   const user = await User.create({ 
     name: name || normalizedEmail.split('@')[0], 
     email: normalizedEmail,
     password: hash, 
+    memberCode,
+    phone: (extra.phone || '').trim(),
+    address: (extra.address || '').trim(),
     roles: finalRoles,
     permissions,
     branch: branch || undefined,

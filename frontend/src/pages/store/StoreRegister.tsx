@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { SEO } from '../../components/ecommerce/SEO';
-import { useRegisterMutation } from '../../services/authApi';
+import { useRegisterPublicMutation } from '../../services/authApi';
 import { setCredentials } from '../../store/authSlice';
 
 const brandLogo = '/brand-logo.png';
@@ -11,8 +11,10 @@ export const StoreRegister: React.FC = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [phone, setPhone] = useState('');
+  const [address, setAddress] = useState('');
   const [error, setError] = useState('');
-  const [register, { isLoading }] = useRegisterMutation();
+  const [register, { isLoading }] = useRegisterPublicMutation();
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -25,6 +27,8 @@ export const StoreRegister: React.FC = () => {
         name: name.trim(),
         email: email.trim().toLowerCase(),
         password: password.trim(),
+        phone: phone.trim(),
+        address: address.trim(),
         roles: ['user'],
       }).unwrap();
 
@@ -67,6 +71,16 @@ export const StoreRegister: React.FC = () => {
             <div>
               <label className="section-heading">Email</label>
               <input type="email" className="input" required value={email} onChange={(e) => setEmail(e.target.value)} />
+            </div>
+
+            <div>
+              <label className="section-heading">Teléfono</label>
+              <input type="tel" className="input" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+54 9 ..." />
+            </div>
+
+            <div>
+              <label className="section-heading">Dirección</label>
+              <input type="text" className="input" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Calle, número, ciudad" />
             </div>
 
             <div>

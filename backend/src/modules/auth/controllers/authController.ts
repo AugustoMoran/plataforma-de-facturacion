@@ -10,16 +10,27 @@ import {
 } from '../utils/authCookies';
 
 export async function registerController(req: Request, res: Response) {
-  const { email, password, roles, permissions, name, branch, commissionRate } = req.body;
+  const { email, password, roles, permissions, name, branch, commissionRate, phone, address } = req.body;
   
   // Note: authRoutes will protect this with 'admin' authorization or check for first user
-  const user = await register(email, password, roles, permissions, name, branch, commissionRate);
-  res.json({ id: user.id, name: user.name, email: user.email, roles: user.roles, permissions: user.permissions, branch: user.branch, commissionRate: user.commissionRate });
+  const user = await register(email, password, roles, permissions, name, branch, commissionRate, { phone, address });
+  res.json({
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    memberCode: user.memberCode,
+    phone: user.phone,
+    address: user.address,
+    roles: user.roles,
+    permissions: user.permissions,
+    branch: user.branch,
+    commissionRate: user.commissionRate,
+  });
 }
 
 export async function publicRegisterController(req: Request, res: Response) {
   try {
-    const { email, password, name } = req.body;
+    const { email, password, name, phone, address } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({ message: 'Email y contraseña son requeridos' });
@@ -34,11 +45,14 @@ export async function publicRegisterController(req: Request, res: Response) {
       return res.status(409).json({ message: 'El email ya está registrado' });
     }
 
-    const user = await register(String(email), String(password), ['user'], {}, name);
+    const user = await register(String(email), String(password), ['user'], {}, name, undefined, undefined, { phone, address });
     res.status(201).json({
       id: user.id,
       name: user.name,
       email: user.email,
+      memberCode: user.memberCode,
+      phone: user.phone,
+      address: user.address,
       roles: user.roles,
     });
   } catch (error: any) {
@@ -84,6 +98,30 @@ export async function updateBranchController(req: Request, res: Response) {
   await user.save();
 
   return res.json({ message: 'Branch updated successfully', branch: branch._id });
+}
+
+export async function updateProfileController(req: Request, res: Response) {
+  const { userId, name, phone, address } = req.body;
+
+  const user = await User.findById(userId);
+  if (!user) return res.status(404).json({ message: 'User not found' });
+
+  if (typeof name === 'string' && name.trim()) user.name = name.trim();
+  if (typeof phone === 'string') user.phone = phone.trim();
+  if (typeof address === 'string') user.address = address.trim();
+
+  await user.save();
+
+  res.json({
+    message: 'Profile updated successfully',
+    user: {
+      id: user.id,
+      name: user.name,
+      memberCode: user.memberCode,
+      phone: user.phone,
+      address: user.address,
+    },
+  });
 }
 
 export async function updatePermissionsController(req: Request, res: Response) {

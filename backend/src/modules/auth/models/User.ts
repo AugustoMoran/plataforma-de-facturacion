@@ -4,6 +4,9 @@ export interface IUser extends Document {
   name: string;
   email: string;
   password: string;
+  memberCode?: number; // Código de socio único y autoincremental (desde 100)
+  phone?: string;
+  address?: string;
   roles: string[];
   permissions: Record<string, boolean>;
   commissionRate: number; // Porcentaje de comisión
@@ -16,6 +19,9 @@ const UserSchema = new Schema<IUser>(
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true, index: true },
     password: { type: String, required: true },
+    memberCode: { type: Number, unique: true, sparse: true, index: true },
+    phone: { type: String, trim: true, default: '' },
+    address: { type: String, trim: true, default: '' },
     roles: { type: [String], default: ['vendedor'] },
     permissions: { type: Schema.Types.Mixed, default: {} },
     commissionRate: { type: Number, default: 0 },
