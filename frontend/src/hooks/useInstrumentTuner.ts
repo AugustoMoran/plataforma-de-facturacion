@@ -26,6 +26,7 @@ export interface TunerReading {
   frequency: number;
   clarity: number;
   detectedLabel: string;
+  detectedNote: string;
   targetString: TuningString;
   cents: number;
   inTune: boolean;
@@ -151,6 +152,7 @@ export const useInstrumentTuner = (instrument: InstrumentId, selectedStringId: s
         frequency: smoothedFrequencyRef.current,
         clarity,
         detectedLabel: detected.label,
+        detectedNote: detected.name,
         targetString: match.string,
         cents,
         inTune: Math.abs(cents) <= IN_TUNE_THRESHOLD_CENTS,

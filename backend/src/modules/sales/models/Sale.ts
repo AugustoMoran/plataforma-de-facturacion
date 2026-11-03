@@ -47,6 +47,7 @@ export interface ISale extends Document {
   shippingCost?: number;
   customerEmail?: string;
   customerPhone?: string;
+  buyerUserId?: mongoose.Types.ObjectId;
   shippingModalidad?: 'D' | 'S';
   shippingQuote?: {
     optionId?: string;
@@ -84,10 +85,15 @@ export interface ISale extends Document {
   envioPackPedidoId?: number;
   envioPackEnvioId?: number;
   envioPackSellerCost?: number;
-  shippingStatus?: 'pending_payment' | 'awaiting_dispatch' | 'awaiting_pickup' | 'label_ready' | 'shipped' | 'delivered';
+  shippingStatus?: 'pending_payment' | 'awaiting_dispatch' | 'awaiting_pickup' | 'ready_for_pickup' | 'label_ready' | 'shipped' | 'delivered';
   trackingNumber?: string;
   paymentId?: string;
+  paywayFormHash?: string;
+  paywayTransactionId?: string;
   paymentStatus?: string;
+  paymentNotifiedAt?: Date;
+  paymentExpiresAt?: Date;
+  pickupReadyNotifiedAt?: Date;
   createdAt: Date;
 }
 
@@ -160,6 +166,7 @@ const SaleSchema: Schema = new Schema({
   shippingCost: { type: Number, default: 0 },
   customerEmail: { type: String },
   customerPhone: { type: String },
+  buyerUserId: { type: Schema.Types.ObjectId, ref: 'User' },
   shippingModalidad: { type: String, enum: ['D', 'S'] },
   shippingQuote: {
     optionId: { type: String },
@@ -199,12 +206,17 @@ const SaleSchema: Schema = new Schema({
   envioPackSellerCost: { type: Number },
   shippingStatus: {
     type: String,
-    enum: ['pending_payment', 'awaiting_dispatch', 'awaiting_pickup', 'label_ready', 'shipped', 'delivered'],
+    enum: ['pending_payment', 'awaiting_dispatch', 'awaiting_pickup', 'ready_for_pickup', 'label_ready', 'shipped', 'delivered'],
     default: 'pending_payment',
   },
   trackingNumber: { type: String },
   paymentId: { type: String },
+  paywayFormHash: { type: String },
+  paywayTransactionId: { type: String },
   paymentStatus: { type: String },
+  paymentNotifiedAt: { type: Date },
+  paymentExpiresAt: { type: Date },
+  pickupReadyNotifiedAt: { type: Date },
 }, {
   timestamps: true,
   versionKey: false,
@@ -212,5 +224,7 @@ const SaleSchema: Schema = new Schema({
 
 SaleSchema.index({ createdAt: -1 });
 SaleSchema.index({ source: 1, createdAt: -1 });
+SaleSchema.index({ paywayTransactionId: 1 });
+SaleSchema.index({ paymentId: 1 });
 
 export default mongoose.model<ISale>('Sale', SaleSchema);

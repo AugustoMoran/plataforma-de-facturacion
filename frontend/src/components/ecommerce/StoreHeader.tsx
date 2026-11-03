@@ -3,15 +3,17 @@ import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../store';
 import { selectCartCount, toggleCart } from '../../store/cartSlice';
-import { isStaffRole } from './RouteGuards';
+import { isCustomerRole, isStaffRole } from './RouteGuards';
 import { BrandLogo } from '../BrandLogo';
 import { StoreSearchBar } from './StoreSearchBar';
+import { useStoreLogout } from '../../hooks/useStoreLogout';
 
 export const StoreHeader: React.FC = () => {
   const dispatch = useDispatch();
   const cartCount = useSelector(selectCartCount);
   const { user } = useSelector((state: RootState) => state.auth);
   const isStaff = user && isStaffRole(user.roles);
+  const { logout, isLoggingOut } = useStoreLogout();
 
   return (
     <header className="sticky top-0 z-40 bg-blue-950/35 backdrop-blur-md border-b border-blue-200/25 shadow-lg shadow-blue-950/20">
@@ -40,7 +42,7 @@ export const StoreHeader: React.FC = () => {
             ) : !user ? (
               <>
                 <Link
-                  to="/login"
+                  to="/ingresar"
                   className="btn-secondary !py-2 !px-2.5 sm:!px-3 text-xs inline-flex items-center gap-1.5"
                   aria-label="Ingresar"
                 >
@@ -49,15 +51,75 @@ export const StoreHeader: React.FC = () => {
                   </svg>
                   <span>Ingresar</span>
                 </Link>
-                <Link to="/store/register" className="btn-primary !py-2 !px-2.5 text-xs hidden sm:inline-flex">
-                  Registrarse
+                <Link
+                  to="/register"
+                  className="btn-primary !py-2 !px-2.5 text-xs inline-flex items-center gap-1.5"
+                  aria-label="Registrarse"
+                >
+                  <span className="hidden sm:inline">Registrarse</span>
+                  <span className="sm:hidden">Registro</span>
                 </Link>
               </>
-            ) : (
-              <span className="text-xs text-blue-100 hidden sm:inline truncate max-w-[120px]">
+          ) : (
+            <>
+              {typeof user.memberCode === 'number' && (
+                <span
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-brand-500/20 text-brand-100 text-[11px] font-semibold ring-1 ring-brand-300/30 whitespace-nowrap"
+                  title="Tu número de socio"
+                >
+                  <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 7h14M5 12h14M5 17h7" />
+                  </svg>
+                  <span className="hidden sm:inline">Socio&nbsp;</span>N° {user.memberCode}
+                </span>
+              )}
+              {isCustomerRole(user.roles) && (
+                <>
+                  <Link
+                    to="/account/orders"
+                    className="btn-icon sm:hidden"
+                    aria-label="Mis pedidos"
+                    title="Mis pedidos"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24" aria-hidden>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                  </Link>
+                  <Link
+                    to="/account"
+                    className="btn-icon sm:hidden"
+                    aria-label="Mi cuenta"
+                    title="Mi cuenta"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24" aria-hidden>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                  </Link>
+                  <Link to="/account/orders" className="btn-secondary !py-2 !px-3 text-xs hidden sm:inline-flex">
+                    Mis pedidos
+                  </Link>
+                  <Link to="/account" className="btn-secondary !py-2 !px-3 text-xs hidden sm:inline-flex">
+                    Mi cuenta
+                  </Link>
+                </>
+              )}
+              <span className="text-xs text-blue-100 hidden lg:inline truncate max-w-[120px]">
                 {user.email}
               </span>
-            )}
+              <button
+                type="button"
+                onClick={() => logout()}
+                disabled={isLoggingOut}
+                className="btn-icon"
+                aria-label="Cerrar sesión"
+                title="Cerrar sesión"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24" aria-hidden>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+              </button>
+            </>
+          )}
 
             <button
               onClick={() => dispatch(toggleCart())}

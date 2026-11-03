@@ -57,7 +57,7 @@ export interface ShippingQuoteResponse {
 export const shippingApi = createApi({
   reducerPath: 'shippingApi',
   baseQuery: createReauthBaseQuery(`${API_BASE_URL}/shipping`),
-  tagTypes: ['Dispatch'],
+  tagTypes: ['Dispatch', 'Pickup'],
   endpoints: (builder) => ({
     getShippingStatus: builder.query<{ enabled: boolean }, void>({
       query: () => '/status',
@@ -104,6 +104,17 @@ export const shippingApi = createApi({
       }),
       invalidatesTags: ['Dispatch'],
     }),
+    getPickupOrders: builder.query<any[], void>({
+      query: () => '/pickup',
+      providesTags: ['Pickup'],
+    }),
+    notifyPickupReady: builder.mutation<{ sent: boolean; customerEmail: string }, string>({
+      query: (saleId) => ({
+        url: `/pickup/${saleId}/notify-ready`,
+        method: 'POST',
+      }),
+      invalidatesTags: ['Pickup'],
+    }),
   }),
 });
 
@@ -115,4 +126,6 @@ export const {
   useGetDispatchOrdersQuery,
   useCreateDispatchShipmentMutation,
   useRefreshDispatchShipmentMutation,
+  useGetPickupOrdersQuery,
+  useNotifyPickupReadyMutation,
 } = shippingApi;

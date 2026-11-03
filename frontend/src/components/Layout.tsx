@@ -67,6 +67,15 @@ const NAV_ADMIN = [
 		),
 	},
 	{
+		to: "/dashboard/admin/store-customers",
+		label: "Clientes tienda",
+		icon: (
+			<svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
+				<path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+			</svg>
+		),
+	},
+	{
 		to: "/dashboard/admin/dispatch",
 		label: "Despachos",
 		icon: (
@@ -137,7 +146,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
 	if (!user) return <>{children}</>;
 
-	const companyName = (import.meta as any).env?.VITE_COMPANY_NAME || "FacturaApp";
+	const companyName = (import.meta as any).env?.VITE_COMPANY_NAME || "Oso Sound";
 
 	return (
     <div className="flex h-screen overflow-hidden admin-shell text-blue-950">

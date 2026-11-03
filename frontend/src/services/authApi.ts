@@ -16,12 +16,95 @@ export const authApi = createApi({
         body: credentials,
       }),
     }),
+    getRegisterSetup: builder.query<
+      { staffBootstrapOpen: boolean; storeRegistrationAvailable: boolean },
+      void
+    >({
+      query: () => 'register/setup',
+    }),
     register: builder.mutation({
       query: (userData) => ({
         url: 'register',
         method: 'POST',
         body: userData,
       }),
+    }),
+    publicRegister: builder.mutation<
+      {
+        user: AuthUser;
+        verificationEmailSent?: boolean;
+        emailDeliverability?: 'ok' | 'institutional';
+      },
+      {
+        name: string;
+        email: string;
+        password: string;
+        phone?: string;
+        shippingAddress: {
+          street: string;
+          city: string;
+          province: string;
+          postalCode: string;
+          country?: string;
+        };
+        marketingOptIn?: boolean;
+      }
+    >({
+      query: (body) => ({
+        url: 'register/public',
+        method: 'POST',
+        body,
+      }),
+    }),
+    updateProfile: builder.mutation<AuthUser, Partial<{
+      name: string;
+      phone: string;
+      marketingOptIn: boolean;
+      defaultShippingAddress: AuthUser['defaultShippingAddress'];
+    }>>({
+      query: (body) => ({
+        url: 'profile',
+        method: 'PATCH',
+        body,
+      }),
+    }),
+    verifyEmail: builder.mutation<{ ok: boolean; user: AuthUser }, string>({
+      query: (token) => ({
+        url: `verify-email?token=${encodeURIComponent(token)}`,
+        method: 'GET',
+      }),
+    }),
+    resendVerification: builder.mutation<
+      {
+        mailerConfigured: boolean;
+        mailSent?: boolean;
+        alreadyVerified?: boolean;
+        sentTo?: string;
+      },
+      void
+    >({
+      query: () => ({
+        url: 'resend-verification',
+        method: 'POST',
+      }),
+    }),
+    changeCustomerEmail: builder.mutation<
+      {
+        user: AuthUser;
+        verificationEmailSent?: boolean;
+        emailDeliverability?: 'ok' | 'institutional';
+      },
+      { newEmail: string }
+    >({
+      query: (body) => ({
+        url: 'customer-email',
+        method: 'PATCH',
+        body,
+      }),
+    }),
+    getStoreCustomers: builder.query<any[], void>({
+      query: () => 'customers',
+      providesTags: ['Users'],
     }),
     logout: builder.mutation<{ ok: boolean }, void>({
       query: () => ({
@@ -78,7 +161,14 @@ export const authApi = createApi({
 
 export const {
   useLoginMutation,
+  useGetRegisterSetupQuery,
   useRegisterMutation,
+  usePublicRegisterMutation,
+  useUpdateProfileMutation,
+  useVerifyEmailMutation,
+  useResendVerificationMutation,
+  useChangeCustomerEmailMutation,
+  useGetStoreCustomersQuery,
   useLogoutMutation,
   useGetMeQuery,
   useRefreshMutation,

@@ -66,6 +66,7 @@ import ecommerceRoutes from './modules/ecommerce/routes/ecommerceRoutes';
 import analyticsRoutes from './modules/analytics/routes/analyticsRoutes';
 import paymentsRoutes from './modules/payments/routes/paymentsRoutes';
 import shippingRoutes from './modules/shipping/routes/shippingRoutes';
+import notificationsRoutes from './modules/notifications/routes/notificationsRoutes';
 
 app.use('/api/auth', authRoutes);
 app.use('/api/inventory', inventoryRoutes);
@@ -82,6 +83,7 @@ app.use('/api/ecommerce', ecommerceRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/payments', paymentsRoutes);
 app.use('/api/shipping', shippingRoutes);
+app.use('/api/notifications', notificationsRoutes);
 
 // Error handler
 app.use((err: any, req: any, res: any, next: any) => {
@@ -101,6 +103,16 @@ export async function start() {
   try {
     const mongo = process.env.MONGO_URI || 'mongodb://localhost:27017/facturacion';
     await mongoose.connect(mongo);
+
+    // Asigna código de socio a los usuarios existentes que aún no lo tengan
+    try {
+      const { backfillMemberCodes } = await import('./modules/auth/services/memberCodeService');
+      const assigned = await backfillMemberCodes();
+      if (assigned > 0) console.log(`Member codes assigned to ${assigned} existing user(s)`);
+    } catch (backfillErr: any) {
+      console.warn('Member code backfill skipped:', backfillErr?.message || backfillErr);
+    }
+
     const server = app.listen(PORT, () => console.log(`Server listening ${PORT}`));
 
     // Initialize Socket.IO

@@ -6,6 +6,7 @@ import { useGetBranchesQuery } from '../../services/branchApi';
 interface User {
   _id: string;
   email: string;
+  memberCode?: number;
   roles: string[];
   permissions: Record<string, boolean>;
   branch?: string;
@@ -199,6 +200,7 @@ export const AdminUsers: React.FC = () => {
             <table className="data-table w-full">
               <thead>
                 <tr>
+                  <th className="text-center">N° Socio</th>
                   <th>Usuario</th>
                   <th className="hidden sm:table-cell">Rol</th>
                   <th className="hidden lg:table-cell">Sucursal</th>
@@ -209,6 +211,11 @@ export const AdminUsers: React.FC = () => {
               <tbody>
                 {users.map(u => (
                   <tr key={u._id}>
+                    <td className="text-center">
+                      <span className="inline-flex items-center justify-center min-w-[2.5rem] px-2 py-1 rounded-lg bg-brand-600/15 text-brand-300 font-mono font-bold text-sm">
+                        {typeof u.memberCode === 'number' ? u.memberCode : '—'}
+                      </span>
+                    </td>
                     <td>
                       <div className="text-sm font-medium text-white">{u.email}</div>
                       <div className="text-xs font-mono text-brand-400 mt-0.5 hidden sm:block">{u._id.slice(-8)}</div>
@@ -250,7 +257,7 @@ export const AdminUsers: React.FC = () => {
                 ))}
                 {(loadingUsers || (Array.isArray(users) && users.length === 0)) && (
                   <tr>
-                    <td colSpan={5} className="text-center text-slate-600 py-10 text-sm">
+                    <td colSpan={6} className="text-center text-slate-600 py-10 text-sm">
                       {loadingUsers ? 'Cargando usuarios...' : 'Sin usuarios registrados'}
                     </td>
                   </tr>

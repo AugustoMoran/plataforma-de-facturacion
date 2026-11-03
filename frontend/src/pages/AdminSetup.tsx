@@ -1,40 +1,44 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useRegisterMutation } from '../services/authApi';
+import { useNavigate, Link, Navigate } from 'react-router-dom';
+import { useGetRegisterSetupQuery, useRegisterMutation } from '../services/authApi';
 
 const brandLogo = '/brand-logo.png';
 
-export const Register = () => {
+/** Primera instalación: único administrador del panel (ruta `/setup`). */
+export const AdminSetup = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const { data: setup, isLoading: setupLoading } = useGetRegisterSetupQuery();
   const [register, { isLoading }] = useRegisterMutation();
   const navigate = useNavigate();
+
+  const staffBootstrapOpen = setup?.staffBootstrapOpen ?? false;
+  const closedPanel = !setupLoading && !staffBootstrapOpen;
+
+  if (closedPanel) {
+    return <Navigate to="/login" replace />;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     try {
-      const normalizedEmail = email.trim().toLowerCase();
-      const normalizedPassword = password.trim();
-
       await register({
-        email: normalizedEmail,
-        password: normalizedPassword,
+        email: email.trim().toLowerCase(),
+        password: password.trim(),
         roles: ['admin'],
       }).unwrap();
       setSuccess(true);
       setTimeout(() => navigate('/login'), 2000);
     } catch (err: any) {
-      const status = err?.status;
       const message = err?.data?.message as string | undefined;
-
-      if (status === 401 || message === 'Missing auth') {
-        setError('Ya existe un administrador. Iniciá sesión con tu cuenta.');
+      const code = err?.data?.code as string | undefined;
+      if (err?.status === 403 || code === 'STAFF_REGISTRATION_CLOSED') {
+        setError(message || 'El panel ya está configurado.');
         return;
       }
-
       setError(message || 'Error al registrar usuario.');
     }
   };
@@ -52,18 +56,20 @@ export const Register = () => {
             <div className="w-14 h-14 rounded-xl bg-white/90 mx-auto mb-4 flex items-center justify-center shadow-glow-md ring-1 ring-white/30 overflow-hidden">
               <img src={brandLogo} alt="Logo" className="w-10 h-10 object-contain" />
             </div>
-            <h1 className="text-xl font-bold text-white">Crear cuenta</h1>
-            <p className="text-sm text-slate-500 mt-1">Configuración inicial de administrador</p>
+            <h1 className="text-xl font-bold text-white">Configuración inicial</h1>
+            <p className="text-sm text-slate-500 mt-1">Crear el primer administrador del panel</p>
           </div>
 
-          {success ? (
+          {setupLoading ? (
+            <p className="text-center text-sm text-slate-500 py-6">Cargando...</p>
+          ) : success ? (
             <div className="flex flex-col items-center gap-3 py-6">
               <div className="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center">
                 <svg className="w-6 h-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <p className="text-white font-semibold">Cuenta creada</p>
+              <p className="text-white font-semibold">Administrador creado</p>
               <p className="text-sm text-slate-500">Redirigiendo al login...</p>
             </div>
           ) : (
@@ -76,33 +82,24 @@ export const Register = () => {
 
               <div>
                 <label className="section-heading">Email</label>
-                <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
                   className="input" placeholder="admin@empresa.com" required />
               </div>
 
               <div>
                 <label className="section-heading">Contraseña</label>
-                <input type="password" value={password} onChange={e => setPassword(e.target.value)}
-                  className="input" placeholder="••••••••" required />
+                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)}
+                  className="input" placeholder="••••••••" required minLength={8} />
               </div>
 
               <button type="submit" disabled={isLoading} className="btn-primary w-full mt-2">
-                {isLoading ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
-                    Creando...
-                  </span>
-                ) : 'Crear cuenta'}
+                {isLoading ? 'Creando...' : 'Crear administrador'}
               </button>
             </form>
           )}
 
           <p className="text-center text-sm text-slate-600 mt-6">
-            ¿Ya tienes cuenta?{' '}
-            <Link to="/login" className="text-brand-400 hover:text-brand-300 transition-colors">Iniciar sesión</Link>
+            <Link to="/login" className="text-brand-400 hover:text-brand-300 transition-colors">Ir al login</Link>
           </p>
         </div>
       </div>

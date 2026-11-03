@@ -7,13 +7,13 @@ import {
   LoginRedirectRoute,
   MaintenanceGuard,
 } from './components/ecommerce/RouteGuards';
-import { AdminUsers, AdminCatalog, AdminProfitReport, AdminSupplierLedger, AdminStoreSettings, AdminDispatch } from './pages/admin';
+import { AdminUsers, AdminCatalog, AdminProfitReport, AdminSupplierLedger, AdminStoreSettings, AdminDispatch, AdminStoreCustomers } from './pages/admin';
 import { Dashboard } from './pages/Dashboard';
 import { Inventory } from './pages/Inventory';
 import { POS } from './pages/POS';
 import { SalesHistory } from './pages/SalesHistory';
 import { Login } from './pages/Login';
-import { Register } from './pages/Register';
+import { AdminSetup } from './pages/AdminSetup';
 import { StoreHome } from './pages/store/StoreHome';
 import { StoreProducts } from './pages/store/StoreProducts';
 import { StoreProductDetail } from './pages/store/StoreProductDetail';
@@ -22,6 +22,9 @@ import { StoreCheckoutConfirmation } from './pages/store/StoreCheckoutConfirmati
 import { StoreCheckoutFailure } from './pages/store/StoreCheckoutFailure';
 import { StoreWhatsAppSent } from './pages/store/StoreWhatsAppSent';
 import { StoreRegister } from './pages/store/StoreRegister';
+import { StoreAccount } from './pages/store/StoreAccount';
+import { StoreOrders } from './pages/store/StoreOrders';
+import { StoreVerifyEmail } from './pages/store/StoreVerifyEmail';
 import { Maintenance } from './pages/store/Maintenance';
 import { StorePrivacy } from './pages/store/StorePrivacy';
 
@@ -46,7 +49,18 @@ const router = createBrowserRouter([
       { path: '/checkout/consulta-enviada', element: <StoreWhatsAppSent /> },
       { path: '/checkout/failure', element: <StoreCheckoutFailure /> },
       { path: '/checkout/confirmation/:orderId', element: <StoreCheckoutConfirmation /> },
-      { path: '/store/register', element: <StoreRegister /> },
+      {
+        path: '/register',
+        element: (
+          <LoginRedirectRoute>
+            <StoreRegister />
+          </LoginRedirectRoute>
+        ),
+      },
+      { path: '/store/register', element: <Navigate to="/register" replace /> },
+      { path: '/verify-email', element: <StoreVerifyEmail /> },
+      { path: '/account', element: <StoreAccount /> },
+      { path: '/account/orders', element: <StoreOrders /> },
       { path: '/privacidad', element: <StorePrivacy /> },
     ],
   },
@@ -91,6 +105,10 @@ const router = createBrowserRouter([
     path: '/dashboard/admin/dispatch',
     element: <DashboardLayout adminOnly><AdminDispatch /></DashboardLayout>,
   },
+  {
+    path: '/dashboard/admin/store-customers',
+    element: <DashboardLayout adminOnly><AdminStoreCustomers /></DashboardLayout>,
+  },
   // Legacy redirects
   { path: '/pos', element: <Navigate to="/dashboard/pos" replace /> },
   { path: '/inventory', element: <Navigate to="/dashboard/inventory" replace /> },
@@ -102,18 +120,26 @@ const router = createBrowserRouter([
   { path: '/admin/supplier-ledger', element: <Navigate to="/dashboard/admin/supplier-ledger" replace /> },
   { path: '/admin/dispatch', element: <Navigate to="/dashboard/admin/dispatch" replace /> },
   {
-    path: '/login',
+    path: '/ingresar',
     element: (
       <LoginRedirectRoute>
-        <Login />
+        <Login variant="store" />
       </LoginRedirectRoute>
     ),
   },
   {
-    path: '/register',
+    path: '/login',
     element: (
       <LoginRedirectRoute>
-        <Register />
+        <Login variant="staff" />
+      </LoginRedirectRoute>
+    ),
+  },
+  {
+    path: '/setup',
+    element: (
+      <LoginRedirectRoute>
+        <AdminSetup />
       </LoginRedirectRoute>
     ),
   },

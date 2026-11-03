@@ -136,6 +136,21 @@ export const listDispatchOrders = async () => {
     .lean();
 };
 
+export const listPickupOrders = async () => {
+  return Sale.find({
+    source: 'ECOMMERCE',
+    paymentStatus: 'approved',
+    $or: [
+      { 'shippingQuote.carrierId': 'store' },
+      { 'shippingQuote.pickupBranch': { $exists: true, $ne: null } },
+    ],
+    shippingStatus: { $in: ['awaiting_pickup', 'ready_for_pickup'] },
+  })
+    .sort({ createdAt: -1 })
+    .limit(100)
+    .lean();
+};
+
 export const handleEnvioPackWebhook = async (tipo: string, id: string) => {
   const sale = await Sale.findOne({ envioPackEnvioId: Number(id) });
   if (!sale) {

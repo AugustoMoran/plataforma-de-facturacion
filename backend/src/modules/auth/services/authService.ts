@@ -1,6 +1,7 @@
 import bcrypt from 'bcrypt';
 import { User, IUser } from '../models/User';
 import * as tokenService from './tokenService';
+import { getNextMemberCode } from './memberCodeService';
 
 function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
@@ -17,23 +18,49 @@ export async function register(
   permissions: Record<string, boolean> = {},
   name?: string,
   branch?: string,
-  commissionRate?: number
+  commissionRate?: number,
+  profile?: {
+    phone?: string;
+    defaultShippingAddress?: {
+      street?: string;
+      city?: string;
+      province?: string;
+      postalCode?: string;
+      country?: string;
+    };
+    marketingOptIn?: boolean;
+  },
+  options?: { enforceRoles?: boolean }
 ) {
   const normalizedEmail = normalizeEmail(email);
   const hash = await bcrypt.hash(password, 10);
   
   // Check if this is the first user
   const userCount = await User.countDocuments();
-  const finalRoles = userCount === 0 ? ['admin'] : roles;
+  const finalRoles = options?.enforceRoles
+    ? roles
+    : userCount === 0
+      ? ['admin']
+      : roles;
   
+  const isCustomerOnly = finalRoles.length === 1 && finalRoles[0] === 'user';
+
+  // Código de socio único y autoincremental (arranca en 100)
+  const memberCode = await getNextMemberCode();
+
   const user = await User.create({ 
     name: name || normalizedEmail.split('@')[0], 
     email: normalizedEmail,
     password: hash, 
+    memberCode,
     roles: finalRoles,
     permissions,
     branch: branch || undefined,
     commissionRate: Number.isFinite(Number(commissionRate)) ? Number(commissionRate) : 0,
+    emailVerified: !isCustomerOnly,
+    phone: profile?.phone,
+    defaultShippingAddress: profile?.defaultShippingAddress,
+    marketingOptIn: Boolean(profile?.marketingOptIn),
   });
   return user;
 }

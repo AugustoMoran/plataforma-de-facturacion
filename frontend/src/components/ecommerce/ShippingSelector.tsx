@@ -18,6 +18,8 @@ interface ShippingSelectorProps {
   onPostalCodeChange: (value: string) => void;
   selectedOptionId: string | null;
   onSelectOption: (option: ShippingOption | null) => void;
+  autoQuoteDomicilio?: boolean;
+  initialDeliveryMode?: 'D' | 'S';
 }
 
 const branchToShippingOption = (branch: {
@@ -62,6 +64,8 @@ export const ShippingSelector: React.FC<ShippingSelectorProps> = ({
   onPostalCodeChange,
   selectedOptionId,
   onSelectOption,
+  autoQuoteDomicilio = false,
+  initialDeliveryMode,
 }) => {
   const { data: provinces = [] } = useGetProvincesQuery();
   const { data: storeBranches = [], isLoading: loadingBranches } = useGetPublicBranchesQuery();
@@ -127,6 +131,17 @@ export const ShippingSelector: React.FC<ShippingSelectorProps> = ({
       setQuoteMessage(err?.data?.message || 'No pudimos calcular el envío. Revisá los datos e intentá de nuevo.');
     }
   };
+
+  useEffect(() => {
+    if (initialDeliveryMode) setDeliveryMode(initialDeliveryMode);
+  }, [initialDeliveryMode]);
+
+  useEffect(() => {
+    if (!autoQuoteDomicilio || deliveryMode !== 'D') return;
+    if (!province || postalCode.length !== 4) return;
+    handleQuote();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoQuoteDomicilio, deliveryMode, province, postalCode, city, subtotal]);
 
   return (
     <div className="space-y-4 rounded-2xl border border-blue-100 bg-blue-50/50 p-4">

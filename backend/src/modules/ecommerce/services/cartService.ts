@@ -115,3 +115,25 @@ export const clearCart = async (cartId: string) => {
   await cart.save();
   return cart;
 };
+
+export const syncCartFromClientItems = async (
+  userId: string,
+  items: Array<{ productId: string; quantity: number }>
+) => {
+  const cart = await getOrCreateCart(undefined, userId);
+  cart.items = [];
+  cart.subtotal = 0;
+  await cart.save();
+
+  for (const item of items || []) {
+    const quantity = Math.max(1, Number(item.quantity) || 1);
+    if (!item.productId) continue;
+    await addCartItem(String(cart._id), {
+      productId: String(item.productId),
+      quantity,
+      userId,
+    });
+  }
+
+  return await Cart.findById(cart._id);
+};

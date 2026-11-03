@@ -21,8 +21,8 @@
     "path": "./android.keystore",
     "alias": "ososound"
   },
-  "appVersionName": "1.0.0",
-  "appVersionCode": 1,
+  "appVersionName": "1.0.1",
+  "appVersionCode": 2,
   "shortcuts": [],
   "generatorApp": "bubblewrap-cli",
   "webManifestUrl": "https://www.ososoundmusic.com/manifest.webmanifest",

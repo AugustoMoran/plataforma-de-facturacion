@@ -2,48 +2,255 @@ import { Request, Response } from 'express';
 import { register, validateUser, tokenService } from '../services/authService';
 import { User } from '../models/User';
 import Branch from '../../branches/models/Branch';
+import Sale from '../../sales/models/Sale';
 import { io } from '../../../app';
 import {
   clearAuthCookies,
   serializeAuthUser,
   setAuthCookies,
 } from '../utils/authCookies';
+import { normalizeCustomerAddress, isCustomerRole } from '../services/customerProfileService';
+import { issueEmailVerification, resendEmailVerification, verifyEmailByToken } from '../services/emailVerificationService';
+import { getEmailDeliverability, isInstitutionalEmail } from '../services/emailDeliverability';
+import { getMailerConfigStatus } from '../../notifications/services/mailerService';
+
+const INSTITUTIONAL_EMAIL_MESSAGE =
+  'Las casillas institucionales (@edu.ar, @ac.ar, etc.) suelen bloquear correos externos. Usá un email personal (Gmail, Outlook, etc.) para recibir el enlace de verificación.';
+
+export async function getRegisterSetupController(_req: Request, res: Response) {
+  const userCount = await User.countDocuments();
+  res.json({
+    staffBootstrapOpen: userCount === 0,
+    storeRegistrationAvailable: true,
+  });
+}
 
 export async function registerController(req: Request, res: Response) {
   const { email, password, roles, permissions, name, branch, commissionRate } = req.body;
   
   // Note: authRoutes will protect this with 'admin' authorization or check for first user
   const user = await register(email, password, roles, permissions, name, branch, commissionRate);
-  res.json({ id: user.id, name: user.name, email: user.email, roles: user.roles, permissions: user.permissions, branch: user.branch, commissionRate: user.commissionRate });
+  res.json({ id: user.id, name: user.name, email: user.email, memberCode: user.memberCode, roles: user.roles, permissions: user.permissions, branch: user.branch, commissionRate: user.commissionRate });
 }
 
 export async function publicRegisterController(req: Request, res: Response) {
   try {
-    const { email, password, name } = req.body;
+    const { email, password, name, phone, shippingAddress, marketingOptIn } = req.body;
 
-    if (!email || !password) {
-      return res.status(400).json({ message: 'Email y contraseña son requeridos' });
+    if (!email || !password || !name) {
+      return res.status(400).json({ message: 'Nombre, email y contraseña son requeridos' });
     }
 
-    if (String(password).length < 6) {
-      return res.status(400).json({ message: 'La contraseña debe tener al menos 6 caracteres' });
+    if (String(password).length < 8) {
+      return res.status(400).json({ message: 'La contraseña debe tener al menos 8 caracteres' });
     }
 
-    const existing = await User.findOne({ email: String(email).trim().toLowerCase() });
+    const address = normalizeCustomerAddress(shippingAddress);
+    if (!address?.province || !address?.postalCode || address.postalCode.length !== 4) {
+      return res.status(400).json({ message: 'Completá provincia y código postal válido para el envío' });
+    }
+    if (!address.street || !address.city) {
+      return res.status(400).json({ message: 'Completá calle y ciudad de tu dirección' });
+    }
+
+    const normalizedEmail = String(email).trim().toLowerCase();
+    const existing = await User.findOne({ email: normalizedEmail });
     if (existing) {
       return res.status(409).json({ message: 'El email ya está registrado' });
     }
+    const emailDeliverability = getEmailDeliverability(normalizedEmail);
 
-    const user = await register(String(email), String(password), ['user'], {}, name);
+    const user = await register(
+      normalizedEmail,
+      String(password),
+      ['user'],
+      {},
+      String(name).trim(),
+      undefined,
+      undefined,
+      {
+        phone: String(phone || '').trim() || undefined,
+        defaultShippingAddress: address,
+        marketingOptIn: Boolean(marketingOptIn),
+      },
+      { enforceRoles: true }
+    );
+
+    let verification = { mailSent: false as boolean };
+    if (emailDeliverability === 'ok') {
+      verification = await issueEmailVerification(user);
+    }
+
+    const access = tokenService.signAccessToken(user as any);
+    const refresh = tokenService.signRefreshToken(user as any);
+    user.refreshTokens.push({ token: refresh, createdAt: new Date() });
+    user.markModified('refreshTokens');
+    await user.save({ validateBeforeSave: false });
+    setAuthCookies(res, access, refresh);
+
     res.status(201).json({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      roles: user.roles,
+      user: serializeAuthUser(user),
+      verificationEmailSent: verification.mailSent,
+      emailDeliverability,
+      mailerConfigured: getMailerConfigStatus().configured,
     });
   } catch (error: any) {
     res.status(400).json({ message: error.message });
   }
+}
+
+export async function updateProfileController(req: Request, res: Response) {
+  try {
+    const user = (req as any).user;
+    if (!user) return res.status(401).json({ message: 'Not authenticated' });
+    if (!isCustomerRole(user.roles || [])) {
+      return res.status(403).json({ message: 'Solo clientes de la tienda pueden editar este perfil' });
+    }
+
+    const { name, phone, defaultShippingAddress, marketingOptIn } = req.body || {};
+    if (name) user.name = String(name).trim();
+    if (phone !== undefined) user.phone = String(phone || '').trim() || undefined;
+    if (defaultShippingAddress !== undefined) {
+      user.defaultShippingAddress = normalizeCustomerAddress(defaultShippingAddress);
+    }
+    if (marketingOptIn !== undefined) user.marketingOptIn = Boolean(marketingOptIn);
+
+    await user.save();
+    res.json(serializeAuthUser(user));
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+}
+
+export async function verifyEmailController(req: Request, res: Response) {
+  try {
+    const token = String(req.query.token || req.body?.token || '');
+    if (!token) return res.status(400).json({ message: 'Token requerido' });
+    const user = await verifyEmailByToken(token);
+    res.json({ ok: true, user: serializeAuthUser(user) });
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+}
+
+export async function changeCustomerEmailController(req: Request, res: Response) {
+  try {
+    const user = (req as any).user;
+    if (!user) return res.status(401).json({ message: 'Not authenticated' });
+    if (!isCustomerRole(user.roles || [])) {
+      return res.status(403).json({ message: 'Solo clientes de la tienda pueden cambiar este email' });
+    }
+    if (user.emailVerified) {
+      return res.status(400).json({ message: 'El email ya está verificado y no se puede cambiar desde acá' });
+    }
+
+    const newEmail = String(req.body?.newEmail || '').trim().toLowerCase();
+    if (!newEmail || !newEmail.includes('@')) {
+      return res.status(400).json({ message: 'Ingresá un email válido' });
+    }
+    if (isInstitutionalEmail(newEmail)) {
+      return res.status(400).json({
+        code: 'EMAIL_INSTITUTIONAL',
+        message: INSTITUTIONAL_EMAIL_MESSAGE,
+        emailDeliverability: 'institutional',
+      });
+    }
+
+    const existing = await User.findOne({ email: newEmail });
+    if (existing && String(existing._id) !== String(user._id)) {
+      return res.status(409).json({ message: 'Ese email ya está registrado en otra cuenta' });
+    }
+
+    user.email = newEmail;
+    await user.save();
+
+    const verification = await issueEmailVerification(user);
+
+    res.json({
+      user: serializeAuthUser(user),
+      verificationEmailSent: verification.mailSent,
+      emailDeliverability: getEmailDeliverability(newEmail),
+      mailerConfigured: getMailerConfigStatus().configured,
+    });
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+}
+
+export async function resendVerificationController(req: Request, res: Response) {
+  try {
+    const user = (req as any).user;
+    if (!user) return res.status(401).json({ message: 'Not authenticated' });
+
+    if (!user.emailVerified && isInstitutionalEmail(user.email)) {
+      return res.status(400).json({
+        code: 'EMAIL_INSTITUTIONAL',
+        message: INSTITUTIONAL_EMAIL_MESSAGE,
+        emailDeliverability: 'institutional',
+      });
+    }
+
+    const result = await resendEmailVerification(user);
+    const payload = {
+      alreadyVerified: result.alreadyVerified,
+      mailSent: result.mailSent,
+      sentTo: result.sentTo,
+      mailerConfigured: getMailerConfigStatus().configured,
+    };
+
+    if (!result.alreadyVerified && !result.mailSent) {
+      return res.status(502).json({
+        message: 'No pudimos enviar el email de verificación. Probá con otro email personal.',
+        ...payload,
+      });
+    }
+
+    res.json(payload);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+}
+
+export async function getStoreCustomersController(req: Request, res: Response) {
+  const customers = await User.find({ roles: 'user' }, '-password -refreshTokens -emailVerificationTokenHash')
+    .sort({ createdAt: -1 })
+    .lean();
+
+  const stats = await Sale.aggregate([
+    { $match: { source: 'ECOMMERCE' } },
+    {
+      $group: {
+        _id: {
+          buyerUserId: '$buyerUserId',
+          customerEmail: '$customerEmail',
+        },
+        ordersCount: { $sum: 1 },
+        totalSpent: { $sum: '$total' },
+        lastOrderAt: { $max: '$createdAt' },
+      },
+    },
+  ]);
+
+  const statsByUserId = new Map<string, any>();
+  const statsByEmail = new Map<string, any>();
+  for (const row of stats) {
+    const payload = {
+      ordersCount: row.ordersCount,
+      totalSpent: row.totalSpent,
+      lastOrderAt: row.lastOrderAt,
+    };
+    if (row._id.buyerUserId) statsByUserId.set(String(row._id.buyerUserId), payload);
+    if (row._id.customerEmail) statsByEmail.set(String(row._id.customerEmail).toLowerCase(), payload);
+  }
+
+  const enriched = customers.map((customer) => {
+    const byId = statsByUserId.get(String(customer._id));
+    const byEmail = statsByEmail.get(String(customer.email).toLowerCase());
+    const metrics = byId || byEmail || { ordersCount: 0, totalSpent: 0, lastOrderAt: null };
+    return { ...customer, metrics };
+  });
+
+  res.json(enriched);
 }
 
 export async function updateCommissionController(req: Request, res: Response) {
@@ -137,7 +344,12 @@ export async function deleteUserController(req: Request, res: Response) {
 export async function loginController(req: Request, res: Response) {
   const { email, password } = req.body;
   const user = await validateUser(email, password);
-  if (!user) return res.status(401).json({ message: 'Invalid credentials' });
+  if (!user) {
+    return res.status(401).json({
+      message: 'Email o contraseña incorrectos',
+      code: 'INVALID_CREDENTIALS',
+    });
+  }
 
   const access = tokenService.signAccessToken(user as any);
   const refresh = tokenService.signRefreshToken(user as any);

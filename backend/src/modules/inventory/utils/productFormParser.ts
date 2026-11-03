@@ -20,6 +20,15 @@ const parseJsonField = (value: unknown) => {
   }
 };
 
+const parseBooleanField = (value: unknown): boolean | undefined => {
+  if (value === true || value === 'true' || value === 1 || value === '1') return true;
+  if (value === false || value === 'false' || value === 0 || value === '0') return false;
+  return undefined;
+};
+
+const isFeaturedValue = (value: unknown) =>
+  value === true || value === 'true' || value === 1 || value === '1';
+
 export const getUploadedFiles = (req: Request) =>
   (req.files as { [fieldname: string]: Express.Multer.File[] } | undefined) || {};
 
@@ -88,6 +97,14 @@ export const applyEcommerceFieldsToProductData = (req: Request, productData: Rec
     }
 
     productData.gallery = gallery;
+  }
+
+  if ('featured' in productData) {
+    productData.featured = parseBooleanField(productData.featured) ?? false;
+  }
+
+  if ('paused' in productData) {
+    productData.paused = parseBooleanField(productData.paused) ?? false;
   }
 
   return productData;

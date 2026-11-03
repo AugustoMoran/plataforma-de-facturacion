@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import * as envioPackService from '../services/envioPackService';
 import * as dispatchService from '../services/dispatchService';
+import { notifyPickupReady } from '../../payments/services/orderNotificationService';
 
 export const getProvincesController = async (_req: Request, res: Response) => {
   try {
@@ -89,6 +90,24 @@ export const refreshDispatchController = async (req: Request, res: Response) => 
   try {
     const envio = await dispatchService.refreshEnvioPackShipment(req.params.saleId);
     res.json(envio);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const listPickupController = async (_req: Request, res: Response) => {
+  try {
+    const orders = await dispatchService.listPickupOrders();
+    res.json(orders);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const notifyPickupReadyController = async (req: Request, res: Response) => {
+  try {
+    const result = await notifyPickupReady(req.params.saleId);
+    res.json(result);
   } catch (error: any) {
     res.status(400).json({ message: error.message });
   }
