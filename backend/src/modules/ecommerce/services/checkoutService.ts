@@ -8,6 +8,7 @@ import Product from '../../inventory/models/Product';
 import { getEffectiveProductPrice } from './catalogService';
 import { resolveShippingOption } from '../../shipping/services/envioPackService';
 import { provinceIdFromName } from '../../shipping/constants/argentinaProvinces';
+import { getPaymentExpiresAt } from '../../payments/utils/paymentRetry';
 
 const round2 = (value: number) => Math.round((Number(value) || 0) * 100) / 100;
 
@@ -192,8 +193,12 @@ export const checkoutDirect = async (input: {
       shippingStatus: 'pending_payment',
       customerEmail: input.customerEmail,
       customerPhone: input.customerPhone,
+      buyerUserId: input.userId,
       paymentId: input.paymentId,
       paymentStatus: input.paymentStatus || 'pending',
+      paymentExpiresAt: (input.paymentMethod || 'payway') === 'payway'
+        ? getPaymentExpiresAt()
+        : undefined,
       notes: input.notes,
     },
     sellerId,

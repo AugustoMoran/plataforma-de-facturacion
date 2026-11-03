@@ -10,7 +10,15 @@ export interface AuthUser {
   name?: string;
   memberCode?: number;
   phone?: string;
-  address?: string;
+  emailVerified?: boolean;
+  marketingOptIn?: boolean;
+  defaultShippingAddress?: {
+    street?: string;
+    city?: string;
+    province?: string;
+    postalCode?: string;
+    country?: string;
+  };
 }
 
 interface AuthState {

@@ -3,106 +3,72 @@ import { app } from '../../../app';
 import { User } from '../models/User';
 import { backfillMemberCodes, getNextMemberCode, MEMBER_CODE_START } from '../services/memberCodeService';
 
-const getCookieHeader = (res: request.Response): string[] => {
-  const raw = res.get('Set-Cookie') as unknown as string[] | undefined;
-  return (raw || []).map((c) => c.split(';')[0]);
-};
+describe('Código de socio (memberCode)', () => {
+  const admin = { email: 'admin@oso.test', password: 'Password123!' };
 
-describe('Member code (código de socio)', () => {
-  const admin = { email: 'admin@example.com', password: 'Password123!' };
+  const customerPayload = (email: string) => ({
+    name: 'Socio Test',
+    email,
+    password: 'Password123!',
+    phone: '1122334455',
+    shippingAddress: {
+      street: 'Av. Test 123',
+      city: 'CABA',
+      province: 'C',
+      postalCode: '1414',
+      country: 'AR',
+    },
+  });
 
-  const registerAsAdmin = async () => {
+  it('asigna 100 al primer usuario y expone el código en el registro', async () => {
+    const res = await request(app).post('/api/auth/register').send(admin);
+    expect(res.status).toBe(200);
+    expect(res.body.memberCode).toBe(MEMBER_CODE_START); // 100
+  });
+
+  it('el registro público de socio recibe código y es autoincremental', async () => {
+    await request(app).post('/api/auth/register').send(admin); // admin -> 100
+
+    const r1 = await request(app)
+      .post('/api/auth/register/public')
+      .send(customerPayload(`c1-${Date.now()}@test.com`));
+    expect(r1.status).toBe(201);
+    expect(r1.body.user.memberCode).toBe(101);
+
+    const r2 = await request(app)
+      .post('/api/auth/register/public')
+      .send(customerPayload(`c2-${Date.now()}@test.com`));
+    expect(r2.status).toBe(201);
+    expect(r2.body.user.memberCode).toBe(102);
+  });
+
+  it('los códigos de socio son únicos', async () => {
     await request(app).post('/api/auth/register').send(admin);
-    const login = await request(app).post('/api/auth/login').send(admin);
-    return getCookieHeader(login);
-  };
-
-  it('starts member codes at 100 and increments by 1', async () => {
-    const first = await request(app).post('/api/auth/register').send(admin);
-    expect(first.status).toBe(200);
-    expect(first.body.memberCode).toBe(MEMBER_CODE_START); // 100
-
-    const login = await request(app).post('/api/auth/login').send(admin);
-    const cookies = getCookieHeader(login);
-
-    const second = await request(app)
-      .post('/api/auth/register')
-      .set('Cookie', cookies)
-      .send({ email: 'socio2@example.com', password: 'Password123!' });
-    expect(second.body.memberCode).toBe(101);
-
-    const third = await request(app)
-      .post('/api/auth/register')
-      .set('Cookie', cookies)
-      .send({ email: 'socio3@example.com', password: 'Password123!' });
-    expect(third.body.memberCode).toBe(102);
-  });
-
-  it('persists phone/address and exposes all data via /users', async () => {
-    const cookies = await registerAsAdmin();
-
-    await request(app)
-      .post('/api/auth/register')
-      .set('Cookie', cookies)
-      .send({
-        email: 'contacto@example.com',
-        password: 'Password123!',
-        name: 'Juan Pérez',
-        phone: '+54 9 11 5555-1234',
-        address: 'Av. Siempre Viva 742, CABA',
-      });
-
-    const list = await request(app).get('/api/auth/users').set('Cookie', cookies);
-    expect(list.status).toBe(200);
-
-    const juan = list.body.find((u: any) => u.email === 'contacto@example.com');
-    expect(juan).toBeTruthy();
-    expect(juan.memberCode).toBe(101);
-    expect(juan.name).toBe('Juan Pérez');
-    expect(juan.phone).toBe('+54 9 11 5555-1234');
-    expect(juan.address).toBe('Av. Siempre Viva 742, CABA');
-    // El endpoint no debe filtrar datos sensibles
-    expect(juan.password).toBeUndefined();
-  });
-
-  it('member codes are unique across many users', async () => {
-    const cookies = await registerAsAdmin();
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 4; i++) {
       await request(app)
-        .post('/api/auth/register')
-        .set('Cookie', cookies)
-        .send({ email: `bulk${i}@example.com`, password: 'Password123!' });
+        .post('/api/auth/register/public')
+        .send(customerPayload(`bulk${i}-${Date.now()}@test.com`));
     }
     const codes = (await User.find().select('memberCode')).map((u) => u.memberCode);
-    const unique = new Set(codes);
-    expect(unique.size).toBe(codes.length);
+    expect(new Set(codes).size).toBe(codes.length);
     expect(Math.min(...(codes as number[]))).toBe(MEMBER_CODE_START);
   });
 
-  it('admin can update profile (name/phone/address)', async () => {
-    const cookies = await registerAsAdmin();
-    const created = await request(app)
-      .post('/api/auth/register')
-      .set('Cookie', cookies)
-      .send({ email: 'editable@example.com', password: 'Password123!' });
+  it('el customer recibe su código serializado en /me', async () => {
+    await request(app).post('/api/auth/register').send(admin);
+    const email = `me-${Date.now()}@test.com`;
+    const reg = await request(app).post('/api/auth/register/public').send(customerPayload(email));
+    const cookies = (reg.get('Set-Cookie') as unknown as string[] | undefined) || [];
+    const accessCookie = cookies.map((c) => c.split(';')[0]).filter((c) => c.startsWith('accessToken='));
 
-    const userId = created.body.id;
-    const upd = await request(app)
-      .patch('/api/auth/users/profile')
-      .set('Cookie', cookies)
-      .send({ userId, name: 'Nuevo Nombre', phone: '12345', address: 'Calle 1' });
-
-    expect(upd.status).toBe(200);
-    expect(upd.body.user.phone).toBe('12345');
-    expect(upd.body.user.address).toBe('Calle 1');
-    expect(upd.body.user.name).toBe('Nuevo Nombre');
+    const me = await request(app).get('/api/auth/me').set('Cookie', accessCookie);
+    expect(me.status).toBe(200);
+    expect(me.body.memberCode).toBe(101);
   });
 
-  it('backfill assigns codes to users missing one, respecting creation order', async () => {
-    // Usuarios legacy creados directamente sin memberCode
-    const u1 = await User.create({ name: 'Legacy 1', email: 'legacy1@example.com', password: 'x', roles: ['user'] });
-    const u2 = await User.create({ name: 'Legacy 2', email: 'legacy2@example.com', password: 'x', roles: ['user'] });
-
+  it('backfill asigna códigos a usuarios sin código, respetando el orden de creación', async () => {
+    const u1 = await User.create({ name: 'Legacy 1', email: 'l1@test.com', password: 'x', roles: ['user'] });
+    const u2 = await User.create({ name: 'Legacy 2', email: 'l2@test.com', password: 'x', roles: ['user'] });
     expect(u1.memberCode).toBeUndefined();
 
     const assigned = await backfillMemberCodes();
@@ -113,7 +79,6 @@ describe('Member code (código de socio)', () => {
     expect(r1?.memberCode).toBe(100);
     expect(r2?.memberCode).toBe(101);
 
-    // El siguiente código continúa la secuencia
     const next = await getNextMemberCode();
     expect(next).toBe(102);
   });

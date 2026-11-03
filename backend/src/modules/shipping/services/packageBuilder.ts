@@ -1,4 +1,5 @@
 import Product from '../../inventory/models/Product';
+import { DEFAULT_PRODUCT_SHIPPING } from '../../inventory/constants/shippingDefaults';
 
 export interface PackageTotals {
   weight: number;
@@ -6,7 +7,12 @@ export interface PackageTotals {
   packages: Array<{ alto: number; ancho: number; largo: number; peso: number }>;
 }
 
-const DEFAULT_DIMS = { alto: 50, ancho: 40, largo: 20, peso: 4 };
+const DEFAULT_DIMS = {
+  alto: DEFAULT_PRODUCT_SHIPPING.dimensions.height,
+  ancho: DEFAULT_PRODUCT_SHIPPING.dimensions.width,
+  largo: DEFAULT_PRODUCT_SHIPPING.dimensions.length,
+  peso: DEFAULT_PRODUCT_SHIPPING.weight,
+};
 
 const roundWeight = (value: number) => Math.round(value * 100) / 100;
 

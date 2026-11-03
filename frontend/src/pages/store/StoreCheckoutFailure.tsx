@@ -1,10 +1,24 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { SEO } from '../../components/ecommerce/SEO';
+import { useCreatePaywayCheckoutMutation } from '../../services/paymentsApi';
 
 export const StoreCheckoutFailure: React.FC = () => {
   const [params] = useSearchParams();
   const saleId = params.get('saleId');
+  const [createPaywayCheckout, { isLoading }] = useCreatePaywayCheckoutMutation();
+  const [error, setError] = useState('');
+
+  const handleRetry = async () => {
+    if (!saleId) return;
+    setError('');
+    try {
+      const checkout = await createPaywayCheckout({ saleId }).unwrap();
+      window.location.href = checkout.checkoutUrl;
+    } catch (err: any) {
+      setError(err?.data?.message || 'No se pudo reintentar el pago');
+    }
+  };
 
   return (
     <div className="max-w-lg mx-auto space-y-6 animate-slide-up text-center">
@@ -19,7 +33,7 @@ export const StoreCheckoutFailure: React.FC = () => {
       <div>
         <h1 className="text-2xl font-bold text-white">Pago no completado</h1>
         <p className="text-blue-100/90 mt-2">
-          El pago fue cancelado o no pudo procesarse. Podés intentar nuevamente o contactarnos por WhatsApp.
+          El pago fue cancelado o no pudo procesarse. Tenés 24 horas para reintentar con los mismos datos del pedido.
         </p>
       </div>
 
@@ -27,8 +41,20 @@ export const StoreCheckoutFailure: React.FC = () => {
         <p className="text-xs text-blue-200/80 font-mono">Referencia: {saleId}</p>
       )}
 
+      {error ? (
+        <div className="rounded-xl border border-red-300/40 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+          {error}
+        </div>
+      ) : null}
+
       <div className="flex flex-col sm:flex-row gap-3 justify-center">
-        <Link to="/checkout" className="btn-primary">Reintentar pago</Link>
+        {saleId ? (
+          <button type="button" className="btn-primary" disabled={isLoading} onClick={handleRetry}>
+            {isLoading ? 'Redirigiendo a Payway...' : 'Reintentar pago'}
+          </button>
+        ) : (
+          <Link to="/checkout" className="btn-primary">Volver al checkout</Link>
+        )}
         <Link to="/products" className="btn-secondary">Volver al catálogo</Link>
       </div>
     </div>

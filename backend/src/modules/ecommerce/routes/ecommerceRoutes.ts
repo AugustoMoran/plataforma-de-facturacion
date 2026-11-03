@@ -15,8 +15,9 @@ import {
   clearCartController,
 } from '../controllers/cartController';
 import { checkoutController } from '../controllers/checkoutController';
-import { getStoreOrderController } from '../controllers/orderController';
-import { optionalAuthenticate } from '../../../middleware/authMiddleware';
+import { syncCartController } from '../controllers/cartSyncController';
+import { getMyStoreOrdersController, getStoreOrderController } from '../controllers/orderController';
+import { authenticate, optionalAuthenticate } from '../../../middleware/authMiddleware';
 
 const router = Router();
 
@@ -26,15 +27,18 @@ router.get('/catalog/featured', getFeaturedProductsController);
 router.get('/sitemap.xml', getSitemapController);
 router.get('/catalog/:slug', getCatalogProductController);
 
-router.get('/cart', getCartController);
+router.get('/cart', optionalAuthenticate, getCartController);
 router.get('/cart/:cartId', getCartByIdController);
-router.post('/cart/items', addCartItemController);
-router.post('/cart/:cartId/items', addCartItemController);
+router.post('/cart/items', optionalAuthenticate, addCartItemController);
+router.post('/cart/:cartId/items', optionalAuthenticate, addCartItemController);
+router.post('/cart/sync', authenticate, syncCartController);
 router.put('/cart/:cartId/items/:productId', updateCartItemController);
 router.delete('/cart/:cartId/items/:productId', removeCartItemController);
 router.delete('/cart/:cartId', clearCartController);
 
-router.post('/checkout', optionalAuthenticate, checkoutController);
+router.get('/orders/me', authenticate, getMyStoreOrdersController);
 router.get('/orders/:id', getStoreOrderController);
+
+router.post('/checkout', optionalAuthenticate, checkoutController);
 
 export default router;

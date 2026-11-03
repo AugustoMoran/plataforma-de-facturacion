@@ -1,15 +1,12 @@
 import React, { useState } from 'react';
 import { PERMISSION_LABELS } from '../../constants/permissions';
-import { useDeleteUserMutation, useGetUsersQuery, useRegisterMutation, useUpdateBranchMutation, useUpdateCommissionMutation, useUpdatePermissionsMutation, useUpdateProfileMutation } from '../../services/authApi';
+import { useDeleteUserMutation, useGetUsersQuery, useRegisterMutation, useUpdateBranchMutation, useUpdateCommissionMutation, useUpdatePermissionsMutation } from '../../services/authApi';
 import { useGetBranchesQuery } from '../../services/branchApi';
 
 interface User {
   _id: string;
-  name?: string;
   email: string;
   memberCode?: number;
-  phone?: string;
-  address?: string;
   roles: string[];
   permissions: Record<string, boolean>;
   branch?: string;
@@ -23,63 +20,47 @@ export const AdminUsers: React.FC = () => {
   const [updatePermissions, { isLoading: updatingPerms }] = useUpdatePermissionsMutation();
   const [updateCommission, { isLoading: updatingCommission }] = useUpdateCommissionMutation();
   const [updateBranch, { isLoading: updatingBranch }] = useUpdateBranchMutation();
-  const [updateProfile, { isLoading: updatingProfile }] = useUpdateProfileMutation();
   const [deleteUser, { isLoading: deletingUser }] = useDeleteUserMutation();
 
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [phone, setPhone] = useState('');
-  const [address, setAddress] = useState('');
   const [branch, setBranch] = useState('');
   const [commissionRate, setCommissionRate] = useState('0');
   const [selectedPermissions, setSelectedPermissions] = useState<Record<string, boolean>>({});
 
-  const loading = creatingUser || updatingPerms || updatingCommission || updatingBranch || updatingProfile || deletingUser;
+  const loading = creatingUser || updatingPerms || updatingCommission || updatingBranch || deletingUser;
 
   const handleToggle = (perm: string) => {
     setSelectedPermissions(prev => ({ ...prev, [perm]: !prev[perm] }));
   };
 
-  const resetForm = () => {
-    setName(''); setEmail(''); setPassword(''); setPhone(''); setAddress('');
-    setBranch(''); setCommissionRate('0'); setSelectedPermissions({});
-  };
-
   const handleCreateUser = async () => {
     try {
       await registerUser({
-        name: name.trim(),
         email,
         password,
-        phone: phone.trim(),
-        address: address.trim(),
         roles: ['vendedor'],
         permissions: selectedPermissions,
         branch,
         commissionRate: Number(commissionRate || 0),
       }).unwrap();
-      resetForm();
+      setEmail(''); setPassword(''); setBranch(''); setCommissionRate('0'); setSelectedPermissions({});
     } catch (err) { console.error('Error creating user', err); }
   };
 
   const handleUpdatePermissions = async () => {
     if (!selectedUser) return;
     try {
-      await updateProfile({ userId: selectedUser._id, name: name.trim(), phone: phone.trim(), address: address.trim() }).unwrap();
       await updatePermissions({ userId: selectedUser._id, permissions: selectedPermissions }).unwrap();
       await updateCommission({ userId: selectedUser._id, commissionRate: Number(commissionRate || 0) }).unwrap();
       await updateBranch({ userId: selectedUser._id, branchId: branch || null }).unwrap();
-      setSelectedUser(null); resetForm();
+      setSelectedUser(null); setSelectedPermissions({});
     } catch (err) { console.error('Error updating permissions', err); }
   };
 
   const selectUserToEdit = (user: User) => {
     setSelectedUser(user);
-    setName(String(user.name || ''));
-    setPhone(String(user.phone || ''));
-    setAddress(String(user.address || ''));
     setSelectedPermissions(user.permissions || {});
     setCommissionRate(String(user.commissionRate ?? 0));
     setBranch(String(user.branch || ''));
@@ -123,21 +104,6 @@ export const AdminUsers: React.FC = () => {
               {selectedUser ? `Editar: ${selectedUser.email.split('@')[0]}` : 'Nuevo usuario'}
             </h2>
 
-            {selectedUser && (
-              <div className="surface rounded-xl p-3 flex items-center justify-between">
-                <div>
-                  <div className="text-[11px] uppercase tracking-wide text-slate-500">N° de Socio</div>
-                  <div className="text-lg font-bold text-brand-300 font-mono">
-                    {selectedUser.memberCode ?? '—'}
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-[11px] uppercase tracking-wide text-slate-500">Email</div>
-                  <div className="text-sm text-slate-200">{selectedUser.email}</div>
-                </div>
-              </div>
-            )}
-
             {!selectedUser && (
               <>
                 <div>
@@ -152,24 +118,6 @@ export const AdminUsers: React.FC = () => {
                 </div>
               </>
             )}
-
-            <div>
-              <label className="section-heading">Nombre</label>
-              <input type="text" placeholder="Nombre y apellido" className="input"
-                value={name} onChange={e => setName(e.target.value)} />
-            </div>
-
-            <div>
-              <label className="section-heading">Teléfono</label>
-              <input type="tel" placeholder="+54 9 ..." className="input"
-                value={phone} onChange={e => setPhone(e.target.value)} />
-            </div>
-
-            <div>
-              <label className="section-heading">Dirección</label>
-              <input type="text" placeholder="Calle, número, ciudad, provincia" className="input"
-                value={address} onChange={e => setAddress(e.target.value)} />
-            </div>
 
             <div>
               <label className="section-heading">Sucursal Asignada</label>
@@ -232,7 +180,7 @@ export const AdminUsers: React.FC = () => {
                   <button onClick={handleUpdatePermissions} disabled={loading} className="btn-primary flex-1">
                     {loading ? 'Guardando...' : 'Actualizar'}
                   </button>
-                  <button onClick={() => { setSelectedUser(null); resetForm(); }} className="btn-secondary w-full sm:w-auto">
+                  <button onClick={() => { setSelectedUser(null); setSelectedPermissions({}); }} className="btn-secondary w-full sm:w-auto">
                     Cancelar
                   </button>
                 </>
@@ -265,27 +213,12 @@ export const AdminUsers: React.FC = () => {
                   <tr key={u._id}>
                     <td className="text-center">
                       <span className="inline-flex items-center justify-center min-w-[2.5rem] px-2 py-1 rounded-lg bg-brand-600/15 text-brand-300 font-mono font-bold text-sm">
-                        {u.memberCode ?? '—'}
+                        {typeof u.memberCode === 'number' ? u.memberCode : '—'}
                       </span>
                     </td>
                     <td>
-                      {u.name && <div className="text-sm font-semibold text-white">{u.name}</div>}
-                      <div className={u.name ? 'text-xs text-slate-300' : 'text-sm font-medium text-white'}>{u.email}</div>
-                      <div className="mt-1 space-y-0.5">
-                        {u.phone ? (
-                          <div className="text-[11px] text-slate-400 flex items-center gap-1">
-                            <span className="text-slate-500">Tel:</span> {u.phone}
-                          </div>
-                        ) : null}
-                        {u.address ? (
-                          <div className="text-[11px] text-slate-400 flex items-center gap-1">
-                            <span className="text-slate-500">Dir:</span> {u.address}
-                          </div>
-                        ) : null}
-                        {!u.phone && !u.address && (
-                          <div className="text-[11px] text-slate-600">Sin datos de contacto</div>
-                        )}
-                      </div>
+                      <div className="text-sm font-medium text-white">{u.email}</div>
+                      <div className="text-xs font-mono text-brand-400 mt-0.5 hidden sm:block">{u._id.slice(-8)}</div>
                     </td>
                     <td className="hidden sm:table-cell">
                       <span className={u.roles.includes('admin') ? 'badge-blue' : 'badge-gray'}>

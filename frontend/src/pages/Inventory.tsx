@@ -16,6 +16,7 @@ import { useGetCategoriesQuery } from '../services/categoryApi';
 import { useGetSuppliersQuery } from '../services/supplierApi';
 import { HasPermission } from '../components/auth/HasPermission';
 import { PERMISSIONS } from '../constants/permissions';
+import { DEFAULT_PRODUCT_SHIPPING } from '../constants/shippingDefaults';
 
 interface ProductFormData {
   name: string;
@@ -364,7 +365,7 @@ export const Inventory = () => {
     name: '', sku: '', description: '', commercialDescription: '', longDescription: '',
     seoTitle: '', seoDescription: '', slug: '',
     price: '', salePrice: '', costPrice: '', iva: 21, margin: '', stock: '', minStock: '', category: '', subcategory: '', supplier: '', barcode: '', internalCode: '',
-    weight: '', dimLength: '', dimWidth: '', dimHeight: '', displayOrder: '',
+    weight: DEFAULT_PRODUCT_SHIPPING.weight, dimLength: DEFAULT_PRODUCT_SHIPPING.length, dimWidth: DEFAULT_PRODUCT_SHIPPING.width, dimHeight: DEFAULT_PRODUCT_SHIPPING.height, displayOrder: '',
   });
 
   const normalizeCategoryName = (value: string) => value.trim().toLowerCase();
@@ -489,7 +490,7 @@ export const Inventory = () => {
       name: '', sku: '', description: '', commercialDescription: '', longDescription: '',
       seoTitle: '', seoDescription: '', slug: '',
       price: '', salePrice: '', costPrice: '', iva: 21, margin: '', stock: '', minStock: '', category: '', subcategory: '', supplier: '',
-      barcode: '', internalCode: '', weight: '', dimLength: '', dimWidth: '', dimHeight: '', displayOrder: '',
+      barcode: '', internalCode: '', weight: DEFAULT_PRODUCT_SHIPPING.weight, dimLength: DEFAULT_PRODUCT_SHIPPING.length, dimWidth: DEFAULT_PRODUCT_SHIPPING.width, dimHeight: DEFAULT_PRODUCT_SHIPPING.height, displayOrder: '',
     });
     setSelectedFile(null);
     setImagePreview(null);
@@ -1474,7 +1475,7 @@ export const Inventory = () => {
                         type="number"
                         step="0.01"
                         className="input"
-                        placeholder="0.30"
+                        placeholder="4.5"
                         value={formData.weight as any}
                         onWheel={handleNumberWheel}
                         onChange={(e) => setFormData({ ...formData, weight: e.target.value === '' ? '' : Number(e.target.value) } as ProductFormData)}
