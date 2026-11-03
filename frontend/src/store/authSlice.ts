@@ -8,6 +8,9 @@ export interface AuthUser {
   permissions: Record<string, boolean>;
   branch?: string;
   name?: string;
+  memberCode?: number;
+  phone?: string;
+  address?: string;
 }
 
 interface AuthState {

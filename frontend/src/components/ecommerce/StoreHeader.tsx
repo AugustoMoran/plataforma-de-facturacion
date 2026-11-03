@@ -54,9 +54,22 @@ export const StoreHeader: React.FC = () => {
                 </Link>
               </>
             ) : (
-              <span className="text-xs text-blue-100 hidden sm:inline truncate max-w-[120px]">
-                {user.email}
-              </span>
+              <div className="hidden sm:flex flex-col items-end leading-tight">
+                {typeof user.memberCode === 'number' && (
+                  <span
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-brand-500/20 text-brand-100 text-[11px] font-semibold ring-1 ring-brand-300/30"
+                    title="Tu número de socio"
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 7h14M5 12h14M5 17h7" />
+                    </svg>
+                    Socio N° {user.memberCode}
+                  </span>
+                )}
+                <span className="text-[11px] text-blue-100 truncate max-w-[140px]">
+                  {user.name || user.email}
+                </span>
+              </div>
             )}
 
             <button
