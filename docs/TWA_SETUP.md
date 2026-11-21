@@ -68,6 +68,9 @@ https://digitalassetlinks.googleapis.com/v1/statements:list?source.web.site=http
 Debe listar `com.ososound.app` sin `ERROR_CODE_MALFORMED_CONTENT` ni `ERROR_CODE_NO_MATCHING_ASSET`.
 Si Play Console seguía fallando, pedí de nuevo la verificación de dominio tras el deploy (a veces cachea unos minutos).
 
+Para **App Links + credenciales / asociación de sitio** en Play Console, el JSON también incluye
+`delegate_permission/common.get_login_creds` junto a `handle_all_urls`.
+
 ---
 
 ## Paso 5 — Ficha en Play Console
