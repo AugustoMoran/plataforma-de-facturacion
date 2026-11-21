@@ -75,25 +75,25 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, showFeatured 
       </div>
 
       <div className={`${compact ? 'p-2.5' : 'p-4'} flex-1 flex flex-col`}>
-        <p className="text-[9px] text-blue-700 uppercase tracking-wide mb-0.5 line-clamp-1">
+        <p className="text-[9px] text-neutral-700 uppercase tracking-wide mb-0.5 line-clamp-1">
           {product.subcategory ? `${product.category} · ${product.subcategory}` : product.category}
         </p>
-        <h3 className={`${compact ? 'text-xs' : 'text-sm'} font-semibold text-blue-950 line-clamp-2 min-h-[2rem] leading-snug group-hover:text-brand-700 transition-colors`}>
+        <h3 className={`${compact ? 'text-xs' : 'text-sm'} font-semibold text-black line-clamp-2 min-h-[2rem] leading-snug group-hover:text-neutral-800 transition-colors`}>
           {product.name}
         </h3>
         <div className={`mt-auto ${compact ? 'pt-2' : 'pt-3'} flex items-end justify-between gap-1`}>
-          <div className="min-w-0">
+          <div className="min-w-0 rounded-lg bg-white px-1.5 py-0.5 ring-1 ring-neutral-300">
             {onSale ? (
               <>
-                <span className="block text-[10px] text-slate-500 line-through tabular-nums">
+                <span className="block text-[10px] text-neutral-500 line-through tabular-nums">
                   {formatPrice(product.price)}
                 </span>
-                <span className="text-sm font-bold text-brand-700 tabular-nums">
+                <span className="text-sm font-bold text-black tabular-nums">
                   {formatPrice(displayPrice)}
                 </span>
               </>
             ) : (
-              <span className="text-sm font-bold text-brand-700 tabular-nums">
+              <span className="text-sm font-bold text-black tabular-nums">
                 {formatPrice(displayPrice)}
               </span>
             )}
