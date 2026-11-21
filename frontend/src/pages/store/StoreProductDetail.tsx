@@ -120,14 +120,14 @@ export const StoreProductDetail: React.FC = () => {
               {onSale && <span className="badge-red">Oferta</span>}
               {outOfStock && <span className="badge-red">Sin stock</span>}
             </div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-blue-950">{product.name}</h1>
-            <p className="text-xs text-blue-600/70 font-mono mt-2">SKU: {product.sku}</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-black">{product.name}</h1>
+            <p className="text-xs text-black font-mono mt-2">SKU: {product.sku}</p>
           </div>
 
-          <div className="inline-flex flex-col gap-0.5 rounded-xl bg-white px-3 py-2 ring-1 ring-neutral-300">
+          <div className="space-y-1">
             {onSale ? (
               <>
-                <p className="text-lg text-neutral-500 line-through tabular-nums">
+                <p className="text-lg text-black/60 line-through tabular-nums">
                   ${product.price.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
                 </p>
                 <p className="text-3xl font-bold text-black tabular-nums">
