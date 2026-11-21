@@ -124,18 +124,18 @@ export const StoreProductDetail: React.FC = () => {
             <p className="text-xs text-blue-600/70 font-mono mt-2">SKU: {product.sku}</p>
           </div>
 
-          <div className="space-y-1">
+          <div className="inline-flex flex-col gap-0.5 rounded-xl bg-white px-3 py-2 ring-1 ring-neutral-300">
             {onSale ? (
               <>
-                <p className="text-lg text-blue-400 line-through tabular-nums">
+                <p className="text-lg text-neutral-500 line-through tabular-nums">
                   ${product.price.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
                 </p>
-                <p className="text-3xl font-bold text-brand-700 tabular-nums">
+                <p className="text-3xl font-bold text-black tabular-nums">
                   ${displayPrice.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
                 </p>
               </>
             ) : (
-              <p className="text-3xl font-bold text-brand-700 tabular-nums">
+              <p className="text-3xl font-bold text-black tabular-nums">
                 ${displayPrice.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
               </p>
             )}
