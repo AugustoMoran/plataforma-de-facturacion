@@ -82,7 +82,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, showFeatured 
           {product.name}
         </h3>
         <div className={`mt-auto ${compact ? 'pt-2' : 'pt-3'} flex items-end justify-between gap-1`}>
-          <div className="min-w-0 rounded-lg bg-white px-1.5 py-0.5 ring-1 ring-neutral-300">
+          <div className="min-w-0">
             {onSale ? (
               <>
                 <span className="block text-[10px] text-neutral-500 line-through tabular-nums">
