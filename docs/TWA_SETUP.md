@@ -51,33 +51,22 @@ Genera `app-release-signed.aab` listo para subir a Play Console.
 
 ## Paso 4 — Digital Asset Links (obligatorio)
 
-Google verifica que tu web autoriza la app Android.
+Google verifica que tu web autoriza la app Android. El archivo debe estar en:
+
+`https://www.ososoundmusic.com/.well-known/assetlinks.json`
 
 1. Subí el AAB a Play Console → **Prueba interna**.
-2. En Play Console → **Configuración → Integridad de la app** copiá el **SHA-256** del certificado de firma.
-3. Editá `frontend/public/.well-known/assetlinks.json`:
-
-```json
-[
-  {
-    "relation": ["delegate_permission/common.handle_all_urls"],
-    "target": {
-      "namespace": "android_app",
-      "package_name": "com.ososound.app",
-      "sha256_cert_fingerprints": ["TU_SHA256_AQUI"]
-    }
-  }
-]
-```
-
-4. Redeploy en Vercel.
+2. En Play Console → **Configuración → Integridad de la app** (o el aviso de verificación de dominio) copiá los **SHA-256** del certificado de firma (App signing + upload key si aplica).
+3. El archivo del repo es `frontend/public/.well-known/assetlinks.json` (package `com.ososound.app`). No dejes placeholders: cada fingerprint debe ser un SHA-256 con dos puntos (`AA:BB:...`).
+4. Redeploy del frontend en Vercel (el `public/.well-known/` se publica como estático).
 5. Verificá:
 
 ```
 https://digitalassetlinks.googleapis.com/v1/statements:list?source.web.site=https://www.ososoundmusic.com&relation=delegate_permission/common.handle_all_urls
 ```
 
-Debe listar tu app sin errores.
+Debe listar `com.ososound.app` sin `ERROR_CODE_MALFORMED_CONTENT` ni `ERROR_CODE_NO_MATCHING_ASSET`.
+Si Play Console seguía fallando, pedí de nuevo la verificación de dominio tras el deploy (a veces cachea unos minutos).
 
 ---
 

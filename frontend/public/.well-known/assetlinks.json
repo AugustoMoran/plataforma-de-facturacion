@@ -5,7 +5,9 @@
       "namespace": "android_app",
       "package_name": "com.ososound.app",
       "sha256_cert_fingerprints": [
-        "REEMPLAZAR_CON_SHA256_DEL_AAB_DE_PLAY_CONSOLE"
+        "96:A1:7E:CC:E4:BC:41:65:EB:AB:0B:34:39:AC:49:E2:18:4A:A7:7D:87:05:AD:B6:E4:5A:D2:C5:58:F5:6F:96",
+        "7A:C6:24:C6:63:17:EC:09:A7:42:4A:49:EE:C0:0F:06:42:ED:05:8E:E9:8D:A7:10:06:8B:13:25:C8:E2:E1:7D",
+        "E5:B0:CB:DF:6F:90:70:0B:6B:38:73:D3:93:96:43:08:00:A3:4C:2A:6F:DA:32:4A:53:82:3D:57:DE:2A:12:6A"
       ]
     }
   }
