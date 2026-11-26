@@ -131,10 +131,36 @@ const buildProductFilters = (query: any = {}) => {
   return filters;
 };
 
-const recalculatePriceKeepingMargin = (costPrice: number, margin: number, iva: number) => {
+export const roundMoney = (value: number) => Number(Number(value || 0).toFixed(2));
+
+export const recalculatePriceKeepingMargin = (costPrice: number, margin: number, iva: number) => {
   const base = costPrice + (costPrice * (margin / 100));
   const total = base * (1 + (iva / 100));
-  return Number(total.toFixed(2));
+  return roundMoney(total);
+};
+
+/** Margen efectivo según costo y precio actuales (el campo `margin` suele estar desactualizado). */
+export const deriveEffectiveMargin = (costPrice: number, price: number, iva: number) => {
+  if (!(costPrice > 0) || !(price > 0)) return 0;
+  const netPrice = price / (1 + (iva / 100));
+  return Number((((netPrice - costPrice) / costPrice) * 100).toFixed(4));
+};
+
+/** Aplica % sobre costo/precio preservando el margen real (no el campo `margin` guardado). */
+export const applyCostIncreaseKeepingRealMargin = (
+  oldCostPrice: number,
+  oldPrice: number,
+  percentage: number,
+  iva = 21
+) => {
+  const factor = 1 + (percentage / 100);
+  const margin = deriveEffectiveMargin(oldCostPrice, oldPrice, iva);
+  const newCostPrice = roundMoney(Math.max(0, oldCostPrice * factor));
+  const newPrice = oldCostPrice > 0
+    ? roundMoney(Math.max(0, oldPrice * factor))
+    : recalculatePriceKeepingMargin(newCostPrice, margin, iva);
+
+  return { newCostPrice, newPrice, margin, iva };
 };
 
 const resolveBulkCandidateFilters = (payload: BulkCostUpdatePayload) => {
@@ -168,12 +194,13 @@ const buildBulkPreviewItems = (products: any[], percentage: number): ProductCost
   return products.map((product) => {
     const oldCostPrice = Number(product.costPrice ?? 0);
     const oldPrice = Number(product.price ?? 0);
-    const margin = Number(product.margin ?? 0);
     const iva = Number(product.iva ?? 21);
-
-    const increasedCost = oldCostPrice * (1 + (percentage / 100));
-    const newCostPrice = Number(Math.max(0, increasedCost).toFixed(2));
-    const newPrice = recalculatePriceKeepingMargin(newCostPrice, margin, iva);
+    const { newCostPrice, newPrice, margin } = applyCostIncreaseKeepingRealMargin(
+      oldCostPrice,
+      oldPrice,
+      percentage,
+      iva
+    );
 
     return {
       id: String(product._id),
@@ -249,6 +276,7 @@ export const applyBulkCostUpdate = async (payload: BulkCostUpdatePayload) => {
           $set: {
             costPrice: item.newCostPrice,
             price: item.newPrice,
+            margin: item.margin,
             updatedAt: now,
           },
         },
