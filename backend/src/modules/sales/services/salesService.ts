@@ -388,10 +388,10 @@ export const getProfitReport = async (from?: Date, to?: Date) => {
 
   const byPaymentMethod: Record<string, { count: number; revenue: number }> = {};
   const byInvoiceType: Record<string, { count: number; revenue: number }> = {};
-  const byDayMap: Record<string, { date: string; sales: number; revenue: number; iva: number; discount: number; cost: number; gain: number }> = {};
-  const byBranchMap: Record<string, { branchId: string; branchName: string; sales: number; revenue: number; iva: number; discount: number; cost: number; gain: number }> = {};
-  const bySellerMap: Record<string, { sellerId: string; sellerName: string; sales: number; revenue: number; commission: number }> = {};
-  const bySellerBranchMap: Record<string, { sellerId: string; sellerName: string; branchId: string; branchName: string; sales: number; revenue: number; commission: number }> = {};
+  const byDayMap: Record<string, { date: string; sales: number; revenue: number; invoicedRevenue: number; nonInvoicedRevenue: number; iva: number; discount: number; cost: number; gain: number }> = {};
+  const byBranchMap: Record<string, { branchId: string; branchName: string; sales: number; revenue: number; invoicedRevenue: number; nonInvoicedRevenue: number; iva: number; discount: number; cost: number; gain: number }> = {};
+  const bySellerMap: Record<string, { sellerId: string; sellerName: string; sales: number; revenue: number; invoicedRevenue: number; nonInvoicedRevenue: number; commission: number }> = {};
+  const bySellerBranchMap: Record<string, { sellerId: string; sellerName: string; branchId: string; branchName: string; sales: number; revenue: number; invoicedRevenue: number; nonInvoicedRevenue: number; commission: number }> = {};
 
   const resolveBranchMeta = (branch: any) => {
     if (branch && typeof branch === 'object') {
@@ -425,6 +425,8 @@ export const getProfitReport = async (from?: Date, to?: Date) => {
         branchName,
         sales: 0,
         revenue: 0,
+        invoicedRevenue: 0,
+        nonInvoicedRevenue: 0,
         iva: 0,
         discount: 0,
         cost: 0,
@@ -445,6 +447,8 @@ export const getProfitReport = async (from?: Date, to?: Date) => {
         sellerName,
         sales: 0,
         revenue: 0,
+        invoicedRevenue: 0,
+        nonInvoicedRevenue: 0,
         commission: 0,
       };
     }
@@ -465,6 +469,8 @@ export const getProfitReport = async (from?: Date, to?: Date) => {
         branchName,
         sales: 0,
         revenue: 0,
+        invoicedRevenue: 0,
+        nonInvoicedRevenue: 0,
         commission: 0,
       };
     }
@@ -555,7 +561,7 @@ export const getProfitReport = async (from?: Date, to?: Date) => {
 
     const dayKey = new Date(sale.createdAt).toISOString().split('T')[0];
     if (!byDayMap[dayKey]) {
-      byDayMap[dayKey] = { date: dayKey, sales: 0, revenue: 0, iva: 0, discount: 0, cost: 0, gain: 0 };
+      byDayMap[dayKey] = { date: dayKey, sales: 0, revenue: 0, invoicedRevenue: 0, nonInvoicedRevenue: 0, iva: 0, discount: 0, cost: 0, gain: 0 };
     }
     byDayMap[dayKey].sales += 1;
     byDayMap[dayKey].revenue += revenue;
@@ -563,6 +569,11 @@ export const getProfitReport = async (from?: Date, to?: Date) => {
     byDayMap[dayKey].discount += discount;
     byDayMap[dayKey].cost += cost;
     byDayMap[dayKey].gain += gain;
+    if (isSuccessfullyInvoiced) {
+      byDayMap[dayKey].invoicedRevenue += revenue;
+    } else {
+      byDayMap[dayKey].nonInvoicedRevenue += revenue;
+    }
 
     const branchBucket = ensureBranchBucket((sale as any).branch);
     branchBucket.sales += 1;
@@ -571,17 +582,32 @@ export const getProfitReport = async (from?: Date, to?: Date) => {
     branchBucket.discount += discount;
     branchBucket.cost += cost;
     branchBucket.gain += gain;
+    if (isSuccessfullyInvoiced) {
+      branchBucket.invoicedRevenue += revenue;
+    } else {
+      branchBucket.nonInvoicedRevenue += revenue;
+    }
 
     if (!isAdminSeller((sale as any).seller)) {
       const sellerBucket = ensureSellerBucket((sale as any).seller);
       sellerBucket.sales += 1;
       sellerBucket.revenue += revenue;
       sellerBucket.commission += commission;
+      if (isSuccessfullyInvoiced) {
+        sellerBucket.invoicedRevenue += revenue;
+      } else {
+        sellerBucket.nonInvoicedRevenue += revenue;
+      }
 
       const sellerBranchBucket = ensureSellerBranchBucket((sale as any).seller, (sale as any).branch);
       sellerBranchBucket.sales += 1;
       sellerBranchBucket.revenue += revenue;
       sellerBranchBucket.commission += commission;
+      if (isSuccessfullyInvoiced) {
+        sellerBranchBucket.invoicedRevenue += revenue;
+      } else {
+        sellerBranchBucket.nonInvoicedRevenue += revenue;
+      }
     }
   }
 
@@ -651,28 +677,48 @@ export const getProfitReport = async (from?: Date, to?: Date) => {
 
     const dayKey = new Date(note.createdAt).toISOString().split('T')[0];
     if (!byDayMap[dayKey]) {
-      byDayMap[dayKey] = { date: dayKey, sales: 0, revenue: 0, iva: 0, discount: 0, cost: 0, gain: 0 };
+      byDayMap[dayKey] = { date: dayKey, sales: 0, revenue: 0, invoicedRevenue: 0, nonInvoicedRevenue: 0, iva: 0, discount: 0, cost: 0, gain: 0 };
     }
     byDayMap[dayKey].sales += 1;
     byDayMap[dayKey].revenue -= revenue;
     byDayMap[dayKey].iva -= iva;
     byDayMap[dayKey].cost += cost;
     byDayMap[dayKey].gain -= gain;
+    if (originalIsSuccessfullyInvoiced) {
+      byDayMap[dayKey].invoicedRevenue -= revenue;
+    } else {
+      byDayMap[dayKey].nonInvoicedRevenue -= revenue;
+    }
 
     const branchBucket = ensureBranchBucket((note as any).branch);
     branchBucket.revenue -= revenue;
     branchBucket.iva -= iva;
     branchBucket.cost += cost;
     branchBucket.gain -= gain;
+    if (originalIsSuccessfullyInvoiced) {
+      branchBucket.invoicedRevenue -= revenue;
+    } else {
+      branchBucket.nonInvoicedRevenue -= revenue;
+    }
 
     if (!isAdminSeller(originalSale?.seller)) {
       const sellerBucket = ensureSellerBucket(originalSale?.seller);
       sellerBucket.revenue -= revenue;
       sellerBucket.commission -= noteCommission;
+      if (originalIsSuccessfullyInvoiced) {
+        sellerBucket.invoicedRevenue -= revenue;
+      } else {
+        sellerBucket.nonInvoicedRevenue -= revenue;
+      }
 
       const sellerBranchBucket = ensureSellerBranchBucket(originalSale?.seller, originalSale?.branch || (note as any).branch);
       sellerBranchBucket.revenue -= revenue;
       sellerBranchBucket.commission -= noteCommission;
+      if (originalIsSuccessfullyInvoiced) {
+        sellerBranchBucket.invoicedRevenue -= revenue;
+      } else {
+        sellerBranchBucket.nonInvoicedRevenue -= revenue;
+      }
     }
   }
 
@@ -687,6 +733,8 @@ export const getProfitReport = async (from?: Date, to?: Date) => {
     .map((row) => ({
       ...row,
       revenue: Number(row.revenue.toFixed(2)),
+      invoicedRevenue: Number(row.invoicedRevenue.toFixed(2)),
+      nonInvoicedRevenue: Number(row.nonInvoicedRevenue.toFixed(2)),
       iva: Number(row.iva.toFixed(2)),
       discount: Number(row.discount.toFixed(2)),
       cost: Number(row.cost.toFixed(2)),
@@ -697,6 +745,9 @@ export const getProfitReport = async (from?: Date, to?: Date) => {
     .sort((a, b) => b.commission - a.commission)
     .map((row) => ({
       ...row,
+      revenue: Number(row.revenue.toFixed(2)),
+      invoicedRevenue: Number(row.invoicedRevenue.toFixed(2)),
+      nonInvoicedRevenue: Number(row.nonInvoicedRevenue.toFixed(2)),
       effectiveRate: row.revenue !== 0 ? (row.commission / row.revenue) * 100 : 0,
     }));
 
@@ -704,6 +755,9 @@ export const getProfitReport = async (from?: Date, to?: Date) => {
     .sort((a, b) => b.commission - a.commission)
     .map((row) => ({
       ...row,
+      revenue: Number(row.revenue.toFixed(2)),
+      invoicedRevenue: Number(row.invoicedRevenue.toFixed(2)),
+      nonInvoicedRevenue: Number(row.nonInvoicedRevenue.toFixed(2)),
       effectiveRate: row.revenue !== 0 ? (row.commission / row.revenue) * 100 : 0,
     }));
 
@@ -763,6 +817,8 @@ export const getProfitReport = async (from?: Date, to?: Date) => {
     byDay: byDay.map((d) => ({
       ...d,
       revenue: Number(d.revenue.toFixed(2)),
+      invoicedRevenue: Number(d.invoicedRevenue.toFixed(2)),
+      nonInvoicedRevenue: Number(d.nonInvoicedRevenue.toFixed(2)),
       iva: Number(d.iva.toFixed(2)),
       discount: Number(d.discount.toFixed(2)),
       cost: Number(d.cost.toFixed(2)),

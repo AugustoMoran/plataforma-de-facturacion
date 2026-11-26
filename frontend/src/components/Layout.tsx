@@ -215,14 +215,14 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 							onClick={() => goTo(to)}
 							className={`nav-item ${isActive(to) ? "active" : ""} ${
 								highlight && !isActive(to)
-									? "text-brand-400 hover:text-brand-300 hover:bg-brand-500/10"
+									? "text-brand-700 hover:text-brand-800 hover:bg-brand-100"
 									: ""
 							}`}
 						>
 							{icon}
 							<span>{label}</span>
 							{highlight && !isActive(to) && (
-								<span className="ml-auto text-[9px] font-bold bg-brand-500/20 text-brand-400 px-1.5 py-0.5 rounded-full ring-1 ring-brand-500/20">
+								<span className="ml-auto text-[9px] font-bold bg-brand-100 text-brand-800 px-1.5 py-0.5 rounded-full ring-1 ring-brand-200">
 									TPV
 								</span>
 							)}

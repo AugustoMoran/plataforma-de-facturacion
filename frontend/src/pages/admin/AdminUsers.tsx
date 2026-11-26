@@ -100,7 +100,7 @@ export const AdminUsers: React.FC = () => {
         {/* Form panel */}
         <div className="lg:col-span-5">
           <div className="card p-6 space-y-4">
-            <h2 className="text-sm font-semibold text-white">
+            <h2 className="text-sm font-semibold text-blue-950">
               {selectedUser ? `Editar: ${selectedUser.email.split('@')[0]}` : 'Nuevo usuario'}
             </h2>
 
@@ -132,8 +132,8 @@ export const AdminUsers: React.FC = () => {
                 ))}
               </select>
               {!branch && (
-                <p className="text-[11px] text-amber-300 mt-1">
-                  ⚠️ Este usuario no podrá cargar ventas hasta que se le asigne una sucursal.
+                <p className="text-[11px] text-amber-800 mt-1">
+                  Este usuario no podrá cargar ventas hasta que se le asigne una sucursal.
                 </p>
               )}
             </div>
@@ -153,7 +153,7 @@ export const AdminUsers: React.FC = () => {
 
             <div>
               <label className="section-heading mb-3 block">Permisos</label>
-              <div className="surface rounded-xl p-4 space-y-2">
+              <div className="rounded-xl border border-blue-200 bg-blue-50/70 p-4 space-y-2">
                 {Object.entries(PERMISSION_LABELS)
                   .filter(([key]) => key !== 'clients:view' && key !== 'clients:edit')
                   .map(([key, label]) => (
@@ -161,14 +161,14 @@ export const AdminUsers: React.FC = () => {
                     <div className="relative flex items-center justify-center w-4 h-4 flex-shrink-0">
                       <input type="checkbox" checked={!!selectedPermissions[key]}
                         onChange={() => handleToggle(key)}
-                        className="w-4 h-4 appearance-none rounded border border-white/20 bg-[#060D1F] checked:bg-brand-600 checked:border-brand-600 transition-all cursor-pointer" />
+                        className="w-4 h-4 appearance-none rounded border border-blue-300 bg-white checked:bg-brand-600 checked:border-brand-600 transition-all cursor-pointer" />
                       {selectedPermissions[key] && (
                         <svg className="absolute w-3 h-3 text-white pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                         </svg>
                       )}
                     </div>
-                    <span className="text-sm text-slate-400 group-hover:text-white transition-colors">{label as string}</span>
+                    <span className="text-sm text-blue-900 group-hover:text-blue-950 transition-colors">{label as string}</span>
                   </label>
                 ))}
               </div>
@@ -200,38 +200,17 @@ export const AdminUsers: React.FC = () => {
             <table className="data-table w-full">
               <thead>
                 <tr>
+                  <th className="text-center">Acciones</th>
                   <th className="text-center">N° Socio</th>
                   <th>Usuario</th>
                   <th className="hidden sm:table-cell">Rol</th>
                   <th className="hidden lg:table-cell">Sucursal</th>
                   <th className="text-right hidden md:table-cell">Comisión</th>
-                  <th className="text-center">Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {users.map(u => (
                   <tr key={u._id}>
-                    <td className="text-center">
-                      <span className="inline-flex items-center justify-center min-w-[2.5rem] px-2 py-1 rounded-lg bg-brand-600/15 text-brand-300 font-mono font-bold text-sm">
-                        {typeof u.memberCode === 'number' ? u.memberCode : '—'}
-                      </span>
-                    </td>
-                    <td>
-                      <div className="text-sm font-medium text-white">{u.email}</div>
-                      <div className="text-xs font-mono text-brand-400 mt-0.5 hidden sm:block">{u._id.slice(-8)}</div>
-                    </td>
-                    <td className="hidden sm:table-cell">
-                      <span className={u.roles.includes('admin') ? 'badge-blue' : 'badge-gray'}>
-                        {u.roles[0]}
-                      </span>
-                    </td>
-                    <td className="hidden lg:table-cell">
-                      <div className="text-sm text-slate-200">{getBranchName(u.branch)}</div>
-                      {!u.roles.includes('admin') && !u.branch && (
-                        <div className="text-[11px] text-amber-300 mt-0.5">Asignar sucursal</div>
-                      )}
-                    </td>
-                    <td className="text-right text-brand-300 font-semibold hidden md:table-cell">{Number(u.commissionRate || 0)}%</td>
                     <td className="text-center">
                       {!u.roles.includes('admin') && (
                         <div className="flex items-center justify-center gap-2">
@@ -242,7 +221,7 @@ export const AdminUsers: React.FC = () => {
                           </button>
                           <button
                             onClick={() => handleDeleteUser(u as any)}
-                            className="btn-icon text-rose-300 hover:text-rose-200"
+                            className="btn-icon text-rose-700 hover:text-rose-800"
                             title="Eliminar usuario"
                             disabled={loading}
                           >
@@ -253,11 +232,32 @@ export const AdminUsers: React.FC = () => {
                         </div>
                       )}
                     </td>
+                    <td className="text-center">
+                      <span className="inline-flex items-center justify-center min-w-[2.5rem] px-2 py-1 rounded-lg bg-brand-100 text-brand-800 font-mono font-bold text-sm">
+                        {typeof u.memberCode === 'number' ? u.memberCode : '—'}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="text-sm font-medium text-blue-950">{u.email}</div>
+                      <div className="text-xs font-mono text-brand-700 mt-0.5 hidden sm:block">{u._id.slice(-8)}</div>
+                    </td>
+                    <td className="hidden sm:table-cell">
+                      <span className={u.roles.includes('admin') ? 'badge-blue' : 'badge-gray'}>
+                        {u.roles[0]}
+                      </span>
+                    </td>
+                    <td className="hidden lg:table-cell">
+                      <div className="text-sm text-blue-950">{getBranchName(u.branch)}</div>
+                      {!u.roles.includes('admin') && !u.branch && (
+                        <div className="text-[11px] text-amber-800 mt-0.5">Asignar sucursal</div>
+                      )}
+                    </td>
+                    <td className="text-right text-blue-950 font-semibold hidden md:table-cell">{Number(u.commissionRate || 0)}%</td>
                   </tr>
                 ))}
                 {(loadingUsers || (Array.isArray(users) && users.length === 0)) && (
                   <tr>
-                    <td colSpan={6} className="text-center text-slate-600 py-10 text-sm">
+                    <td colSpan={6} className="text-center text-blue-800 py-10 text-sm">
                       {loadingUsers ? 'Cargando usuarios...' : 'Sin usuarios registrados'}
                     </td>
                   </tr>
