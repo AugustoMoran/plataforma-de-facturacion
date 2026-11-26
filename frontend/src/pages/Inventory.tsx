@@ -335,7 +335,7 @@ export const Inventory = () => {
     try {
       const payload = getBulkPayload();
       const confirmation = window.confirm(
-        `Se actualizará el costo de ${selectedCount} producto(s) con ${payload.percentage}% y se recalculará precio manteniendo margen. ¿Desea continuar?`
+        `Se aumentará costo y precio de ${selectedCount} producto(s) un ${payload.percentage}% (manteniendo el margen real). ¿Desea continuar?`
       );
       if (!confirmation) return;
 
@@ -894,7 +894,7 @@ export const Inventory = () => {
                 onChange={(e) => setBulkPercentage(e.target.value)}
               />
               <p className="text-[11px] text-slate-500 mt-1">
-                Estrategia: mantener margen y recalcular precio final con IVA.
+                Estrategia: sube costo y precio el mismo %. Mantiene el margen real (no el valor guardado).
               </p>
             </div>
             <div className="lg:col-span-2 flex flex-col sm:flex-row gap-3 items-stretch sm:items-end">
